@@ -14,67 +14,45 @@ func init() {
 	f.IntP("port", "p", 0, "Application port (default: auto-detected)")
 	f.String("host", "ink", "Git host: ink, github")
 	f.String("branch", "main", "Git branch to deploy")
-	f.String("memory", "512Mi", "Memory limit: 256Mi, 512Mi, 1Gi, 2Gi, 4Gi, 8Gi")
-	f.String("vcpu", "0.5", "CPU cores: 0.25, 0.5, 1, 2, 4")
-	f.StringArray("env", nil, "Environment variable as KEY=VALUE (repeatable)")
-	f.String("build-command", "", "Custom build command")
-	f.String("start-command", "", "Custom start command")
-	f.String("root-dir", "", "Root directory for monorepo projects")
-	f.String("publish-dir", "", "Publish directory for static sites (e.g. dist, build)")
-	f.String("dockerfile", "", "Path to Dockerfile")
-	f.String("buildpack", "railpack", "Build strategy: railpack, dockerfile, static")
 	f.String("region", "eu-central-1", "Deploy region")
+	addServiceFlags(deployCmd)
+
+	addServiceFlags(redeployCmd)
 
 	rootCmd.AddCommand(deployCmd)
 	rootCmd.AddCommand(redeployCmd)
 }
 
-var redeployCmd = &cobra.Command{
-	Use:   "redeploy <name>",
-	Short: "Redeploy a service (pull latest code and rebuild)",
-	Example: `ink redeploy myapi`,
-	Args:    exactArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
-		name := args[0]
-		client := newClient()
-
-		existing, err := findService(client, name)
-		if err != nil {
-			fatal(err.Error())
-		}
-		if existing == nil {
-			fatal(fmt.Sprintf("Service %q not found", name))
-		}
-
-		input := map[string]any{"name": name}
-		addDefaults(input)
-
-		var result struct {
-			ServiceUpdate struct {
-				ServiceID string `json:"serviceId"`
-				Name      string `json:"name"`
-				Status    string `json:"status"`
-			} `json:"serviceUpdate"`
-		}
-
-		err = client.Do(`mutation($input: UpdateServiceInput!) {
-			serviceUpdate(input: $input) { serviceId name status }
-		}`, map[string]any{"input": input}, &result)
-		if err != nil {
-			fatal(err.Error())
-		}
-
-		s := result.ServiceUpdate
-		if jsonOutput {
-			printJSON(s)
-			return
-		}
-
-		fmt.Println()
-		success(fmt.Sprintf("Redeploying: %s", bold.Render(s.Name)))
-		kv("Status", renderStatus(s.Status))
-		fmt.Println()
-	},
+// addServiceFlags registers the flags shared between deploy and redeploy.
+func addServiceFlags(cmd *cobra.Command) {
+	f := cmd.Flags()
+	if f.Lookup("memory") == nil {
+		f.String("memory", "512Mi", "Memory limit: 256Mi, 512Mi, 1Gi, 2Gi, 4Gi, 8Gi")
+	}
+	if f.Lookup("vcpu") == nil {
+		f.String("vcpu", "0.5", "CPU cores: 0.25, 0.5, 1, 2, 4")
+	}
+	if f.Lookup("env") == nil {
+		f.StringArray("env", nil, "Environment variable as KEY=VALUE (repeatable)")
+	}
+	if f.Lookup("build-command") == nil {
+		f.String("build-command", "", "Custom build command")
+	}
+	if f.Lookup("start-command") == nil {
+		f.String("start-command", "", "Custom start command")
+	}
+	if f.Lookup("root-dir") == nil {
+		f.String("root-dir", "", "Root directory for monorepo projects")
+	}
+	if f.Lookup("publish-dir") == nil {
+		f.String("publish-dir", "", "Publish directory for static sites (e.g. dist, build)")
+	}
+	if f.Lookup("dockerfile") == nil {
+		f.String("dockerfile", "", "Path to Dockerfile")
+	}
+	if f.Lookup("buildpack") == nil {
+		f.String("buildpack", "railpack", "Build strategy: railpack, dockerfile, static")
+	}
 }
 
 var deployCmd = &cobra.Command{
@@ -116,6 +94,38 @@ ink deploy myapi --memory 4Gi`,
 		} else {
 			runCreate(cmd, client, name)
 		}
+	},
+}
+
+var redeployCmd = &cobra.Command{
+	Use:   "redeploy <name>",
+	Short: "Redeploy a service (pull latest code and rebuild)",
+	Long:  "Triggers a rebuild and redeploy. Optionally update configuration at the same time.",
+	Example: `# Redeploy with latest code
+ink redeploy myapi
+
+# Redeploy and update memory
+ink redeploy myapi --memory 2Gi
+
+# Redeploy with new env vars
+ink redeploy myapi --env DATABASE_URL=postgres://... --env SECRET_KEY=abc123
+
+# Redeploy with different build settings
+ink redeploy myapi --buildpack dockerfile --dockerfile Dockerfile.prod`,
+	Args: exactArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		name := args[0]
+		client := newClient()
+
+		existing, err := findService(client, name)
+		if err != nil {
+			fatal(err.Error())
+		}
+		if existing == nil {
+			fatal(fmt.Sprintf("Service %q not found", name))
+		}
+
+		runUpdate(cmd, client, name)
 	},
 }
 
