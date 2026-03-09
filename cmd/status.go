@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/Khan/genqlient/graphql"
+	"github.com/mldotink/cli/internal/gql"
 	"github.com/spf13/cobra"
 )
 
@@ -36,10 +38,7 @@ ink status myapi -e --deploy-logs 20 --runtime-logs 50 --metrics 7d`,
 		name := args[0]
 		client := newClient()
 
-		svc, err := findService(client, name)
-		if err != nil {
-			fatal(err.Error())
-		}
+		svc := findService(name)
 		if svc == nil {
 			fatal(fmt.Sprintf("Service %q not found", name))
 		}
@@ -49,13 +48,13 @@ ink status myapi -e --deploy-logs 20 --runtime-logs 50 --metrics 7d`,
 			return
 		}
 
-		d := newDetail(svc.Name)
+		d := newDetail(deref(svc.Name, ""))
 		d.kv("Status", renderStatus(svc.Status))
 		if svc.ErrorMessage != nil {
 			d.kv("Error", red.Render(*svc.ErrorMessage))
 		}
-		if svc.FQDN != nil {
-			d.kv("URL", accent.Render(*svc.FQDN))
+		if svc.Fqdn != nil {
+			d.kv("URL", accent.Render(*svc.Fqdn))
 		}
 		d.kv("Repo", svc.Repo)
 		d.kv("Branch", svc.Branch)
@@ -67,9 +66,8 @@ ink status myapi -e --deploy-logs 20 --runtime-logs 50 --metrics 7d`,
 			d.kv("Commit", dim.Render(hash))
 		}
 		d.kv("Memory", svc.Memory)
-		d.kv("vCPU", svc.VCPUs)
+		d.kv("vCPU", svc.Vcpus)
 		d.kv("Port", svc.Port)
-		d.kv("Build pack", svc.BuildPack)
 		d.kv("Git host", svc.GitProvider)
 		if svc.CustomDomain != nil {
 			status := ""
@@ -78,7 +76,7 @@ ink status myapi -e --deploy-logs 20 --runtime-logs 50 --metrics 7d`,
 			}
 			d.kv("Domain", *svc.CustomDomain+status)
 		}
-		d.kv("Internal URL", svc.InternalURL)
+		d.kv("Internal URL", svc.InternalUrl)
 
 		if statusIncludeEnv && len(svc.EnvVars) > 0 {
 			d.section("Environment")
@@ -95,7 +93,7 @@ ink status myapi -e --deploy-logs 20 --runtime-logs 50 --metrics 7d`,
 			if deployLines > 500 {
 				deployLines = 500
 			}
-			fetchAndPrintLogs(client, svc.ID, "BUILD", deployLines, "Deploy Logs")
+			fetchAndPrintLogs(client, svc.Id, gql.LogTypeBuild, deployLines, "Deploy Logs")
 		}
 
 		// Runtime logs
@@ -103,40 +101,24 @@ ink status myapi -e --deploy-logs 20 --runtime-logs 50 --metrics 7d`,
 			if runtimeLines > 500 {
 				runtimeLines = 500
 			}
-			fetchAndPrintLogs(client, svc.ID, "RUNTIME", runtimeLines, "Runtime Logs")
+			fetchAndPrintLogs(client, svc.Id, gql.LogTypeRuntime, runtimeLines, "Runtime Logs")
 		}
 
 		// Metrics
 		if metricsRange, _ := cmd.Flags().GetString("metrics"); metricsRange != "" {
-			fetchAndPrintMetrics(client, svc.ID, metricsRange)
+			fetchAndPrintMetrics(client, svc.Id, metricsRange)
 		}
 
 		fmt.Println()
 	},
 }
 
-func fetchAndPrintLogs(client interface{ Do(string, map[string]any, any) error }, serviceID, logType string, lines int, title string) {
-	var result struct {
-		ServiceLogs struct {
-			Entries []struct {
-				Timestamp string  `json:"timestamp"`
-				Level     *string `json:"level"`
-				Message   string  `json:"message"`
-			} `json:"entries"`
-		} `json:"serviceLogs"`
-	}
-
-	err := client.Do(`query($input: LogsInput!) {
-		serviceLogs(input: $input) {
-			entries { timestamp level message }
-		}
-	}`, map[string]any{
-		"input": map[string]any{
-			"serviceId": serviceID,
-			"logType":   logType,
-			"limit":     lines,
-		},
-	}, &result)
+func fetchAndPrintLogs(client graphql.Client, serviceID string, logType gql.LogType, lines int, title string) {
+	result, err := gql.ServiceLogs(ctx(), client, gql.LogsInput{
+		ServiceId: serviceID,
+		LogType:   logType,
+		Limit:     &lines,
+	})
 	if err != nil {
 		fmt.Println()
 		fmt.Printf("  %s %s\n", red.Render("!"), dim.Render(title+": "+err.Error()))
@@ -165,12 +147,12 @@ func fetchAndPrintLogs(client interface{ Do(string, map[string]any, any) error }
 	}
 }
 
-func fetchAndPrintMetrics(client interface{ Do(string, map[string]any, any) error }, serviceID, timeRange string) {
-	gqlRange := map[string]string{
-		"1h":  "ONE_HOUR",
-		"6h":  "SIX_HOURS",
-		"7d":  "SEVEN_DAYS",
-		"30d": "THIRTY_DAYS",
+func fetchAndPrintMetrics(client graphql.Client, serviceID, timeRange string) {
+	gqlRange := map[string]gql.MetricTimeRange{
+		"1h":  gql.MetricTimeRangeOneHour,
+		"6h":  gql.MetricTimeRangeSixHours,
+		"7d":  gql.MetricTimeRangeSevenDays,
+		"30d": gql.MetricTimeRangeThirtyDays,
 	}
 
 	tr, ok := gqlRange[strings.ToLower(timeRange)]
@@ -179,35 +161,7 @@ func fetchAndPrintMetrics(client interface{ Do(string, map[string]any, any) erro
 		return
 	}
 
-	var result struct {
-		ServiceMetrics struct {
-			CPUUsage struct {
-				DataPoints []struct {
-					Timestamp string  `json:"timestamp"`
-					Value     float64 `json:"value"`
-				} `json:"dataPoints"`
-			} `json:"cpuUsage"`
-			MemoryUsageMB struct {
-				DataPoints []struct {
-					Timestamp string  `json:"timestamp"`
-					Value     float64 `json:"value"`
-				} `json:"dataPoints"`
-			} `json:"memoryUsageMB"`
-			MemoryLimitMB float64 `json:"memoryLimitMB"`
-			CPULimitVCPUs float64 `json:"cpuLimitVCPUs"`
-		} `json:"serviceMetrics"`
-	}
-
-	err := client.Do(`query($id: ID!, $range: MetricTimeRange!) {
-		serviceMetrics(serviceId: $id, timeRange: $range) {
-			cpuUsage { dataPoints { timestamp value } }
-			memoryUsageMB { dataPoints { timestamp value } }
-			memoryLimitMB cpuLimitVCPUs
-		}
-	}`, map[string]any{
-		"id":    serviceID,
-		"range": tr,
-	}, &result)
+	result, err := gql.ServiceMetrics(ctx(), client, serviceID, tr)
 	if err != nil {
 		fmt.Println()
 		fmt.Printf("  %s %s\n", red.Render("!"), dim.Render("Metrics: "+err.Error()))
@@ -215,7 +169,7 @@ func fetchAndPrintMetrics(client interface{ Do(string, map[string]any, any) erro
 	}
 
 	m := result.ServiceMetrics
-	cpuPts := m.CPUUsage.DataPoints
+	cpuPts := m.CpuUsage.DataPoints
 	memPts := m.MemoryUsageMB.DataPoints
 	if len(cpuPts) == 0 && len(memPts) == 0 {
 		return
@@ -227,7 +181,7 @@ func fetchAndPrintMetrics(client interface{ Do(string, map[string]any, any) erro
 	if len(cpuPts) > 0 {
 		latest := cpuPts[len(cpuPts)-1]
 		fmt.Printf("  CPU        %.4f / %.2f vCPUs  %s\n",
-			latest.Value, m.CPULimitVCPUs, dim.Render(latest.Timestamp))
+			latest.Value, m.CpuLimitVCPUs, dim.Render(latest.Timestamp))
 	}
 	if len(memPts) > 0 {
 		latest := memPts[len(memPts)-1]

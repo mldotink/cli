@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/mldotink/ink-cli/internal/api"
+	"github.com/Khan/genqlient/graphql"
+	"github.com/mldotink/cli/internal/gql"
 	"github.com/spf13/cobra"
 )
 
@@ -84,10 +85,7 @@ ink deploy myapi --memory 4Gi`,
 		name := args[0]
 		client := newClient()
 
-		existing, err := findService(client, name)
-		if err != nil {
-			fatal(err.Error())
-		}
+		existing := findService(name)
 
 		if existing != nil {
 			runUpdate(cmd, client, name)
@@ -117,10 +115,7 @@ ink redeploy myapi --buildpack dockerfile --dockerfile Dockerfile.prod`,
 		name := args[0]
 		client := newClient()
 
-		existing, err := findService(client, name)
-		if err != nil {
-			fatal(err.Error())
-		}
+		existing := findService(name)
 		if existing == nil {
 			fatal(fmt.Sprintf("Service %q not found", name))
 		}
@@ -129,50 +124,73 @@ ink redeploy myapi --buildpack dockerfile --dockerfile Dockerfile.prod`,
 	},
 }
 
-func runCreate(cmd *cobra.Command, client *api.Client, name string) {
+func runCreate(cmd *cobra.Command, client graphql.Client, name string) {
 	repo, _ := cmd.Flags().GetString("repo")
 	if repo == "" {
 		repo = name
 	}
 
-	input := map[string]any{
-		"name": name,
-		"repo": repo,
+	input := gql.CreateServiceInput{
+		Name:          name,
+		Repo:          repo,
+		WorkspaceSlug: wsPtr(),
+		Project:       projPtr(),
 	}
-	addDefaults(input)
-	addFlagInt(cmd, input, "port", "port")
-	addFlagStr(cmd, input, "host", "host")
-	addFlagStr(cmd, input, "branch", "branch")
-	addFlagStr(cmd, input, "memory", "memory")
-	addFlagStr(cmd, input, "vcpu", "vcpus")
-	addFlagStr(cmd, input, "build-command", "buildCommand")
-	addFlagStr(cmd, input, "start-command", "startCommand")
-	addFlagStr(cmd, input, "root-dir", "rootDirectory")
-	addFlagStr(cmd, input, "publish-dir", "publishDirectory")
-	addFlagStr(cmd, input, "dockerfile", "dockerfilePath")
-	addFlagStr(cmd, input, "buildpack", "buildPack")
 
+	if cmd.Flags().Changed("host") {
+		v, _ := cmd.Flags().GetString("host")
+		input.Host = ptr(v)
+	}
+	if cmd.Flags().Changed("branch") {
+		v, _ := cmd.Flags().GetString("branch")
+		input.Branch = ptr(v)
+	}
+	if cmd.Flags().Changed("memory") {
+		v, _ := cmd.Flags().GetString("memory")
+		input.Memory = ptr(v)
+	}
+	if cmd.Flags().Changed("vcpu") {
+		v, _ := cmd.Flags().GetString("vcpu")
+		input.Vcpus = ptr(v)
+	}
+	if cmd.Flags().Changed("build-command") {
+		v, _ := cmd.Flags().GetString("build-command")
+		input.BuildCommand = ptr(v)
+	}
+	if cmd.Flags().Changed("start-command") {
+		v, _ := cmd.Flags().GetString("start-command")
+		input.StartCommand = ptr(v)
+	}
+	if cmd.Flags().Changed("root-dir") {
+		v, _ := cmd.Flags().GetString("root-dir")
+		input.RootDirectory = ptr(v)
+	}
+	if cmd.Flags().Changed("publish-dir") {
+		v, _ := cmd.Flags().GetString("publish-dir")
+		input.PublishDirectory = ptr(v)
+	}
+	if cmd.Flags().Changed("dockerfile") {
+		v, _ := cmd.Flags().GetString("dockerfile")
+		input.DockerfilePath = ptr(v)
+	}
+	if cmd.Flags().Changed("buildpack") {
+		v, _ := cmd.Flags().GetString("buildpack")
+		input.BuildPack = ptr(v)
+	}
+	if cmd.Flags().Changed("port") {
+		v, _ := cmd.Flags().GetInt("port")
+		input.Port = &v
+	}
 	if cmd.Flags().Changed("region") {
 		region, _ := cmd.Flags().GetString("region")
-		input["regions"] = []string{region}
+		input.Regions = []string{region}
 	}
 
 	if envs, _ := cmd.Flags().GetStringArray("env"); len(envs) > 0 {
-		input["envVars"] = parseEnvVars(envs)
+		input.EnvVars = parseEnvVars(envs)
 	}
 
-	var result struct {
-		ServiceCreate struct {
-			ServiceID   string `json:"serviceId"`
-			Name        string `json:"name"`
-			Status      string `json:"status"`
-			InternalURL string `json:"internalUrl"`
-		} `json:"serviceCreate"`
-	}
-
-	err := client.Do(`mutation($input: CreateServiceInput!) {
-		serviceCreate(input: $input) { serviceId name status internalUrl }
-	}`, map[string]any{"input": input}, &result)
+	result, err := gql.CreateService(ctx(), client, input)
 	if err != nil {
 		fatal(err.Error())
 	}
@@ -190,39 +208,67 @@ func runCreate(cmd *cobra.Command, client *api.Client, name string) {
 	fmt.Println()
 }
 
-func runUpdate(cmd *cobra.Command, client *api.Client, name string) {
-	input := map[string]any{
-		"name": name,
+func runUpdate(cmd *cobra.Command, client graphql.Client, name string) {
+	input := gql.UpdateServiceInput{
+		Name:          name,
+		WorkspaceSlug: wsPtr(),
+		Project:       projPtr(),
 	}
-	addDefaults(input)
-	addFlagStr(cmd, input, "repo", "repo")
-	addFlagInt(cmd, input, "port", "port")
-	addFlagStr(cmd, input, "host", "host")
-	addFlagStr(cmd, input, "branch", "branch")
-	addFlagStr(cmd, input, "memory", "memory")
-	addFlagStr(cmd, input, "vcpu", "vcpus")
-	addFlagStr(cmd, input, "build-command", "buildCommand")
-	addFlagStr(cmd, input, "start-command", "startCommand")
-	addFlagStr(cmd, input, "root-dir", "rootDirectory")
-	addFlagStr(cmd, input, "publish-dir", "publishDirectory")
-	addFlagStr(cmd, input, "dockerfile", "dockerfilePath")
-	addFlagStr(cmd, input, "buildpack", "buildPack")
+
+	if cmd.Flags().Changed("repo") {
+		v, _ := cmd.Flags().GetString("repo")
+		input.Repo = ptr(v)
+	}
+	if cmd.Flags().Changed("host") {
+		v, _ := cmd.Flags().GetString("host")
+		input.Host = ptr(v)
+	}
+	if cmd.Flags().Changed("branch") {
+		v, _ := cmd.Flags().GetString("branch")
+		input.Branch = ptr(v)
+	}
+	if cmd.Flags().Changed("memory") {
+		v, _ := cmd.Flags().GetString("memory")
+		input.Memory = ptr(v)
+	}
+	if cmd.Flags().Changed("vcpu") {
+		v, _ := cmd.Flags().GetString("vcpu")
+		input.Vcpus = ptr(v)
+	}
+	if cmd.Flags().Changed("build-command") {
+		v, _ := cmd.Flags().GetString("build-command")
+		input.BuildCommand = ptr(v)
+	}
+	if cmd.Flags().Changed("start-command") {
+		v, _ := cmd.Flags().GetString("start-command")
+		input.StartCommand = ptr(v)
+	}
+	if cmd.Flags().Changed("root-dir") {
+		v, _ := cmd.Flags().GetString("root-dir")
+		input.RootDirectory = ptr(v)
+	}
+	if cmd.Flags().Changed("publish-dir") {
+		v, _ := cmd.Flags().GetString("publish-dir")
+		input.PublishDirectory = ptr(v)
+	}
+	if cmd.Flags().Changed("dockerfile") {
+		v, _ := cmd.Flags().GetString("dockerfile")
+		input.DockerfilePath = ptr(v)
+	}
+	if cmd.Flags().Changed("buildpack") {
+		v, _ := cmd.Flags().GetString("buildpack")
+		input.BuildPack = ptr(v)
+	}
+	if cmd.Flags().Changed("port") {
+		v, _ := cmd.Flags().GetInt("port")
+		input.Port = &v
+	}
 
 	if envs, _ := cmd.Flags().GetStringArray("env"); len(envs) > 0 {
-		input["envVars"] = parseEnvVars(envs)
+		input.EnvVars = parseEnvVars(envs)
 	}
 
-	var result struct {
-		ServiceUpdate struct {
-			ServiceID string `json:"serviceId"`
-			Name      string `json:"name"`
-			Status    string `json:"status"`
-		} `json:"serviceUpdate"`
-	}
-
-	err := client.Do(`mutation($input: UpdateServiceInput!) {
-		serviceUpdate(input: $input) { serviceId name status }
-	}`, map[string]any{"input": input}, &result)
+	result, err := gql.UpdateService(ctx(), client, input)
 	if err != nil {
 		fatal(err.Error())
 	}
@@ -239,26 +285,12 @@ func runUpdate(cmd *cobra.Command, client *api.Client, name string) {
 	fmt.Println()
 }
 
-func parseEnvVars(envs []string) []map[string]string {
-	var vars []map[string]string
+func parseEnvVars(envs []string) []gql.EnvVarInput {
+	var vars []gql.EnvVarInput
 	for _, e := range envs {
 		if k, v, ok := strings.Cut(e, "="); ok {
-			vars = append(vars, map[string]string{"key": k, "value": v})
+			vars = append(vars, gql.EnvVarInput{Key: k, Value: v})
 		}
 	}
 	return vars
-}
-
-func addFlagStr(cmd *cobra.Command, input map[string]any, flag, key string) {
-	if cmd.Flags().Changed(flag) {
-		val, _ := cmd.Flags().GetString(flag)
-		input[key] = val
-	}
-}
-
-func addFlagInt(cmd *cobra.Command, input map[string]any, flag, key string) {
-	if cmd.Flags().Changed(flag) {
-		val, _ := cmd.Flags().GetInt(flag)
-		input[key] = val
-	}
 }

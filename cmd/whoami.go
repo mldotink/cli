@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/mldotink/cli/internal/gql"
 	"github.com/spf13/cobra"
 )
 
@@ -16,24 +17,7 @@ var whoamiCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		client := newClient()
 
-		var result struct {
-			AccountStatus *struct {
-				ID               string  `json:"id"`
-				Email            *string `json:"email"`
-				GithubUsername   *string `json:"githubUsername"`
-				HasGitHubOAuth   bool    `json:"hasGitHubOAuth"`
-				HasGitHubApp     bool    `json:"hasGitHubApp"`
-				DefaultWorkspace string  `json:"defaultWorkspace"`
-				SubscriptionTier *string `json:"subscriptionTier"`
-			} `json:"accountStatus"`
-		}
-
-		err := client.Do(`{
-			accountStatus {
-				id email githubUsername hasGitHubOAuth hasGitHubApp
-				defaultWorkspace subscriptionTier
-			}
-		}`, nil, &result)
+		result, err := gql.AccountStatus(ctx(), client)
 		if err != nil {
 			fatal(err.Error())
 		}

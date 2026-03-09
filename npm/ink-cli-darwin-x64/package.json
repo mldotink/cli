@@ -1,0 +1,11 @@
+{
+  "name": "@mldotink/ink-cli-darwin-x64",
+  "version": "0.0.0",
+  "description": "ink binary for darwin-x64",
+  "os": ["darwin"],
+  "cpu": ["x64"],
+  "bin": {
+    "ink": "bin/ink"
+  },
+  "license": "MIT"
+}

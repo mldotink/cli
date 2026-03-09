@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/mldotink/cli/internal/gql"
 	"github.com/spf13/cobra"
 )
 
@@ -27,18 +28,7 @@ var dnsZonesCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		client := newClient()
 
-		var result struct {
-			DnsListZones []struct {
-				ID     string  `json:"id"`
-				Zone   string  `json:"zone"`
-				Status string  `json:"status"`
-				Error  *string `json:"error"`
-			} `json:"dnsListZones"`
-		}
-
-		err := client.Do(`query($ws: String) {
-			dnsListZones(workspaceSlug: $ws) { id zone status error }
-		}`, defaultVars(), &result)
+		result, err := gql.ListDnsZones(ctx(), client, wsPtr())
 		if err != nil {
 			fatal(err.Error())
 		}
@@ -58,7 +48,7 @@ var dnsZonesCmd = &cobra.Command{
 		for _, z := range zones {
 			status := renderStatus(z.Status)
 			if z.Error != nil {
-				status += dim.Render(" — "+*z.Error)
+				status += dim.Render(" — " + *z.Error)
 			}
 			rows = append(rows, []string{z.Zone, status})
 		}
@@ -79,22 +69,7 @@ var dnsRecordsCmd = &cobra.Command{
 		zone := args[0]
 		client := newClient()
 
-		var result struct {
-			DnsListRecords []struct {
-				ID      string `json:"id"`
-				Name    string `json:"name"`
-				Type    string `json:"type"`
-				Content string `json:"content"`
-				TTL     int    `json:"ttl"`
-				Managed bool   `json:"managed"`
-			} `json:"dnsListRecords"`
-		}
-
-		err := client.Do(`query($zone: String!, $ws: String) {
-			dnsListRecords(zone: $zone, workspaceSlug: $ws) {
-				id name type content ttl managed
-			}
-		}`, mergeVars(map[string]any{"zone": zone}), &result)
+		result, err := gql.ListDnsRecords(ctx(), client, zone, wsPtr())
 		if err != nil {
 			fatal(err.Error())
 		}
@@ -116,7 +91,7 @@ var dnsRecordsCmd = &cobra.Command{
 			if r.Managed {
 				managed = dim.Render("system")
 			}
-			rows = append(rows, []string{r.Name, r.Type, r.Content, strconv.Itoa(r.TTL), managed})
+			rows = append(rows, []string{r.Name, r.Type, r.Content, strconv.Itoa(r.Ttl), managed})
 		}
 
 		fmt.Println()
@@ -144,23 +119,7 @@ ink dns add example.com @ TXT "v=spf1 include:_spf.google.com ~all" --ttl 3600`,
 		ttl, _ := cmd.Flags().GetInt("ttl")
 		client := newClient()
 
-		var result struct {
-			DnsAddRecord struct {
-				ID      string `json:"id"`
-				Name    string `json:"name"`
-				Type    string `json:"type"`
-				Content string `json:"content"`
-				TTL     int    `json:"ttl"`
-			} `json:"dnsAddRecord"`
-		}
-
-		err := client.Do(`mutation($zone: String!, $name: String!, $type: String!, $content: String!, $ttl: Int, $ws: String) {
-			dnsAddRecord(zone: $zone, name: $name, type: $type, content: $content, ttl: $ttl, workspaceSlug: $ws) {
-				id name type content ttl
-			}
-		}`, mergeVars(map[string]any{
-			"zone": zone, "name": name, "type": typ, "content": content, "ttl": ttl,
-		}), &result)
+		result, err := gql.AddDnsRecord(ctx(), client, zone, name, typ, content, &ttl, wsPtr())
 		if err != nil {
 			fatal(err.Error())
 		}
@@ -186,13 +145,7 @@ ink dns delete example.com rec_abc123`,
 		zone, recordID := args[0], args[1]
 		client := newClient()
 
-		var result struct {
-			DnsDeleteRecord bool `json:"dnsDeleteRecord"`
-		}
-
-		err := client.Do(`mutation($zone: String!, $recordId: ID!, $ws: String) {
-			dnsDeleteRecord(zone: $zone, recordId: $recordId, workspaceSlug: $ws)
-		}`, mergeVars(map[string]any{"zone": zone, "recordId": recordID}), &result)
+		result, err := gql.DeleteDnsRecord(ctx(), client, zone, recordID, wsPtr())
 		if err != nil {
 			fatal(err.Error())
 		}

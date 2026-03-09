@@ -3,7 +3,8 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/mldotink/ink-cli/internal/api"
+	"github.com/Khan/genqlient/graphql"
+	"github.com/mldotink/cli/internal/gql"
 	"github.com/spf13/cobra"
 )
 
@@ -36,17 +37,7 @@ ink ws invite my-team user@example.com admin`,
 	Run: func(cmd *cobra.Command, args []string) {
 		client := newClient()
 
-		var result struct {
-			WorkspaceList []struct {
-				ID        string `json:"id"`
-				Name      string `json:"name"`
-				Slug      string `json:"slug"`
-				IsDefault bool   `json:"isDefault"`
-				Role      string `json:"role"`
-			} `json:"workspaceList"`
-		}
-
-		err := client.Do(`{ workspaceList { id name slug isDefault role } }`, nil, &result)
+		result, err := gql.ListWorkspaces(ctx(), client)
 		if err != nil {
 			fatal(err.Error())
 		}
@@ -87,22 +78,7 @@ var workspacesCreateCmd = &cobra.Command{
 		desc, _ := cmd.Flags().GetString("description")
 		client := newClient()
 
-		var result struct {
-			WorkspaceCreate struct {
-				ID   string `json:"id"`
-				Name string `json:"name"`
-				Slug string `json:"slug"`
-			} `json:"workspaceCreate"`
-		}
-
-		vars := map[string]any{"name": name, "slug": slug}
-		if desc != "" {
-			vars["desc"] = desc
-		}
-
-		err := client.Do(`mutation($name: String!, $slug: String!, $desc: String) {
-			workspaceCreate(name: $name, slug: $slug, description: $desc) { id name slug }
-		}`, vars, &result)
+		result, err := gql.CreateWorkspace(ctx(), client, name, slug, ptr(desc))
 		if err != nil {
 			fatal(err.Error())
 		}
@@ -130,12 +106,7 @@ var workspacesDeleteCmd = &cobra.Command{
 			fatal(err.Error())
 		}
 
-		var result struct {
-			WorkspaceDelete bool `json:"workspaceDelete"`
-		}
-
-		err = client.Do(`mutation($id: ID!) { workspaceDelete(id: $id) }`,
-			map[string]any{"id": id}, &result)
+		result, err := gql.DeleteWorkspace(ctx(), client, id)
 		if err != nil {
 			fatal(err.Error())
 		}
@@ -157,21 +128,7 @@ var workspacesMembersCmd = &cobra.Command{
 		slug := args[0]
 		client := newClient()
 
-		var result struct {
-			WorkspaceListMembers []struct {
-				UserID      string  `json:"userId"`
-				Email       *string `json:"email"`
-				Username    *string `json:"username"`
-				DisplayName *string `json:"displayName"`
-				Role        string  `json:"role"`
-			} `json:"workspaceListMembers"`
-		}
-
-		err := client.Do(`query($slug: String!) {
-			workspaceListMembers(workspaceSlug: $slug) {
-				userId email username displayName role
-			}
-		}`, map[string]any{"slug": slug}, &result)
+		result, err := gql.ListWorkspaceMembers(ctx(), client, slug)
 		if err != nil {
 			fatal(err.Error())
 		}
@@ -189,7 +146,7 @@ var workspacesMembersCmd = &cobra.Command{
 
 		var rows [][]string
 		for _, m := range members {
-			name := deref(m.DisplayName, deref(m.Username, m.UserID))
+			name := deref(m.DisplayName, deref(m.Username, m.UserId))
 			email := deref(m.Email, dim.Render("—"))
 			rows = append(rows, []string{name, email, m.Role})
 		}
@@ -218,17 +175,7 @@ var workspacesInviteCmd = &cobra.Command{
 			fatal(err.Error())
 		}
 
-		var result struct {
-			WorkspaceInvite struct {
-				ID     string `json:"id"`
-				Role   string `json:"role"`
-				Status string `json:"status"`
-			} `json:"workspaceInvite"`
-		}
-
-		err = client.Do(`mutation($id: ID!, $user: String!, $role: String) {
-			workspaceInvite(workspaceId: $id, user: $user, role: $role) { id role status }
-		}`, map[string]any{"id": id, "user": user, "role": role}, &result)
+		result, err := gql.InviteToWorkspace(ctx(), client, id, user, ptr(role))
 		if err != nil {
 			fatal(err.Error())
 		}
@@ -249,19 +196,8 @@ var workspacesInvitesCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		client := newClient()
 
-		type invite struct {
-			ID            string  `json:"id"`
-			WorkspaceName *string `json:"workspaceName"`
-			WorkspaceSlug *string `json:"workspaceSlug"`
-			Role          string  `json:"role"`
-			Status        string  `json:"status"`
-		}
-
 		if len(args) == 0 {
-			var result struct {
-				WorkspaceListMyInvites []invite `json:"workspaceListMyInvites"`
-			}
-			err := client.Do(`{ workspaceListMyInvites { id workspaceName workspaceSlug role status } }`, nil, &result)
+			result, err := gql.ListMyInvites(ctx(), client)
 			if err != nil {
 				fatal(err.Error())
 			}
@@ -278,7 +214,7 @@ var workspacesInvitesCmd = &cobra.Command{
 			var rows [][]string
 			for _, inv := range invites {
 				wsName := deref(inv.WorkspaceName, "?")
-				rows = append(rows, []string{inv.ID, wsName, inv.Role, renderStatus(inv.Status)})
+				rows = append(rows, []string{inv.Id, wsName, inv.Role, renderStatus(inv.Status)})
 			}
 
 			fmt.Println()
@@ -286,12 +222,7 @@ var workspacesInvitesCmd = &cobra.Command{
 			fmt.Println()
 		} else {
 			slug := args[0]
-			var result struct {
-				WorkspaceListInvites []invite `json:"workspaceListInvites"`
-			}
-			err := client.Do(`query($slug: String!) {
-				workspaceListInvites(workspaceSlug: $slug) { id role status }
-			}`, map[string]any{"slug": slug}, &result)
+			result, err := gql.ListWorkspaceInvites(ctx(), client, slug)
 			if err != nil {
 				fatal(err.Error())
 			}
@@ -307,7 +238,7 @@ var workspacesInvitesCmd = &cobra.Command{
 
 			var rows [][]string
 			for _, inv := range invites {
-				rows = append(rows, []string{inv.ID, inv.Role, renderStatus(inv.Status)})
+				rows = append(rows, []string{inv.Id, inv.Role, renderStatus(inv.Status)})
 			}
 
 			fmt.Println()
@@ -323,11 +254,7 @@ var workspacesAcceptCmd = &cobra.Command{
 	Args:  exactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		client := newClient()
-		var result struct {
-			WorkspaceAcceptInvite bool `json:"workspaceAcceptInvite"`
-		}
-		err := client.Do(`mutation($id: ID!) { workspaceAcceptInvite(inviteId: $id) }`,
-			map[string]any{"id": args[0]}, &result)
+		_, err := gql.AcceptInvite(ctx(), client, args[0])
 		if err != nil {
 			fatal(err.Error())
 		}
@@ -345,11 +272,7 @@ var workspacesDeclineCmd = &cobra.Command{
 	Args:  exactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		client := newClient()
-		var result struct {
-			WorkspaceDeclineInvite bool `json:"workspaceDeclineInvite"`
-		}
-		err := client.Do(`mutation($id: ID!) { workspaceDeclineInvite(inviteId: $id) }`,
-			map[string]any{"id": args[0]}, &result)
+		_, err := gql.DeclineInvite(ctx(), client, args[0])
 		if err != nil {
 			fatal(err.Error())
 		}
@@ -367,11 +290,7 @@ var workspacesRevokeCmd = &cobra.Command{
 	Args:  exactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		client := newClient()
-		var result struct {
-			WorkspaceRevokeInvite bool `json:"workspaceRevokeInvite"`
-		}
-		err := client.Do(`mutation($id: ID!) { workspaceRevokeInvite(inviteId: $id) }`,
-			map[string]any{"id": args[0]}, &result)
+		_, err := gql.RevokeInvite(ctx(), client, args[0])
 		if err != nil {
 			fatal(err.Error())
 		}
@@ -396,12 +315,7 @@ var workspacesRemoveCmd = &cobra.Command{
 			fatal(err.Error())
 		}
 
-		var result struct {
-			WorkspaceRemoveMember bool `json:"workspaceRemoveMember"`
-		}
-		err = client.Do(`mutation($wsId: ID!, $userId: ID!) {
-			workspaceRemoveMember(workspaceId: $wsId, userId: $userId)
-		}`, map[string]any{"wsId": wsID, "userId": userID}, &result)
+		_, err = gql.RemoveWorkspaceMember(ctx(), client, wsID, userID)
 		if err != nil {
 			fatal(err.Error())
 		}
@@ -414,20 +328,14 @@ var workspacesRemoveCmd = &cobra.Command{
 	},
 }
 
-func resolveWorkspaceID(client *api.Client, slug string) (string, error) {
-	var result struct {
-		WorkspaceList []struct {
-			ID   string `json:"id"`
-			Slug string `json:"slug"`
-		} `json:"workspaceList"`
-	}
-	err := client.Do(`{ workspaceList { id slug } }`, nil, &result)
+func resolveWorkspaceID(client graphql.Client, slug string) (string, error) {
+	result, err := gql.ListWorkspaces(ctx(), client)
 	if err != nil {
 		return "", err
 	}
 	for _, ws := range result.WorkspaceList {
 		if ws.Slug == slug {
-			return ws.ID, nil
+			return ws.Id, nil
 		}
 	}
 	return "", fmt.Errorf("workspace %q not found", slug)

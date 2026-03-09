@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/mldotink/ink-cli/internal/config"
+	"github.com/mldotink/cli/internal/config"
 	"github.com/spf13/cobra"
 )
 

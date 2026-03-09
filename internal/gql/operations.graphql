@@ -1,0 +1,355 @@
+# ── Services ───────────────────────────────────────
+
+query ListServices($ws: String) {
+  serviceList(workspaceSlug: $ws) {
+    nodes {
+      name
+      status
+      fqdn
+      memory
+      vcpus
+      projectId
+    }
+    totalCount
+  }
+  projectList(workspaceSlug: $ws) {
+    nodes {
+      id
+      slug
+    }
+  }
+}
+
+query FindService($ws: String) {
+  serviceList(workspaceSlug: $ws) {
+    nodes {
+      id
+      name
+      status
+      errorMessage
+      fqdn
+      internalUrl
+      repo
+      branch
+      commitHash
+      gitProvider
+      memory
+      vcpus
+      port
+      customDomain
+      customDomainStatus
+      envVars { key value }
+      project { slug }
+      createdAt
+      updatedAt
+    }
+  }
+}
+
+mutation CreateService($input: CreateServiceInput!) {
+  serviceCreate(input: $input) {
+    serviceId
+    name
+    status
+    internalUrl
+  }
+}
+
+mutation UpdateService($input: UpdateServiceInput!) {
+  serviceUpdate(input: $input) {
+    serviceId
+    name
+    status
+  }
+}
+
+mutation DeleteService($name: String!, $project: String, $ws: String) {
+  serviceDelete(name: $name, project: $project, workspaceSlug: $ws) {
+    serviceId
+    name
+    message
+  }
+}
+
+# ── Logs & Metrics ─────────────────────────────────
+
+query ServiceLogs($input: LogsInput!) {
+  serviceLogs(input: $input) {
+    entries {
+      timestamp
+      level
+      message
+    }
+    hasMore
+  }
+}
+
+query ServiceMetrics($id: ID!, $timeRange: MetricTimeRange!) {
+  serviceMetrics(serviceId: $id, timeRange: $timeRange) {
+    cpuUsage {
+      dataPoints { timestamp value }
+    }
+    memoryUsageMB {
+      dataPoints { timestamp value }
+    }
+    memoryLimitMB
+    cpuLimitVCPUs
+  }
+}
+
+# ── Databases ──────────────────────────────────────
+
+query ListResources($ws: String) {
+  resourceList(workspaceSlug: $ws) {
+    nodes {
+      id
+      name
+      type
+      status
+      region
+    }
+    totalCount
+  }
+}
+
+mutation CreateResource($input: CreateResourceInput!) {
+  resourceCreate(input: $input) {
+    resourceId
+    name
+    type
+    region
+    databaseUrl
+    authToken
+    status
+  }
+}
+
+query GetResource($id: ID!) {
+  resourceGet(id: $id) {
+    id
+    name
+    type
+    region
+    status
+    metadata { size hostname }
+  }
+}
+
+query GetResourceIDByName($ws: String) {
+  resourceList(workspaceSlug: $ws) {
+    nodes {
+      id
+      name
+    }
+  }
+}
+
+mutation DeleteResource($name: String!, $ws: String) {
+  resourceDelete(name: $name, workspaceSlug: $ws) {
+    resourceId
+    name
+    message
+  }
+}
+
+# ── Domains ────────────────────────────────────────
+
+mutation AddDomain($name: String!, $domain: String!, $project: String, $ws: String) {
+  domainAdd(name: $name, domain: $domain, project: $project, workspaceSlug: $ws) {
+    serviceId
+    domain
+    status
+    message
+  }
+}
+
+mutation RemoveDomain($name: String!, $project: String, $ws: String) {
+  domainRemove(name: $name, project: $project, workspaceSlug: $ws) {
+    serviceId
+    message
+  }
+}
+
+# ── DNS ────────────────────────────────────────────
+
+query ListDnsZones($ws: String) {
+  dnsListZones(workspaceSlug: $ws) {
+    id
+    zone
+    status
+    error
+  }
+}
+
+query ListDnsRecords($zone: String!, $ws: String) {
+  dnsListRecords(zone: $zone, workspaceSlug: $ws) {
+    id
+    name
+    type
+    content
+    ttl
+    managed
+  }
+}
+
+mutation AddDnsRecord($zone: String!, $name: String!, $recordType: String!, $content: String!, $ttl: Int, $ws: String) {
+  dnsAddRecord(zone: $zone, name: $name, type: $recordType, content: $content, ttl: $ttl, workspaceSlug: $ws) {
+    id
+    name
+    type
+    content
+    ttl
+  }
+}
+
+mutation DeleteDnsRecord($zone: String!, $recordId: ID!, $ws: String) {
+  dnsDeleteRecord(zone: $zone, recordId: $recordId, workspaceSlug: $ws)
+}
+
+# ── Repos ──────────────────────────────────────────
+
+mutation CreateRepo($input: RepoCreateInput!) {
+  repoCreate(input: $input) {
+    name
+    gitRemote
+    expiresAt
+    message
+  }
+}
+
+mutation GetRepoToken($input: RepoGetTokenInput!) {
+  repoGetToken(input: $input) {
+    gitRemote
+    expiresAt
+  }
+}
+
+# ── Projects ──────────────────────────────────────
+
+query ListProjects($ws: String) {
+  projectList(workspaceSlug: $ws) {
+    nodes {
+      id
+      name
+      slug
+    }
+    totalCount
+  }
+}
+
+mutation DeleteProject($slug: String!, $ws: String) {
+  projectDelete(slug: $slug, workspaceSlug: $ws)
+}
+
+# ── Workspaces ─────────────────────────────────────
+
+query ListWorkspaces {
+  workspaceList {
+    id
+    name
+    slug
+    isDefault
+    role
+  }
+}
+
+mutation CreateWorkspace($name: String!, $slug: String!, $desc: String) {
+  workspaceCreate(name: $name, slug: $slug, description: $desc) {
+    id
+    name
+    slug
+  }
+}
+
+mutation DeleteWorkspace($id: ID!) {
+  workspaceDelete(id: $id)
+}
+
+query ListWorkspaceMembers($slug: String!) {
+  workspaceListMembers(workspaceSlug: $slug) {
+    userId
+    email
+    username
+    displayName
+    role
+  }
+}
+
+mutation InviteToWorkspace($id: ID!, $user: String!, $role: String) {
+  workspaceInvite(workspaceId: $id, user: $user, role: $role) {
+    id
+    role
+    status
+  }
+}
+
+query ListMyInvites {
+  workspaceListMyInvites {
+    id
+    workspaceName
+    workspaceSlug
+    role
+    status
+  }
+}
+
+query ListWorkspaceInvites($slug: String!) {
+  workspaceListInvites(workspaceSlug: $slug) {
+    id
+    role
+    status
+  }
+}
+
+mutation AcceptInvite($id: ID!) {
+  workspaceAcceptInvite(inviteId: $id)
+}
+
+mutation DeclineInvite($id: ID!) {
+  workspaceDeclineInvite(inviteId: $id)
+}
+
+mutation RevokeInvite($id: ID!) {
+  workspaceRevokeInvite(inviteId: $id)
+}
+
+mutation RemoveWorkspaceMember($wsId: ID!, $userId: ID!) {
+  workspaceRemoveMember(workspaceId: $wsId, userId: $userId)
+}
+
+# ── Chat ───────────────────────────────────────────
+
+mutation SendChatMessage($ws: String!, $channel: String, $content: String!) {
+  chatSend(workspaceSlug: $ws, channel: $channel, content: $content) {
+    seq
+    messageId
+  }
+}
+
+query ReadChat($ws: String!, $channel: String, $cursor: Int, $limit: Int) {
+  chatRead(workspaceSlug: $ws, channel: $channel, cursor: $cursor, limit: $limit) {
+    messages {
+      seq
+      senderName
+      content
+      channel
+      createdAt
+    }
+    nextCursor
+    hasMore
+  }
+}
+
+# ── Account ────────────────────────────────────────
+
+query AccountStatus {
+  accountStatus {
+    id
+    email
+    githubUsername
+    hasGitHubOAuth
+    hasGitHubApp
+    defaultWorkspace
+    subscriptionTier
+  }
+}

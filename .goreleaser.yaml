@@ -1,0 +1,55 @@
+version: 2
+
+builds:
+  - main: .
+    binary: ink
+    ldflags:
+      - -s -w -X main.version={{.Version}}
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
+
+archives:
+  - format: tar.gz
+    name_template: "ink_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        format: zip
+
+checksum:
+  name_template: "checksums.txt"
+
+release:
+  github:
+    owner: mldotink
+    name: cli
+
+brews:
+  - repository:
+      owner: mldotink
+      name: homebrew-tap
+    homepage: "https://ml.ink"
+    description: "Deploy and manage services on Ink"
+    license: "MIT"
+    install: |
+      bin.install "ink"
+    test: |
+      system "#{bin}/ink", "--version"
+
+nfpms:
+  - package_name: ink
+    homepage: "https://ml.ink"
+    description: "Deploy and manage services on Ink"
+    license: "MIT"
+    formats:
+      - deb
+      - rpm

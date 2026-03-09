@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/mldotink/cli/internal/gql"
 	"github.com/spf13/cobra"
 )
 
@@ -22,23 +23,7 @@ var projectsCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		client := newClient()
 
-		var result struct {
-			ProjectList struct {
-				Nodes []struct {
-					ID   string `json:"id"`
-					Name string `json:"name"`
-					Slug string `json:"slug"`
-				} `json:"nodes"`
-				TotalCount int `json:"totalCount"`
-			} `json:"projectList"`
-		}
-
-		err := client.Do(`query($ws: String) {
-			projectList(workspaceSlug: $ws) {
-				nodes { id name slug }
-				totalCount
-			}
-		}`, defaultVars(), &result)
+		result, err := gql.ListProjects(ctx(), client, wsPtr())
 		if err != nil {
 			fatal(err.Error())
 		}
@@ -87,13 +72,7 @@ var projectsDeleteCmd = &cobra.Command{
 
 		client := newClient()
 
-		var result struct {
-			ProjectDelete bool `json:"projectDelete"`
-		}
-
-		err := client.Do(`mutation($slug: String!, $ws: String) {
-			projectDelete(slug: $slug, workspaceSlug: $ws)
-		}`, mergeVars(map[string]any{"slug": slug}), &result)
+		result, err := gql.DeleteProject(ctx(), client, slug, wsPtr())
 		if err != nil {
 			fatal(err.Error())
 		}

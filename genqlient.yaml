@@ -1,0 +1,13 @@
+schema: schema.graphql
+operations:
+  - internal/gql/*.graphql
+generated: internal/gql/generated.go
+package: gql
+optional: pointer
+bindings:
+  Time:
+    type: string
+  Decimal:
+    type: string
+  Int64:
+    type: int64

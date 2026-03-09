@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/mldotink/cli/internal/gql"
 	"github.com/spf13/cobra"
 )
 
@@ -33,42 +34,21 @@ ink logs myapi -n 500`,
 		}
 		client := newClient()
 
-		svc, err := findService(client, name)
-		if err != nil {
-			fatal(err.Error())
-		}
+		svc := findService(name)
 		if svc == nil {
 			fatal(fmt.Sprintf("Service %q not found", name))
 		}
 
-		logType := "RUNTIME"
+		logType := gql.LogTypeRuntime
 		if showBuild {
-			logType = "BUILD"
+			logType = gql.LogTypeBuild
 		}
 
-		var result struct {
-			ServiceLogs struct {
-				Entries []struct {
-					Timestamp string  `json:"timestamp"`
-					Level     *string `json:"level"`
-					Message   string  `json:"message"`
-				} `json:"entries"`
-				HasMore bool `json:"hasMore"`
-			} `json:"serviceLogs"`
-		}
-
-		err = client.Do(`query($input: LogsInput!) {
-			serviceLogs(input: $input) {
-				entries { timestamp level message }
-				hasMore
-			}
-		}`, map[string]any{
-			"input": map[string]any{
-				"serviceId": svc.ID,
-				"logType":   logType,
-				"limit":     lines,
-			},
-		}, &result)
+		result, err := gql.ServiceLogs(ctx(), client, gql.LogsInput{
+			ServiceId: svc.Id,
+			LogType:   logType,
+			Limit:     &lines,
+		})
 		if err != nil {
 			fatal(err.Error())
 		}

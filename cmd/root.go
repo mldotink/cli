@@ -7,11 +7,12 @@ import (
 	"os"
 	"strings"
 
+	"github.com/Khan/genqlient/graphql"
 	"github.com/charmbracelet/fang"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/lipgloss/table"
-	"github.com/mldotink/ink-cli/internal/api"
-	"github.com/mldotink/ink-cli/internal/config"
+	"github.com/mldotink/cli/internal/api"
+	"github.com/mldotink/cli/internal/config"
 	"github.com/spf13/cobra"
 )
 
@@ -137,15 +138,21 @@ func (d *detail) String() string {
 
 // ── Root command ───────────────────────────────────
 
+var Version = "dev"
+
 var rootCmd = &cobra.Command{
-	Use:     "ink",
-	Short:   "Deploy and manage services on Ink (ml.ink)",
-	Version: "0.1.0",
+	Use:   "ink",
+	Short: "Deploy and manage services on Ink (ml.ink)",
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		cfg = config.Resolve(apiKeyFlag, wsFlag, projectFlag)
 
-		if !jsonOutput && cmd.Name() != "login" && cmd.Name() != "help" && cmd.Name() != "completion" {
-			printConfigHints()
+		switch cmd.Name() {
+		case "login", "help", "completion", "workspaces", "whoami":
+			// These commands don't operate within a workspace/project scope.
+		default:
+			if !jsonOutput {
+				printConfigHints()
+			}
 		}
 	},
 }
@@ -160,20 +167,61 @@ func init() {
 func Execute() {
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 
+	opts := []fang.Option{
+		fang.WithNotifySignal(os.Interrupt),
+	}
+	if Version != "dev" {
+		opts = append(opts, fang.WithVersion(Version))
+	}
+
 	if err := fang.Execute(
 		context.Background(),
 		rootCmd,
-		fang.WithNotifySignal(os.Interrupt),
+		opts...,
 	); err != nil {
 		os.Exit(1)
 	}
 }
 
-func newClient() *api.Client {
+func newClient() graphql.Client {
 	if cfg.APIKey == "" {
 		fatal("Not authenticated. Run: ink login")
 	}
-	return api.New(cfg.APIKey)
+	return api.NewClient(cfg.APIKey)
+}
+
+func ctx() context.Context {
+	return context.Background()
+}
+
+// wsPtr returns a pointer to workspace slug, or nil if unset.
+func wsPtr() *string {
+	if cfg.Workspace == "" {
+		return nil
+	}
+	return &cfg.Workspace
+}
+
+// projPtr returns a pointer to project slug, or nil if unset.
+func projPtr() *string {
+	if cfg.Project == "" {
+		return nil
+	}
+	return &cfg.Project
+}
+
+func ptr(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
+}
+
+func deref(s *string, fallback string) string {
+	if s != nil {
+		return *s
+	}
+	return fallback
 }
 
 // ── Output helpers ─────────────────────────────────
@@ -214,22 +262,25 @@ func tableFooter(count int, noun string) {
 // ── Config helpers ─────────────────────────────────
 
 func printConfigHints() {
-	var hints []string
-	for _, f := range []struct{ name, value, source string }{
-		{"workspace", cfg.Workspace, cfg.Sources["workspace"]},
-		{"project", cfg.Project, cfg.Sources["project"]},
-	} {
-		if f.value != "" && f.source != "" && f.source != "flag" {
-			hints = append(hints, fmt.Sprintf("%s=%s", f.name, f.value))
-		}
+	ws := cfg.Workspace
+	if ws == "" {
+		ws = "default"
 	}
-	if len(hints) > 0 {
-		src := cfg.Sources["workspace"]
-		if src == "" {
-			src = cfg.Sources["project"]
-		}
-		fmt.Fprintf(os.Stderr, "  %s\n", dim.Render("using "+strings.Join(hints, ", ")+" ("+sourceLabel(src)+")"))
+
+	line := fmt.Sprintf("  %s workspace=%s", dim.Render("▸"), ws)
+	if cfg.Project != "" {
+		line += fmt.Sprintf("  project=%s", cfg.Project)
 	}
+
+	src := cfg.Sources["workspace"]
+	if src == "" {
+		src = cfg.Sources["project"]
+	}
+	if src != "" {
+		line += "  " + dim.Render("("+sourceLabel(src)+")")
+	}
+
+	fmt.Fprintln(os.Stderr, line)
 }
 
 func sourceLabel(src string) string {
@@ -243,41 +294,6 @@ func sourceLabel(src string) string {
 	default:
 		return src
 	}
-}
-
-func addDefaults(input map[string]any) {
-	if cfg.Workspace != "" {
-		input["workspaceSlug"] = cfg.Workspace
-	}
-	if cfg.Project != "" {
-		input["project"] = cfg.Project
-	}
-}
-
-func defaultVars() map[string]any {
-	vars := make(map[string]any)
-	if cfg.Workspace != "" {
-		vars["ws"] = cfg.Workspace
-	}
-	if cfg.Project != "" {
-		vars["proj"] = cfg.Project
-	}
-	return vars
-}
-
-func mergeVars(extra map[string]any) map[string]any {
-	vars := defaultVars()
-	for k, v := range extra {
-		vars[k] = v
-	}
-	return vars
-}
-
-func deref(s *string, fallback string) string {
-	if s != nil {
-		return *s
-	}
-	return fallback
 }
 
 // ── Arg validators (show help on error) ───────────

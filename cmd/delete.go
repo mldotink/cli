@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/mldotink/cli/internal/gql"
 	"github.com/spf13/cobra"
 )
 
@@ -38,17 +39,7 @@ ink delete myapi -y`,
 
 		client := newClient()
 
-		var result struct {
-			ServiceDelete struct {
-				ServiceID string `json:"serviceId"`
-				Name      string `json:"name"`
-				Message   string `json:"message"`
-			} `json:"serviceDelete"`
-		}
-
-		err := client.Do(`mutation($name: String!, $ws: String, $proj: String) {
-			serviceDelete(name: $name, workspaceSlug: $ws, project: $proj) { serviceId name message }
-		}`, mergeVars(map[string]any{"name": name}), &result)
+		result, err := gql.DeleteService(ctx(), client, name, projPtr(), wsPtr())
 		if err != nil {
 			fatal(err.Error())
 		}

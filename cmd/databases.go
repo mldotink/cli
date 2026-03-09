@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/mldotink/cli/internal/gql"
 	"github.com/spf13/cobra"
 )
 
@@ -27,25 +28,7 @@ var databasesCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		client := newClient()
 
-		var result struct {
-			ResourceList struct {
-				Nodes []struct {
-					ID     string `json:"id"`
-					Name   string `json:"name"`
-					Type   string `json:"type"`
-					Status string `json:"status"`
-					Region string `json:"region"`
-				} `json:"nodes"`
-				TotalCount int `json:"totalCount"`
-			} `json:"resourceList"`
-		}
-
-		err := client.Do(`query($ws: String) {
-			resourceList(workspaceSlug: $ws) {
-				nodes { id name type status region }
-				totalCount
-			}
-		}`, defaultVars(), &result)
+		result, err := gql.ListResources(ctx(), client, wsPtr())
 		if err != nil {
 			fatal(err.Error())
 		}
@@ -86,29 +69,24 @@ ink deploy myapi --env DATABASE_URL=libsql://... --env DATABASE_AUTH_TOKEN=...`,
 		name := args[0]
 		client := newClient()
 
-		input := map[string]any{"name": name}
-		addDefaults(input)
-		addFlagStr(cmd, input, "type", "type")
-		addFlagStr(cmd, input, "size", "size")
-		addFlagStr(cmd, input, "region", "region")
-
-		var result struct {
-			ResourceCreate struct {
-				ResourceID  string `json:"resourceId"`
-				Name        string `json:"name"`
-				Type        string `json:"type"`
-				Region      string `json:"region"`
-				DatabaseURL string `json:"databaseUrl"`
-				AuthToken   string `json:"authToken"`
-				Status      string `json:"status"`
-			} `json:"resourceCreate"`
+		input := gql.CreateResourceInput{
+			Name:          name,
+			WorkspaceSlug: wsPtr(),
+		}
+		if cmd.Flags().Changed("type") {
+			v, _ := cmd.Flags().GetString("type")
+			input.Type = ptr(v)
+		}
+		if cmd.Flags().Changed("size") {
+			v, _ := cmd.Flags().GetString("size")
+			input.Size = ptr(v)
+		}
+		if cmd.Flags().Changed("region") {
+			v, _ := cmd.Flags().GetString("region")
+			input.Region = ptr(v)
 		}
 
-		err := client.Do(`mutation($input: CreateResourceInput!) {
-			resourceCreate(input: $input) {
-				resourceId name type region databaseUrl authToken status
-			}
-		}`, map[string]any{"input": input}, &result)
+		result, err := gql.CreateResource(ctx(), client, input)
 		if err != nil {
 			fatal(err.Error())
 		}
@@ -121,12 +99,12 @@ ink deploy myapi --env DATABASE_URL=libsql://... --env DATABASE_AUTH_TOKEN=...`,
 
 		fmt.Println()
 		success(fmt.Sprintf("Database created: %s", bold.Render(r.Name)))
-		kv("URL", r.DatabaseURL)
+		kv("URL", r.DatabaseUrl)
 		kv("Token", r.AuthToken)
 		kv("Region", r.Region)
 		fmt.Println()
 		fmt.Println(dim.Render("  Use these as env vars:"))
-		fmt.Printf("  ink deploy -n myapp --env DATABASE_URL=%s --env DATABASE_AUTH_TOKEN=%s\n", r.DatabaseURL, r.AuthToken)
+		fmt.Printf("  ink deploy -n myapp --env DATABASE_URL=%s --env DATABASE_AUTH_TOKEN=%s\n", r.DatabaseUrl, r.AuthToken)
 		fmt.Println()
 	},
 }
@@ -140,18 +118,7 @@ var databasesGetCmd = &cobra.Command{
 		client := newClient()
 
 		// resourceGet uses ID, so we list and find by name
-		var listResult struct {
-			ResourceList struct {
-				Nodes []struct {
-					ID   string `json:"id"`
-					Name string `json:"name"`
-				} `json:"nodes"`
-			} `json:"resourceList"`
-		}
-
-		err := client.Do(`query($ws: String) {
-			resourceList(workspaceSlug: $ws) { nodes { id name } }
-		}`, defaultVars(), &listResult)
+		listResult, err := gql.GetResourceIDByName(ctx(), client, wsPtr())
 		if err != nil {
 			fatal(err.Error())
 		}
@@ -159,7 +126,7 @@ var databasesGetCmd = &cobra.Command{
 		var resourceID string
 		for _, r := range listResult.ResourceList.Nodes {
 			if r.Name == name {
-				resourceID = r.ID
+				resourceID = r.Id
 				break
 			}
 		}
@@ -167,23 +134,7 @@ var databasesGetCmd = &cobra.Command{
 			fatal(fmt.Sprintf("Database %q not found", name))
 		}
 
-		var result struct {
-			ResourceGet *struct {
-				ID       string `json:"id"`
-				Name     string `json:"name"`
-				Type     string `json:"type"`
-				Region   string `json:"region"`
-				Status   string `json:"status"`
-				Metadata *struct {
-					Size     *string `json:"size"`
-					Hostname *string `json:"hostname"`
-				} `json:"metadata"`
-			} `json:"resourceGet"`
-		}
-
-		err = client.Do(`query($id: ID!) {
-			resourceGet(id: $id) { id name type region status metadata { size hostname } }
-		}`, map[string]any{"id": resourceID}, &result)
+		result, err := gql.GetResource(ctx(), client, resourceID)
 		if err != nil {
 			fatal(err.Error())
 		}
@@ -233,17 +184,7 @@ var databasesDeleteCmd = &cobra.Command{
 
 		client := newClient()
 
-		var result struct {
-			ResourceDelete struct {
-				ResourceID string `json:"resourceId"`
-				Name       string `json:"name"`
-				Message    string `json:"message"`
-			} `json:"resourceDelete"`
-		}
-
-		err := client.Do(`mutation($name: String!, $ws: String) {
-			resourceDelete(name: $name, workspaceSlug: $ws) { resourceId name message }
-		}`, mergeVars(map[string]any{"name": name}), &result)
+		result, err := gql.DeleteResource(ctx(), client, name, wsPtr())
 		if err != nil {
 			fatal(err.Error())
 		}

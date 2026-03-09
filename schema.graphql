@@ -1,0 +1,811 @@
+type ActionLogEntry {
+  id: ID!
+  userId: String!
+  """Operation performed: 'service.create', 'service.delete', 'resource.create', 'domain.add', etc."""
+  action: String!
+  """Entity category: 'service', 'resource', 'domain', 'workspace', 'member', 'invite', 'repo'."""
+  entityType: String!
+  entityId: String!
+  """Where the action originated: 'graphql', 'mcp', or 'webhook'."""
+  source: String!
+  """JSON metadata with additional context (varies by action)."""
+  metadata: String
+  createdAt: Time!
+}
+
+type ActionLogConnection {
+  nodes: [ActionLogEntry!]!
+}
+
+extend type Query {
+  """Audit trail of all operations in a workspace. Filter by entity type or specific entity. Newest first."""
+  actionLogList(workspaceSlug: String, entityType: String, entityId: String, limit: Int, offset: Int): ActionLogConnection!
+}
+scalar Decimal
+
+enum PaymentMethod {
+  STRIPE
+  CREDITS
+}
+
+type WorkspaceBilling {
+  id: ID!
+  workspaceId: ID!
+  paymentMethod: PaymentMethod!
+  subscription: WorkspaceSubscription
+
+  # Usage (same for both payment methods)
+  currentUsageCents: Int!
+  includedUsageCents: Int!
+  estimatedBillCents: Int!
+
+  # Limits
+  spendingLimitCents: Int
+  alertThresholdCents: Int
+
+  # Credits/deposit balance (shown for credits payment method)
+  depositBalance: Decimal
+
+  # Suspension state
+  suspended: Boolean!
+  suspendedAt: Time
+  suspensionReason: String
+
+  # Legacy credit balance (kept for backward compat)
+  credits: Decimal!
+}
+
+type WorkspaceSubscription {
+  tier: String!
+  status: String!
+  currentPeriodEnd: Time
+  cancelAtPeriodEnd: Boolean!
+  cancellable: Boolean!
+}
+
+type CreditTransaction {
+  id: ID!
+  amountUsd: Decimal!
+  transactionType: String!
+  description: String
+  createdAt: Time!
+}
+
+type UsageBillBreakdown {
+  memory: UsageLineItem!
+  cpu: UsageLineItem!
+  egress: UsageLineItem!
+  subtotal: Decimal!
+  includedUsageCents: Int!
+  planFeeCents: Int!
+  currentBillCents: Int!
+  periodStart: Time!
+  periodEnd: Time!
+}
+
+type UsageLineItem {
+  quantity: Decimal!
+  unitPrice: Decimal!
+  unit: String!
+  totalCents: Int!
+}
+
+type ProjectUsage {
+  projectId: ID!
+  projectName: String!
+  cpuVcpuMinutes: Decimal!
+  memoryGbMinutes: Decimal!
+  cpuCostCents: Int!
+  memoryCostCents: Int!
+  egressBytes: Decimal!
+  egressCostCents: Int!
+  totalCostCents: Int!
+  serviceCount: Int!
+  estimatedCostCents: Int!
+  services: [ServiceUsage!]!
+}
+
+type ServiceUsage {
+  serviceId: ID!
+  serviceName: String
+  region: String!
+  cpuVcpuMinutes: Decimal!
+  memoryGbMinutes: Decimal!
+  cpuCostCents: Int!
+  memoryCostCents: Int!
+  egressBytes: Decimal!
+  egressCostCents: Int!
+  totalCostCents: Int!
+}
+
+type UsageChartPoint {
+  timestamp: Time!
+  projectId: ID!
+  cpuCores: Float!
+  memoryMB: Float!
+  actualCpuCores: Float!
+  actualMemoryMB: Float!
+  egressBytes: Float!
+}
+
+type CheckoutSessionResult {
+  url: String!
+}
+
+type PlanChangeResult {
+  applied: Boolean!
+  redirectUrl: String
+}
+
+input SetUsageLimitsInput {
+  workspaceSlug: String
+  spendingLimitCents: Int
+  alertThresholdCents: Int
+}
+
+extend type Query {
+  workspaceBilling(workspaceSlug: String!): WorkspaceBilling!
+  usageBillBreakdown(workspaceSlug: String): UsageBillBreakdown!
+  usageByProject(workspaceSlug: String): [ProjectUsage!]!
+  usageChart(workspaceSlug: String): [UsageChartPoint!]!
+  creditTransactions(workspaceSlug: String!, limit: Int, offset: Int): [CreditTransaction!]!
+}
+
+extend type Mutation {
+  createCheckoutSession(tier: String!, workspaceSlug: String!, successUrl: String!, cancelUrl: String!): CheckoutSessionResult!
+  createCreditTopUpSession(amountCents: Int!, workspaceSlug: String!, successUrl: String!, cancelUrl: String!): CheckoutSessionResult!
+  changeSubscriptionPlan(workspaceSlug: String!, tier: String!, returnUrl: String!): PlanChangeResult!
+  cancelSubscription(workspaceSlug: String!, stopImmediately: Boolean!): Boolean!
+  resumeSubscription(workspaceSlug: String!): Boolean!
+  createBillingPortalSession(workspaceSlug: String!, returnUrl: String!): CheckoutSessionResult!
+  setUsageLimits(input: SetUsageLimitsInput!): WorkspaceBilling!
+}
+extend type Query {
+  """Read messages from workspace chat. Supports cursor-based pagination. Omit channel for workspace-wide messages, or set to a project slug for project-scoped chat."""
+  chatRead(workspaceSlug: String!, channel: String, cursor: Int, limit: Int): ChatReadResult!
+}
+
+extend type Mutation {
+  """Send a message to workspace chat. Messages are visible to all workspace members. Use channel for project-scoped discussions."""
+  chatSend(workspaceSlug: String!, channel: String, content: String!, metadata: String): ChatSendResult!
+}
+
+type ChatMessage {
+  """Monotonically increasing sequence number within the workspace. Use as cursor for pagination."""
+  seq: Int!
+  messageId: String!
+  senderId: String!
+  senderName: String!
+  """Channel scope: empty string for workspace-wide, project slug for project-scoped."""
+  channel: String!
+  content: String!
+  """Optional structured metadata (JSON string)."""
+  metadata: String
+  createdAt: Time!
+}
+
+type ChatReadResult {
+  messages: [ChatMessage!]!
+  """Pass as cursor to the next chatRead call to fetch older messages."""
+  nextCursor: Int!
+  """True if there are more messages before the returned set."""
+  hasMore: Boolean!
+}
+
+type ChatSendResult {
+  """Sequence number assigned to the sent message."""
+  seq: Int!
+  messageId: String!
+}
+type CryptoPaymentIdResult {
+  paymentId: String!
+  contractAddress: String!
+  tokens: [CryptoToken!]!
+  expectedAmount: String!
+  expiresAt: String!
+}
+
+type CryptoToken {
+  address: String!
+  decimals: Int!
+  discount: Float!
+  isStable: Boolean!
+}
+
+type CryptoTokenPrice {
+  address: String!
+  priceUsd: Float!
+}
+
+extend type Query {
+  cryptoTokenPrices: [CryptoTokenPrice!]!
+}
+
+extend type Mutation {
+  createCryptoPaymentId(workspaceSlug: String!, tier: String!, months: Int!, token: String!): CryptoPaymentIdResult!
+}
+extend type Query {
+  """List all delegated DNS zones in a workspace with their verification status."""
+  dnsListZones(workspaceSlug: String): [HostedZone!]!
+  """List all DNS records in a zone. Includes both user-created and managed (system) records."""
+  dnsListRecords(zone: String!, workspaceSlug: String): [ZoneRecord!]!
+}
+
+extend type Mutation {
+  """Create a new DNS zone. Requires manual NS delegation — the user must point NS records to ns1.ml.ink / ns2.ml.ink."""
+  dnsCreateZone(zone: String!, workspaceSlug: String): CreateHostedZoneResult!
+  """Verify NS delegation for a zone. Call after the user has configured NS records at their registrar."""
+  dnsVerifyZone(zone: String!, workspaceSlug: String): VerifyHostedZoneResult!
+  """Delete a zone and all its records. Cannot be undone."""
+  dnsDeleteZone(zone: String!, workspaceSlug: String): DeleteHostedZoneResult!
+  """Add a DNS record to a zone. Supported types: A, AAAA, CNAME, MX, TXT, CAA. Managed records cannot be overwritten."""
+  dnsAddRecord(zone: String!, name: String!, type: String!, content: String!, ttl: Int, workspaceSlug: String): ZoneRecord!
+  """Delete a DNS record. Managed records (auto-created for custom domains) cannot be deleted."""
+  dnsDeleteRecord(zone: String!, recordId: ID!, workspaceSlug: String): Boolean!
+  """Attach a custom domain to a service. The domain must be under a verified delegated zone. Auto-creates the required DNS records."""
+  domainAdd(name: String!, domain: String!, project: String, workspaceSlug: String): DomainAddResult!
+  """Remove a custom domain from a service and clean up its managed DNS records."""
+  domainRemove(name: String!, project: String, workspaceSlug: String): DomainRemoveResult!
+}
+
+type DomainAddResult {
+  serviceId: ID!
+  domain: String!
+  """'active' if zone is verified and DNS propagated, 'pending' otherwise."""
+  status: String!
+  message: String!
+}
+
+type DomainRemoveResult {
+  serviceId: ID!
+  message: String!
+}
+
+type HostedZone {
+  id: ID!
+  """Domain name of the zone (e.g. 'example.com')."""
+  zone: String!
+  """'active' when NS delegation verified, 'pending' when awaiting verification, 'error' on failure."""
+  status: String!
+  error: String
+  """NS/TXT records required for delegation verification."""
+  dnsRecords: [DNSRecord!]
+  """All records in this zone (A, CNAME, MX, etc.)."""
+  records: [ZoneRecord!]!
+  createdAt: Time!
+}
+
+type DNSRecord {
+  host: String!
+  type: String!
+  value: String!
+  """Whether this delegation record has been verified via DNS lookup."""
+  verified: Boolean!
+}
+
+type ZoneRecord {
+  id: ID!
+  """Record name relative to the zone (e.g. 'www', '@', 'mail.sub')."""
+  name: String!
+  """DNS record type: A, AAAA, CNAME, MX, TXT, CAA."""
+  type: String!
+  """Record value (IP address, hostname, or text content)."""
+  content: String!
+  """Time-to-live in seconds. Default 300."""
+  ttl: Int!
+  """True for records auto-managed by the system (custom domain CNAME/TXT). These cannot be modified or deleted."""
+  managed: Boolean!
+  createdAt: Time!
+}
+
+type CreateHostedZoneResult {
+  zoneId: ID!
+  zone: String!
+  status: String!
+  """NS and TXT records the user must configure at their registrar."""
+  dnsRecords: [DNSRecord!]!
+}
+
+type VerifyHostedZoneResult {
+  zoneId: ID!
+  zone: String!
+  status: String!
+  message: String!
+  dnsRecords: [DNSRecord!]!
+}
+
+type DeleteHostedZoneResult {
+  zoneId: ID!
+  message: String!
+}
+extend type Mutation {
+  """Create a git repository. Use host='ink' (default) for instant private repos on Ink's internal git, or host='github' to create on GitHub (requires GitHub OAuth). Returns a git remote URL with embedded push token."""
+  repoCreate(input: RepoCreateInput!): RepoCreateResult!
+  """Get a temporary push token for an existing repo. Tokens expire — call again when expired. The returned gitRemote URL has the token embedded for direct git push."""
+  repoGetToken(input: RepoGetTokenInput!): RepoGetTokenResult!
+}
+
+input RepoCreateInput {
+  """Repository name (e.g. 'my-app'). Do not include owner prefix."""
+  name: String!
+  """Git host: 'ink' for internal git, 'github' for GitHub repos."""
+  host: String = "ink"
+  description: String
+  """Project slug to scope the repo to."""
+  project: String = "default"
+  workspaceSlug: String
+}
+
+type RepoCreateResult {
+  """The repo name to pass to serviceCreate(repo: ...). Same as the name you provided."""
+  name: String!
+  """Git remote URL with embedded token. Use as: git remote add ink <gitRemote> && git push ink main."""
+  gitRemote: String!
+  """Token expiration time. Call repoGetToken for a fresh token after expiry."""
+  expiresAt: String!
+  message: String!
+}
+
+input RepoGetTokenInput {
+  """Repo reference as returned by repoCreate."""
+  name: String!
+  """Git host: 'ink' for internal git, 'github' for GitHub repos."""
+  host: String = "ink"
+  workspaceSlug: String
+}
+
+type RepoGetTokenResult {
+  """Git remote URL with fresh embedded push token."""
+  gitRemote: String!
+  expiresAt: String!
+}
+type ResourceUsage {
+  services: Int!
+  memoryMi: Int!
+  vcpus: Float!
+}
+
+type ResourceLimits {
+  tier: String!
+  maxVcpus: Float!
+  maxMemoryMi: Int!
+  maxServices: Int!
+  usage: ResourceUsage!
+}
+
+extend type Query {
+  resourceLimits(workspaceSlug: String): ResourceLimits!
+}
+enum LogType {
+  BUILD
+  RUNTIME
+}
+
+input LogsInput {
+  serviceId: ID!
+  logType: LogType!
+  startTime: Time
+  endTime: Time
+  query: String
+  limit: Int
+}
+
+type LogEntry {
+  timestamp: Time!
+  level: String
+  message: String!
+  attributes: String
+}
+
+type LogsResult {
+  entries: [LogEntry!]!
+  hasMore: Boolean!
+}
+
+extend type Query {
+  serviceLogs(input: LogsInput!): LogsResult!
+}
+enum MetricTimeRange {
+  ONE_HOUR
+  SIX_HOURS
+  SEVEN_DAYS
+  THIRTY_DAYS
+}
+
+type MetricDataPoint {
+  timestamp: Time!
+  value: Float!
+}
+
+type MetricSeries {
+  metric: String!
+  dataPoints: [MetricDataPoint!]!
+}
+
+type ServiceMetrics {
+  cpuUsage: MetricSeries!
+  memoryUsageMB: MetricSeries!
+  networkReceiveBytesPerSec: MetricSeries!
+  networkTransmitBytesPerSec: MetricSeries!
+  memoryLimitMB: Float!
+  cpuLimitVCPUs: Float!
+}
+
+extend type Query {
+  serviceMetrics(serviceId: ID!, timeRange: MetricTimeRange!): ServiceMetrics!
+}
+extend type Query {
+  """Paginated list of projects in a workspace. Each project contains services and resources."""
+  projectList(first: Int, after: String, workspaceSlug: String): ProjectConnection!
+  projectGet(id: ID!, workspaceSlug: String): Project
+}
+
+extend type Mutation {
+  """Delete a project and all its services. Requires owner or admin role. Cannot delete the 'default' project."""
+  projectDelete(slug: String!, workspaceSlug: String): Boolean!
+}
+
+type ProjectConnection {
+  nodes: [Project!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type Project {
+  id: ID!
+  name: String!
+  """URL-friendly identifier used in API calls (e.g. 'default', 'my-project')."""
+  slug: String!
+  """Services deployed within this project."""
+  services: [Service!]!
+  createdAt: Time!
+  updatedAt: Time!
+}
+extend type Query {
+  """Paginated list of resources (databases) in a workspace."""
+  resourceList(first: Int, after: String, workspaceSlug: String): ResourceConnection!
+  """Get resource details including connection credentials (databaseUrl, authToken)."""
+  resourceGet(id: ID!): Resource
+}
+
+extend type Mutation {
+  """Provision a managed SQLite database (via libSQL). Returns a connection URL and auth token ready to use as env vars."""
+  resourceCreate(input: CreateResourceInput!): CreateResourceResult!
+  """Permanently delete a resource. The underlying database is destroyed."""
+  resourceDelete(name: String!, workspaceSlug: String): DeleteResourceResult!
+}
+
+input CreateResourceInput {
+  """Resource name, used to identify and look up the database."""
+  name: String!
+  """Resource type. Currently only 'sqlite' is supported."""
+  type: String = "sqlite"
+  """Size limit for the database."""
+  size: String = "100mb"
+  """Deployment region."""
+  region: String = "eu-central"
+  workspaceSlug: String
+}
+
+type CreateResourceResult {
+  resourceId: ID!
+  name: String!
+  type: String!
+  region: String!
+  """libSQL connection URL (e.g. libsql://db-name-org.turso.io). Use as DATABASE_URL env var."""
+  databaseUrl: String!
+  """Auth token for the database connection. Use as DATABASE_AUTH_TOKEN env var."""
+  authToken: String!
+  status: String!
+}
+
+type DeleteResourceResult {
+  resourceId: ID!
+  name: String!
+  message: String!
+}
+
+type ResourceConnection {
+  nodes: [Resource!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type Resource {
+  id: ID!
+  name: String!
+  """Resource type: 'sqlite'."""
+  type: String!
+  """Provider: 'turso'."""
+  provider: String!
+  region: String!
+  """Provisioning status: 'active', 'provisioning', 'error'."""
+  status: String!
+  metadata: ResourceMetadata
+  projectId: ID
+  project: Project
+  createdAt: Time!
+  updatedAt: Time!
+}
+
+type ResourceMetadata {
+  size: String
+  hostname: String
+  group: String
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
+scalar Time
+
+type User {
+  id: ID!
+  email: String
+  displayName: String
+  username: String
+  """GitHub username from connected OAuth account, if any."""
+  githubUsername: String
+  avatarUrl: String
+  createdAt: Time!
+  githubAppInstallationId: String
+  githubScopes: [String!]!
+  tosAcceptedAt: Time
+  """Whether the user has connected GitHub via OAuth, enabling repo creation and code push on their behalf."""
+  hasGitHubOAuth: Boolean!
+  """Whether the Ink GitHub App is installed on at least one repo, enabling code pulls during deployment."""
+  hasGitHubApp: Boolean!
+  """Slug of the user's personal workspace (used when workspaceSlug is omitted)."""
+  defaultWorkspace: String!
+  """Credit/deposit balance in USD for the default workspace. Null if no billing record exists."""
+  depositBalance: Decimal
+  """Subscription tier for the default workspace: 'free', 'pro', 'team'. Null if no subscription."""
+  subscriptionTier: String
+  """When the current billing period ends for the default workspace. Null if no active subscription."""
+  subscriptionExpiresAt: Time
+}
+
+type APIKey {
+  id: ID!
+  name: String!
+  prefix: String!
+  lastUsedAt: Time
+  createdAt: Time!
+}
+
+type CreateAPIKeyResult {
+  apiKey: APIKey!
+  secret: String!
+}
+
+type Query {
+  """Current user's account: identity, GitHub App status, and default workspace slug."""
+  accountStatus: User
+  myAPIKeys: [APIKey!]!
+}
+
+type Mutation {
+  createAPIKey(name: String!): CreateAPIKeyResult!
+  revokeAPIKey(id: ID!): Boolean!
+  disconnectGitHub: Boolean!
+  recheckGithubAppInstallation(installationId: String): String
+  updateUserProfile(displayName: String, username: String): User!
+  acceptTermsOfService: Boolean!
+}
+extend type Query {
+  """Paginated list of all services in a workspace. Returns status from the latest deployment."""
+  serviceList(first: Int, after: String, workspaceSlug: String): ServiceConnection!
+  """Full details for a single service including config, env vars, custom domain, and deployment status."""
+  serviceGet(id: ID!): Service
+}
+
+extend type Mutation {
+  """Create a service and trigger its first deployment. The service name becomes {name}.ml.ink. Returns immediately while build runs async — poll serviceGet to track status."""
+  serviceCreate(input: CreateServiceInput!): CreateServiceResult!
+  """Permanently delete a service and tear down its container, DNS, and custom domain."""
+  serviceDelete(name: String!, project: String, workspaceSlug: String): DeleteServiceResult!
+  """Update service configuration and trigger a redeployment. Only specified fields change. Can also redeploy without changes to pull latest code."""
+  serviceUpdate(input: UpdateServiceInput!): UpdateServiceResult!
+}
+
+input CreateServiceInput {
+  """Service name — becomes the subdomain at {name}.ml.ink."""
+  name: String!
+  """Repository reference as returned by repoCreate (e.g. 'my-app' for internal, 'user/repo' for GitHub). Not a URL."""
+  repo: String!
+  """Git host: 'ink' for internal git, 'github' for GitHub repos."""
+  host: String = "ink"
+  """Branch to deploy."""
+  branch: String = "main"
+  """Project slug to deploy into."""
+  project: String = "default"
+  """Workspace slug. Omit to use your personal workspace."""
+  workspaceSlug: String
+  """Build strategy: 'railpack' (auto-detect), 'dockerfile', 'static' (no build, serve as-is), 'dockercompose'."""
+  buildPack: String = "railpack"
+  """Port the application listens on inside the container."""
+  port: Int
+  """Environment variables injected into the container at runtime."""
+  envVars: [EnvVarInput!]
+  """Memory limit: 256Mi, 512Mi, 1Gi, 2Gi, 4Gi, 8Gi."""
+  memory: String = "256Mi"
+  """CPU allocation: 0.25, 0.5, 1, 2, 4 vCPUs."""
+  vcpus: String = "0.25"
+  """Custom build command (overrides auto-detected). Only with railpack."""
+  buildCommand: String
+  """Custom start command (overrides auto-detected). Only with railpack."""
+  startCommand: String
+  """Directory with built static files (e.g. 'dist'). With railpack, builds then serves via nginx. For Vite/React/Vue SPAs."""
+  publishDirectory: String
+  """Subdirectory to use as build context (e.g. 'frontend'). For monorepo deployments."""
+  rootDirectory: String
+  """Path to Dockerfile relative to rootDirectory. Only with dockerfile build pack."""
+  dockerfilePath: String
+  """Deployment region."""
+  regions: [String!] = ["eu-central-1"]
+}
+
+type CreateServiceResult {
+  serviceId: ID!
+  name: String!
+  """Initial status, typically 'queued'. Poll serviceGet to track progress."""
+  status: String!
+  repo: String!
+  """Cluster-internal URL for service-to-service calls (e.g. http://svc.ns.svc.cluster.local:port)."""
+  internalUrl: String!
+}
+
+input UpdateServiceInput {
+  """Name of the service to update (required). Identifies the service within the project."""
+  name: String!
+  project: String
+  workspaceSlug: String
+  repo: String
+  host: String
+  branch: String
+  port: Int
+  """Replaces all existing env vars. Omit to keep current values."""
+  envVars: [EnvVarInput!]
+  buildPack: String
+  memory: String
+  vcpus: String
+  buildCommand: String
+  startCommand: String
+  publishDirectory: String
+  rootDirectory: String
+  dockerfilePath: String
+}
+
+input EnvVarInput {
+  key: String!
+  value: String!
+}
+
+type UpdateServiceResult {
+  serviceId: ID!
+  name: String!
+  """Status after update, typically 'queued' as redeployment starts."""
+  status: String!
+}
+
+type DeleteServiceResult {
+  serviceId: ID!
+  name: String!
+  message: String!
+}
+
+type ServiceConnection {
+  nodes: [Service!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type PageInfo {
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+  endCursor: String
+}
+
+type Service {
+  id: ID!
+  projectId: ID!
+  project: Project
+  name: String
+  repo: String!
+  branch: String!
+  """Deployment status: queued, building, deploying, active, failed, cancelled, superseded, crashed, completed, removed."""
+  status: String!
+  """Error details when status is 'failed' or 'crashed'."""
+  errorMessage: String
+  envVars: [EnvVar!]!
+  """Public URL: {name}.ml.ink. Null until first successful deploy."""
+  fqdn: String
+  """Cluster-internal URL for service-to-service communication within the same workspace."""
+  internalUrl: String!
+  port: String!
+  """'internal' for Ink git, 'github' for GitHub repos."""
+  gitProvider: String!
+  """Git commit SHA of the current deployment."""
+  commitHash: String
+  memory: String!
+  vcpus: String!
+  """Custom domain attached to this service, if any."""
+  customDomain: String
+  """Custom domain TLS/DNS status: 'active', 'pending', 'error'."""
+  customDomainStatus: String
+  createdAt: Time!
+  updatedAt: Time!
+}
+
+type EnvVar {
+  key: String!
+  value: String!
+}
+extend type Query {
+  """List all workspaces the user belongs to (owned and invited). Includes billing status for each."""
+  workspaceList: [Workspace!]!
+  """List all members of a workspace with their roles and profile info."""
+  workspaceListMembers(workspaceSlug: String!): [WorkspaceMember!]!
+  """List pending outgoing invites for a workspace. Requires admin or owner role."""
+  workspaceListInvites(workspaceSlug: String!): [WorkspaceInvite!]!
+  """List the current user's pending incoming invites across all workspaces."""
+  workspaceListMyInvites: [WorkspaceInvite!]!
+}
+
+extend type Mutation {
+  """Create a new workspace for team collaboration. The creator becomes the owner."""
+  workspaceCreate(name: String!, slug: String!, description: String): Workspace!
+  """Delete a workspace. Must have no active services. Cannot delete your personal workspace."""
+  workspaceDelete(id: ID!): Boolean!
+  """Invite a user by email or username. Invitee must accept before joining."""
+  workspaceInvite(workspaceId: ID!, user: String!, role: String): WorkspaceInvite!
+  """Accept a pending workspace invite and join as a member."""
+  workspaceAcceptInvite(inviteId: ID!): Boolean!
+  """Decline a pending workspace invite."""
+  workspaceDeclineInvite(inviteId: ID!): Boolean!
+  """Revoke a pending outgoing invite. Requires admin or owner role."""
+  workspaceRevokeInvite(inviteId: ID!): Boolean!
+  """Remove a member from a workspace. Requires admin or owner role. Cannot remove the workspace owner."""
+  workspaceRemoveMember(workspaceId: ID!, userId: ID!): Boolean!
+}
+
+type Workspace {
+  id: ID!
+  name: String!
+  """URL-friendly identifier used in API calls."""
+  slug: String!
+  """True for the user's auto-created personal workspace."""
+  isDefault: Boolean!
+  """User's role in this workspace: 'owner', 'admin', or 'member'."""
+  role: String!
+  createdAt: Time!
+}
+
+type WorkspaceMember {
+  id: ID!
+  userId: String!
+  email: String
+  username: String
+  displayName: String
+  avatarUrl: String
+  """Member's role: 'owner', 'admin', or 'member'."""
+  role: String!
+  joinedAt: Time!
+}
+
+type WorkspaceInvite {
+  id: ID!
+  workspaceId: String!
+  workspaceName: String
+  workspaceSlug: String
+  inviterDisplayName: String
+  inviteeDisplayName: String
+  role: String!
+  """Invite status: 'pending', 'accepted', 'declined', 'revoked'."""
+  status: String!
+  createdAt: Time!
+}
+

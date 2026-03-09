@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/mldotink/cli/internal/gql"
 	"github.com/spf13/cobra"
 )
 
@@ -26,20 +27,7 @@ var domainsAddCmd = &cobra.Command{
 		svc, domain := args[0], args[1]
 		client := newClient()
 
-		var result struct {
-			DomainAdd struct {
-				ServiceID string `json:"serviceId"`
-				Domain    string `json:"domain"`
-				Status    string `json:"status"`
-				Message   string `json:"message"`
-			} `json:"domainAdd"`
-		}
-
-		err := client.Do(`mutation($name: String!, $domain: String!, $ws: String, $proj: String) {
-			domainAdd(name: $name, domain: $domain, workspaceSlug: $ws, project: $proj) {
-				serviceId domain status message
-			}
-		}`, mergeVars(map[string]any{"name": svc, "domain": domain}), &result)
+		result, err := gql.AddDomain(ctx(), client, svc, domain, projPtr(), wsPtr())
 		if err != nil {
 			fatal(err.Error())
 		}
@@ -69,16 +57,7 @@ var domainsRemoveCmd = &cobra.Command{
 		svc := args[0]
 		client := newClient()
 
-		var result struct {
-			DomainRemove struct {
-				ServiceID string `json:"serviceId"`
-				Message   string `json:"message"`
-			} `json:"domainRemove"`
-		}
-
-		err := client.Do(`mutation($name: String!, $ws: String, $proj: String) {
-			domainRemove(name: $name, workspaceSlug: $ws, project: $proj) { serviceId message }
-		}`, mergeVars(map[string]any{"name": svc}), &result)
+		result, err := gql.RemoveDomain(ctx(), client, svc, projPtr(), wsPtr())
 		if err != nil {
 			fatal(err.Error())
 		}

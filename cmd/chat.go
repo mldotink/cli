@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/mldotink/cli/internal/gql"
 	"github.com/spf13/cobra"
 )
 
@@ -37,26 +38,7 @@ ink chat send "Frontend update" --channel my-project`,
 			fatal("Workspace required — set in config or use --workspace")
 		}
 
-		vars := map[string]any{
-			"ws":      ws,
-			"content": content,
-		}
-		if channel != "" {
-			vars["channel"] = channel
-		}
-
-		var result struct {
-			ChatSend struct {
-				Seq       int    `json:"seq"`
-				MessageID string `json:"messageId"`
-			} `json:"chatSend"`
-		}
-
-		err := client.Do(`mutation($ws: String!, $channel: String, $content: String!) {
-			chatSend(workspaceSlug: $ws, channel: $channel, content: $content) {
-				seq messageId
-			}
-		}`, vars, &result)
+		result, err := gql.SendChatMessage(ctx(), client, ws, ptr(channel), content)
 		if err != nil {
 			fatal(err.Error())
 		}
@@ -84,37 +66,12 @@ var chatReadCmd = &cobra.Command{
 			fatal("Workspace required — set in config or use --workspace")
 		}
 
-		vars := map[string]any{
-			"ws":    ws,
-			"limit": limit,
-		}
-		if channel != "" {
-			vars["channel"] = channel
-		}
+		var cursorPtr *int
 		if cursor > 0 {
-			vars["cursor"] = cursor
+			cursorPtr = &cursor
 		}
 
-		var result struct {
-			ChatRead struct {
-				Messages []struct {
-					Seq        int    `json:"seq"`
-					SenderName string `json:"senderName"`
-					Content    string `json:"content"`
-					Channel    string `json:"channel"`
-					CreatedAt  string `json:"createdAt"`
-				} `json:"messages"`
-				NextCursor int  `json:"nextCursor"`
-				HasMore    bool `json:"hasMore"`
-			} `json:"chatRead"`
-		}
-
-		err := client.Do(`query($ws: String!, $channel: String, $cursor: Int, $limit: Int) {
-			chatRead(workspaceSlug: $ws, channel: $channel, cursor: $cursor, limit: $limit) {
-				messages { seq senderName content channel createdAt }
-				nextCursor hasMore
-			}
-		}`, vars, &result)
+		result, err := gql.ReadChat(ctx(), client, ws, ptr(channel), cursorPtr, &limit)
 		if err != nil {
 			fatal(err.Error())
 		}

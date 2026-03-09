@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/mldotink/cli/internal/gql"
 	"github.com/spf13/cobra"
 )
 
@@ -38,27 +39,17 @@ git push ink main`,
 
 		desc, _ := cmd.Flags().GetString("description")
 
-		input := map[string]any{
-			"name": name,
-			"host": host,
+		input := gql.RepoCreateInput{
+			Name:          name,
+			Host:          ptr(host),
+			WorkspaceSlug: wsPtr(),
+			Project:       projPtr(),
 		}
 		if desc != "" {
-			input["description"] = desc
-		}
-		addDefaults(input)
-
-		var result struct {
-			RepoCreate struct {
-				Name      string `json:"name"`
-				GitRemote string `json:"gitRemote"`
-				ExpiresAt string `json:"expiresAt"`
-				Message   string `json:"message"`
-			} `json:"repoCreate"`
+			input.Description = ptr(desc)
 		}
 
-		err := client.Do(`mutation($input: RepoCreateInput!) {
-			repoCreate(input: $input) { name gitRemote expiresAt message }
-		}`, map[string]any{"input": input}, &result)
+		result, err := gql.CreateRepo(ctx(), client, input)
 		if err != nil {
 			fatal(err.Error())
 		}
@@ -90,19 +81,13 @@ var reposTokenCmd = &cobra.Command{
 		host, _ := cmd.Flags().GetString("host")
 		client := newClient()
 
-		input := map[string]any{"name": name, "host": host}
-		addDefaults(input)
-
-		var result struct {
-			RepoGetToken struct {
-				GitRemote string `json:"gitRemote"`
-				ExpiresAt string `json:"expiresAt"`
-			} `json:"repoGetToken"`
+		input := gql.RepoGetTokenInput{
+			Name:          name,
+			Host:          ptr(host),
+			WorkspaceSlug: wsPtr(),
 		}
 
-		err := client.Do(`mutation($input: RepoGetTokenInput!) {
-			repoGetToken(input: $input) { gitRemote expiresAt }
-		}`, map[string]any{"input": input}, &result)
+		result, err := gql.GetRepoToken(ctx(), client, input)
 		if err != nil {
 			fatal(err.Error())
 		}
