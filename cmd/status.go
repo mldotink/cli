@@ -11,7 +11,7 @@ var statusIncludeEnv bool
 
 func init() {
 	statusCmd.Flags().BoolVarP(&statusIncludeEnv, "env", "e", false, "Show environment variables")
-	statusCmd.Flags().Int("build-logs", 0, "Include N build log lines (max 500)")
+	statusCmd.Flags().Int("deploy-logs", 0, "Include N deploy log lines (max 500)")
 	statusCmd.Flags().Int("runtime-logs", 0, "Include N runtime log lines (max 500)")
 	statusCmd.Flags().String("metrics", "", "Include CPU/memory metrics: 1h, 6h, 7d, 30d")
 	rootCmd.AddCommand(statusCmd)
@@ -23,14 +23,14 @@ var statusCmd = &cobra.Command{
 	Example: `# Show service status
 ink status myapi
 
-# Include build and runtime logs
-ink status myapi --build-logs 50 --runtime-logs 100
+# Include deploy and runtime logs
+ink status myapi --deploy-logs 50 --runtime-logs 100
 
 # Include usage metrics for the last hour
 ink status myapi --metrics 1h
 
 # Show everything including env vars
-ink status myapi -e --build-logs 20 --runtime-logs 50 --metrics 7d`,
+ink status myapi -e --deploy-logs 20 --runtime-logs 50 --metrics 7d`,
 	Args: exactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		name := args[0]
@@ -67,8 +67,10 @@ ink status myapi -e --build-logs 20 --runtime-logs 50 --metrics 7d`,
 			d.kv("Commit", dim.Render(hash))
 		}
 		d.kv("Memory", svc.Memory)
-		d.kv("vCPUs", svc.VCPUs)
-		d.kv("Git provider", svc.GitProvider)
+		d.kv("vCPU", svc.VCPUs)
+		d.kv("Port", svc.Port)
+		d.kv("Build pack", svc.BuildPack)
+		d.kv("Git host", svc.GitProvider)
 		if svc.CustomDomain != nil {
 			status := ""
 			if svc.CustomDomainStatus != nil {
@@ -88,12 +90,12 @@ ink status myapi -e --build-logs 20 --runtime-logs 50 --metrics 7d`,
 		fmt.Println()
 		fmt.Println(d.String())
 
-		// Build logs
-		if buildLines, _ := cmd.Flags().GetInt("build-logs"); buildLines > 0 {
-			if buildLines > 500 {
-				buildLines = 500
+		// Deploy logs
+		if deployLines, _ := cmd.Flags().GetInt("deploy-logs"); deployLines > 0 {
+			if deployLines > 500 {
+				deployLines = 500
 			}
-			fetchAndPrintLogs(client, svc.ID, "BUILD", buildLines, "Build Logs")
+			fetchAndPrintLogs(client, svc.ID, "BUILD", deployLines, "Deploy Logs")
 		}
 
 		// Runtime logs

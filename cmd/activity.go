@@ -10,6 +10,7 @@ func init() {
 	activityCmd.Flags().String("entity-type", "", "Filter: service, resource, domain, workspace, member, invite, repo")
 	activityCmd.Flags().String("entity-id", "", "Filter by entity ID (use with --entity-type)")
 	activityCmd.Flags().IntP("limit", "n", 20, "Number of entries to show (max 100)")
+	activityCmd.Flags().Int("offset", 0, "Skip N entries for pagination")
 	rootCmd.AddCommand(activityCmd)
 }
 
@@ -26,10 +27,14 @@ ink activity --entity-type service -n 50`,
 		entityType, _ := cmd.Flags().GetString("entity-type")
 		entityID, _ := cmd.Flags().GetString("entity-id")
 		limit, _ := cmd.Flags().GetInt("limit")
+		offset, _ := cmd.Flags().GetInt("offset")
 		client := newClient()
 
 		vars := defaultVars()
 		vars["limit"] = limit
+		if offset > 0 {
+			vars["offset"] = offset
+		}
 		if entityType != "" {
 			vars["entityType"] = entityType
 		}
@@ -50,8 +55,8 @@ ink activity --entity-type service -n 50`,
 			} `json:"actionLogList"`
 		}
 
-		err := client.Do(`query($ws: String, $entityType: String, $entityId: String, $limit: Int) {
-			actionLogList(workspaceSlug: $ws, entityType: $entityType, entityId: $entityId, limit: $limit) {
+		err := client.Do(`query($ws: String, $entityType: String, $entityId: String, $limit: Int, $offset: Int) {
+			actionLogList(workspaceSlug: $ws, entityType: $entityType, entityId: $entityId, limit: $limit, offset: $offset) {
 				nodes { id action entityType entityId source createdAt }
 			}
 		}`, vars, &result)

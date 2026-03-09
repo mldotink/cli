@@ -25,6 +25,7 @@ type serviceInfo struct {
 	Memory             string   `json:"memory"`
 	VCPUs              string   `json:"vcpus"`
 	Port               string   `json:"port"`
+	BuildPack          string   `json:"buildPack"`
 	CustomDomain       *string  `json:"customDomain"`
 	CustomDomainStatus *string  `json:"customDomainStatus"`
 	EnvVars            []envVar `json:"envVars"`
@@ -99,7 +100,7 @@ func findService(client *api.Client, name string) (*serviceInfo, error) {
 		serviceList(workspaceSlug: $ws) {
 			nodes {
 				id name status errorMessage fqdn internalUrl
-				repo branch commitHash gitProvider memory vcpus port
+				repo branch commitHash gitProvider memory vcpus port buildPack
 				customDomain customDomainStatus
 				envVars { key value }
 			}
