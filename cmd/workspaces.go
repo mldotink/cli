@@ -73,7 +73,7 @@ var workspacesCmd = &cobra.Command{
 var workspacesCreateCmd = &cobra.Command{
 	Use:   "create <name> <slug>",
 	Short: "Create a workspace",
-	Args:  cobra.ExactArgs(2),
+	Args:  exactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		name, slug := args[0], args[1]
 		desc, _ := cmd.Flags().GetString("description")
@@ -112,7 +112,7 @@ var workspacesCreateCmd = &cobra.Command{
 var workspacesDeleteCmd = &cobra.Command{
 	Use:   "delete <slug>",
 	Short: "Delete a workspace",
-	Args:  cobra.ExactArgs(1),
+	Args:  exactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		slug := args[0]
 		client := newClient()
@@ -144,7 +144,7 @@ var workspacesDeleteCmd = &cobra.Command{
 var workspacesMembersCmd = &cobra.Command{
 	Use:   "members <slug>",
 	Short: "List workspace members",
-	Args:  cobra.ExactArgs(1),
+	Args:  exactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		slug := args[0]
 		client := newClient()
@@ -196,7 +196,7 @@ var workspacesMembersCmd = &cobra.Command{
 var workspacesInviteCmd = &cobra.Command{
 	Use:   "invite <slug> <user> [role]",
 	Short: "Invite a user to a workspace",
-	Args:  cobra.RangeArgs(2, 3),
+	Args:  rangeArgs(2, 3),
 	Run: func(cmd *cobra.Command, args []string) {
 		slug, user := args[0], args[1]
 		role := "member"
@@ -237,7 +237,7 @@ var workspacesInviteCmd = &cobra.Command{
 var workspacesInvitesCmd = &cobra.Command{
 	Use:   "invites [slug]",
 	Short: "List pending invites (yours if no slug, workspace's if slug given)",
-	Args:  cobra.MaximumNArgs(1),
+	Args:  maxArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		client := newClient()
 
@@ -312,7 +312,7 @@ var workspacesInvitesCmd = &cobra.Command{
 var workspacesAcceptCmd = &cobra.Command{
 	Use:   "accept-invite <invite-id>",
 	Short: "Accept a workspace invite",
-	Args:  cobra.ExactArgs(1),
+	Args:  exactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		client := newClient()
 		var result struct {
@@ -334,7 +334,7 @@ var workspacesAcceptCmd = &cobra.Command{
 var workspacesDeclineCmd = &cobra.Command{
 	Use:   "decline-invite <invite-id>",
 	Short: "Decline a workspace invite",
-	Args:  cobra.ExactArgs(1),
+	Args:  exactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		client := newClient()
 		var result struct {
@@ -356,7 +356,7 @@ var workspacesDeclineCmd = &cobra.Command{
 var workspacesRevokeCmd = &cobra.Command{
 	Use:   "revoke-invite <invite-id>",
 	Short: "Revoke a pending invite",
-	Args:  cobra.ExactArgs(1),
+	Args:  exactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		client := newClient()
 		var result struct {
@@ -378,7 +378,7 @@ var workspacesRevokeCmd = &cobra.Command{
 var workspacesRemoveCmd = &cobra.Command{
 	Use:   "remove-member <slug> <user-id>",
 	Short: "Remove a member from a workspace",
-	Args:  cobra.ExactArgs(2),
+	Args:  exactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		slug, userID := args[0], args[1]
 		client := newClient()

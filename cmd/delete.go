@@ -19,7 +19,7 @@ func init() {
 var deleteCmd = &cobra.Command{
 	Use:   "delete <name>",
 	Short: "Delete a service",
-	Args:  cobra.ExactArgs(1),
+	Args:  exactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		name := args[0]
 

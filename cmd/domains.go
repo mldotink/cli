@@ -20,7 +20,7 @@ var domainsCmd = &cobra.Command{
 var domainsAddCmd = &cobra.Command{
 	Use:   "add <service> <domain>",
 	Short: "Add a custom domain to a service",
-	Args:  cobra.ExactArgs(2),
+	Args:  exactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		svc, domain := args[0], args[1]
 		client := newClient()
@@ -62,7 +62,7 @@ var domainsAddCmd = &cobra.Command{
 var domainsRemoveCmd = &cobra.Command{
 	Use:   "remove <service>",
 	Short: "Remove custom domain from a service",
-	Args:  cobra.ExactArgs(1),
+	Args:  exactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		svc := args[0]
 		client := newClient()

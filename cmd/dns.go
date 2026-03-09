@@ -73,7 +73,7 @@ var dnsZonesCmd = &cobra.Command{
 var dnsRecordsCmd = &cobra.Command{
 	Use:   "records <zone>",
 	Short: "List DNS records in a zone",
-	Args:  cobra.ExactArgs(1),
+	Args:  exactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		zone := args[0]
 		client := newClient()
@@ -129,7 +129,7 @@ var dnsAddCmd = &cobra.Command{
 	Use:   "add <zone> <name> <type> <content>",
 	Short: "Add a DNS record",
 	Long:  "Add a DNS record. Types: A, AAAA, CNAME, MX, TXT, CAA",
-	Args:  cobra.ExactArgs(4),
+	Args:  exactArgs(4),
 	Run: func(cmd *cobra.Command, args []string) {
 		zone, name, typ, content := args[0], args[1], args[2], args[3]
 		ttl, _ := cmd.Flags().GetInt("ttl")
@@ -169,7 +169,7 @@ var dnsAddCmd = &cobra.Command{
 var dnsDeleteCmd = &cobra.Command{
 	Use:   "delete <zone> <record-id>",
 	Short: "Delete a DNS record",
-	Args:  cobra.ExactArgs(2),
+	Args:  exactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		zone, recordID := args[0], args[1]
 		client := newClient()

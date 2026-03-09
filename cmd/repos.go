@@ -23,7 +23,7 @@ var reposCmd = &cobra.Command{
 var reposCreateCmd = &cobra.Command{
 	Use:   "create <name>",
 	Short: "Create a repository",
-	Args:  cobra.ExactArgs(1),
+	Args:  exactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		name := args[0]
 		host, _ := cmd.Flags().GetString("host")
@@ -76,7 +76,7 @@ var reposCreateCmd = &cobra.Command{
 var reposTokenCmd = &cobra.Command{
 	Use:   "token <name>",
 	Short: "Get a fresh push token for a repo",
-	Args:  cobra.ExactArgs(1),
+	Args:  exactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		name := args[0]
 		host, _ := cmd.Flags().GetString("host")

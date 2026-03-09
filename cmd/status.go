@@ -20,7 +20,7 @@ func init() {
 var statusCmd = &cobra.Command{
 	Use:   "status <name>",
 	Short: "Get service details",
-	Args:  cobra.ExactArgs(1),
+	Args:  exactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		name := args[0]
 		client := newClient()

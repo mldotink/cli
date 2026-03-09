@@ -76,7 +76,7 @@ var databasesCmd = &cobra.Command{
 var databasesCreateCmd = &cobra.Command{
 	Use:   "create <name>",
 	Short: "Create a database",
-	Args:  cobra.ExactArgs(1),
+	Args:  exactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		name := args[0]
 		client := newClient()
@@ -129,7 +129,7 @@ var databasesCreateCmd = &cobra.Command{
 var databasesGetCmd = &cobra.Command{
 	Use:   "get <name>",
 	Short: "Get database details and credentials",
-	Args:  cobra.ExactArgs(1),
+	Args:  exactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		name := args[0]
 		client := newClient()
@@ -210,7 +210,7 @@ var databasesGetCmd = &cobra.Command{
 var databasesDeleteCmd = &cobra.Command{
 	Use:   "delete <name>",
 	Short: "Delete a database",
-	Args:  cobra.ExactArgs(1),
+	Args:  exactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		name := args[0]
 		yes, _ := cmd.Flags().GetBool("yes")

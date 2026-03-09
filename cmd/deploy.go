@@ -32,7 +32,7 @@ var deployCmd = &cobra.Command{
 	Use:   "deploy <name> [flags]",
 	Short: "Create or update a service",
 	Long:  "Creates a new service or updates an existing one. Detects automatically.",
-	Args:  cobra.ExactArgs(1),
+	Args:  exactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		name := args[0]
 		client := newClient()

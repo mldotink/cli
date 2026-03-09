@@ -21,7 +21,7 @@ var loginCmd = &cobra.Command{
 	Use:   "login [api-key]",
 	Short: "Authenticate with Ink",
 	Long:  "Store your API key. Get one at https://ml.ink/account/api-keys",
-	Args:  cobra.MaximumNArgs(1),
+	Args:  maxArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		var key string
 		if len(args) > 0 {

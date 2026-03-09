@@ -15,7 +15,7 @@ func init() {
 var logsCmd = &cobra.Command{
 	Use:   "logs <name>",
 	Short: "View service logs",
-	Args:  cobra.ExactArgs(1),
+	Args:  exactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		name := args[0]
 		showBuild, _ := cmd.Flags().GetBool("build")

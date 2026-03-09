@@ -24,7 +24,7 @@ var chatCmd = &cobra.Command{
 var chatSendCmd = &cobra.Command{
 	Use:   "send <message>",
 	Short: "Send a message to workspace chat",
-	Args:  cobra.ExactArgs(1),
+	Args:  exactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		content := args[0]
 		channel, _ := cmd.Flags().GetString("channel")

@@ -69,7 +69,7 @@ var projectsCmd = &cobra.Command{
 var projectsDeleteCmd = &cobra.Command{
 	Use:   "delete <slug>",
 	Short: "Delete a project and all its services",
-	Args:  cobra.ExactArgs(1),
+	Args:  exactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		slug := args[0]
 		yes, _ := cmd.Flags().GetBool("yes")

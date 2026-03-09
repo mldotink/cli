@@ -279,3 +279,38 @@ func deref(s *string, fallback string) string {
 	}
 	return fallback
 }
+
+// ── Arg validators (show help on error) ───────────
+
+func exactArgs(n int) cobra.PositionalArgs {
+	return func(cmd *cobra.Command, args []string) error {
+		if len(args) != n {
+			cmd.Help()
+			fmt.Println()
+			os.Exit(1)
+		}
+		return nil
+	}
+}
+
+func rangeArgs(min, max int) cobra.PositionalArgs {
+	return func(cmd *cobra.Command, args []string) error {
+		if len(args) < min || len(args) > max {
+			cmd.Help()
+			fmt.Println()
+			os.Exit(1)
+		}
+		return nil
+	}
+}
+
+func maxArgs(n int) cobra.PositionalArgs {
+	return func(cmd *cobra.Command, args []string) error {
+		if len(args) > n {
+			cmd.Help()
+			fmt.Println()
+			os.Exit(1)
+		}
+		return nil
+	}
+}
