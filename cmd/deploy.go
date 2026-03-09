@@ -15,7 +15,7 @@ func init() {
 	f.String("host", "ink", "Git host: ink, github")
 	f.String("branch", "main", "Git branch to deploy")
 	f.String("memory", "512Mi", "Memory limit: 256Mi, 512Mi, 1Gi, 2Gi, 4Gi, 8Gi")
-	f.String("vcpus", "0.5", "CPU cores: 0.25, 0.5, 1, 2, 4")
+	f.String("vcpu", "0.5", "CPU cores: 0.25, 0.5, 1, 2, 4")
 	f.StringArray("env", nil, "Environment variable as KEY=VALUE (repeatable)")
 	f.String("build-command", "", "Custom build command")
 	f.String("start-command", "", "Custom start command")
@@ -39,7 +39,7 @@ ink deploy myapp
 ink deploy myapi --env DATABASE_URL=postgres://... --env SECRET_KEY=abc123
 
 # Deploy with custom resources
-ink deploy myapi --memory 2Gi --vcpus 1
+ink deploy myapi --memory 2Gi --vcpu 1
 
 # Deploy from a GitHub repo on a specific branch
 ink deploy myapi --host github --repo myorg/myrepo --branch develop
@@ -85,7 +85,7 @@ func runCreate(cmd *cobra.Command, client *api.Client, name string) {
 	addFlagStr(cmd, input, "host", "host")
 	addFlagStr(cmd, input, "branch", "branch")
 	addFlagStr(cmd, input, "memory", "memory")
-	addFlagStr(cmd, input, "vcpus", "vcpus")
+	addFlagStr(cmd, input, "vcpu", "vcpus")
 	addFlagStr(cmd, input, "build-command", "buildCommand")
 	addFlagStr(cmd, input, "start-command", "startCommand")
 	addFlagStr(cmd, input, "root-dir", "rootDirectory")
@@ -141,7 +141,7 @@ func runUpdate(cmd *cobra.Command, client *api.Client, name string) {
 	addFlagStr(cmd, input, "host", "host")
 	addFlagStr(cmd, input, "branch", "branch")
 	addFlagStr(cmd, input, "memory", "memory")
-	addFlagStr(cmd, input, "vcpus", "vcpus")
+	addFlagStr(cmd, input, "vcpu", "vcpus")
 	addFlagStr(cmd, input, "build-command", "buildCommand")
 	addFlagStr(cmd, input, "start-command", "startCommand")
 	addFlagStr(cmd, input, "root-dir", "rootDirectory")
