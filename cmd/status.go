@@ -11,16 +11,27 @@ var statusIncludeEnv bool
 
 func init() {
 	statusCmd.Flags().BoolVarP(&statusIncludeEnv, "env", "e", false, "Show environment variables")
-	statusCmd.Flags().Int("build-logs", 0, "Number of build log lines to include (max 500)")
-	statusCmd.Flags().Int("runtime-logs", 0, "Number of runtime log lines to include (max 500)")
-	statusCmd.Flags().String("metrics", "", "Include usage metrics: 1h, 6h, 7d, 30d")
+	statusCmd.Flags().Int("build-logs", 0, "Include N build log lines (max 500)")
+	statusCmd.Flags().Int("runtime-logs", 0, "Include N runtime log lines (max 500)")
+	statusCmd.Flags().String("metrics", "", "Include CPU/memory metrics: 1h, 6h, 7d, 30d")
 	rootCmd.AddCommand(statusCmd)
 }
 
 var statusCmd = &cobra.Command{
 	Use:   "status <name>",
 	Short: "Get service details",
-	Args:  exactArgs(1),
+	Example: `# Show service status
+ink status myapi
+
+# Include build and runtime logs
+ink status myapi --build-logs 50 --runtime-logs 100
+
+# Include usage metrics for the last hour
+ink status myapi --metrics 1h
+
+# Show everything including env vars
+ink status myapi -e --build-logs 20 --runtime-logs 50 --metrics 7d`,
+	Args: exactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		name := args[0]
 		client := newClient()

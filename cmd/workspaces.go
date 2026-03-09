@@ -25,6 +25,14 @@ var workspacesCmd = &cobra.Command{
 	Use:     "workspaces",
 	Aliases: []string{"ws"},
 	Short:   "Manage workspaces",
+	Example: `# List workspaces
+ink ws
+
+# Create a workspace
+ink ws create "My Team" my-team
+
+# Invite a member
+ink ws invite my-team user@example.com admin`,
 	Run: func(cmd *cobra.Command, args []string) {
 		client := newClient()
 

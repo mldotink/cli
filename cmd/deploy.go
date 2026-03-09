@@ -10,20 +10,20 @@ import (
 
 func init() {
 	f := deployCmd.Flags()
-	f.StringP("repo", "r", "", "Repository name (defaults to service name)")
-	f.IntP("port", "p", 0, "Application port")
-	f.String("host", "", "Git host: ink or github")
-	f.String("branch", "", "Git branch")
-	f.String("memory", "", "Memory: 256Mi, 512Mi, 1Gi, 2Gi, 4Gi, 8Gi")
-	f.String("vcpus", "", "vCPUs: 0.25, 0.5, 1, 2, 4")
-	f.StringArray("env", nil, "Env var KEY=VALUE (repeatable)")
+	f.StringP("repo", "r", "", "Repository name (default: same as service name)")
+	f.IntP("port", "p", 0, "Application port (default: auto-detected)")
+	f.String("host", "ink", "Git host: ink, github")
+	f.String("branch", "main", "Git branch to deploy")
+	f.String("memory", "512Mi", "Memory limit: 256Mi, 512Mi, 1Gi, 2Gi, 4Gi, 8Gi")
+	f.String("vcpus", "0.5", "CPU cores: 0.25, 0.5, 1, 2, 4")
+	f.StringArray("env", nil, "Environment variable as KEY=VALUE (repeatable)")
 	f.String("build-command", "", "Custom build command")
 	f.String("start-command", "", "Custom start command")
-	f.String("root-dir", "", "Root directory (monorepo)")
-	f.String("publish-dir", "", "Static publish directory (e.g. dist)")
-	f.String("dockerfile", "", "Dockerfile path")
-	f.String("buildpack", "", "Build strategy: railpack, dockerfile, static")
-	f.String("region", "", "Deploy region (default: eu-central-1)")
+	f.String("root-dir", "", "Root directory for monorepo projects")
+	f.String("publish-dir", "", "Publish directory for static sites (e.g. dist, build)")
+	f.String("dockerfile", "", "Path to Dockerfile")
+	f.String("buildpack", "railpack", "Build strategy: railpack, dockerfile, static")
+	f.String("region", "eu-central-1", "Deploy region")
 
 	rootCmd.AddCommand(deployCmd)
 }
@@ -32,7 +32,27 @@ var deployCmd = &cobra.Command{
 	Use:   "deploy <name> [flags]",
 	Short: "Create or update a service",
 	Long:  "Creates a new service or updates an existing one. Detects automatically.",
-	Args:  exactArgs(1),
+	Example: `# Deploy a Node.js app
+ink deploy myapp
+
+# Deploy with environment variables
+ink deploy myapi --env DATABASE_URL=postgres://... --env SECRET_KEY=abc123
+
+# Deploy with custom resources
+ink deploy myapi --memory 2Gi --vcpus 1
+
+# Deploy from a GitHub repo on a specific branch
+ink deploy myapi --host github --repo myorg/myrepo --branch develop
+
+# Deploy a static site
+ink deploy docs --buildpack static --publish-dir dist
+
+# Deploy with a Dockerfile
+ink deploy myapi --buildpack dockerfile --dockerfile Dockerfile.prod
+
+# Update memory on an existing service
+ink deploy myapi --memory 4Gi`,
+	Args: exactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		name := args[0]
 		client := newClient()

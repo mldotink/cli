@@ -7,9 +7,9 @@ import (
 )
 
 func init() {
-	reposCreateCmd.Flags().String("host", "ink", "Git host: ink or github")
+	reposCreateCmd.Flags().String("host", "ink", "Git host: ink, github")
 	reposCreateCmd.Flags().String("description", "", "Repository description")
-	reposTokenCmd.Flags().String("host", "ink", "Git host: ink or github")
+	reposTokenCmd.Flags().String("host", "ink", "Git host: ink, github")
 	reposCmd.AddCommand(reposCreateCmd)
 	reposCmd.AddCommand(reposTokenCmd)
 	rootCmd.AddCommand(reposCmd)
@@ -23,7 +23,14 @@ var reposCmd = &cobra.Command{
 var reposCreateCmd = &cobra.Command{
 	Use:   "create <name>",
 	Short: "Create a repository",
-	Args:  exactArgs(1),
+	Example: `# Create an Ink-hosted repo
+ink repos create myapp
+
+# Create and push your code
+ink repos create myapp
+git remote add ink <remote-url>
+git push ink main`,
+	Args: exactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		name := args[0]
 		host, _ := cmd.Flags().GetString("host")
@@ -76,7 +83,8 @@ var reposCreateCmd = &cobra.Command{
 var reposTokenCmd = &cobra.Command{
 	Use:   "token <name>",
 	Short: "Get a fresh push token for a repo",
-	Args:  exactArgs(1),
+	Example: `ink repos token myapp`,
+	Args:    exactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		name := args[0]
 		host, _ := cmd.Flags().GetString("host")

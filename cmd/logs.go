@@ -7,15 +7,23 @@ import (
 )
 
 func init() {
-	logsCmd.Flags().Bool("build", false, "Show build logs (default: runtime)")
-	logsCmd.Flags().IntP("lines", "n", 100, "Number of log lines (max 500)")
+	logsCmd.Flags().Bool("build", false, "Show build logs instead of runtime logs")
+	logsCmd.Flags().IntP("lines", "n", 100, "Number of lines to show (max 500)")
 	rootCmd.AddCommand(logsCmd)
 }
 
 var logsCmd = &cobra.Command{
 	Use:   "logs <name>",
 	Short: "View service logs",
-	Args:  exactArgs(1),
+	Example: `# View runtime logs (last 100 lines)
+ink logs myapi
+
+# View build logs
+ink logs myapi --build
+
+# View last 500 lines
+ink logs myapi -n 500`,
+	Args: exactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		name := args[0]
 		showBuild, _ := cmd.Flags().GetBool("build")

@@ -10,7 +10,7 @@ import (
 func init() {
 	dnsCmd.AddCommand(dnsZonesCmd)
 	dnsCmd.AddCommand(dnsRecordsCmd)
-	dnsAddCmd.Flags().Int("ttl", 300, "TTL in seconds")
+	dnsAddCmd.Flags().Int("ttl", 300, "Time to live in seconds")
 	dnsCmd.AddCommand(dnsAddCmd)
 	dnsCmd.AddCommand(dnsDeleteCmd)
 	rootCmd.AddCommand(dnsCmd)
@@ -73,7 +73,8 @@ var dnsZonesCmd = &cobra.Command{
 var dnsRecordsCmd = &cobra.Command{
 	Use:   "records <zone>",
 	Short: "List DNS records in a zone",
-	Args:  exactArgs(1),
+	Example: `ink dns records example.com`,
+	Args:    exactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		zone := args[0]
 		client := newClient()
@@ -128,8 +129,16 @@ var dnsRecordsCmd = &cobra.Command{
 var dnsAddCmd = &cobra.Command{
 	Use:   "add <zone> <name> <type> <content>",
 	Short: "Add a DNS record",
-	Long:  "Add a DNS record. Types: A, AAAA, CNAME, MX, TXT, CAA",
-	Args:  exactArgs(4),
+	Long:  "Add a DNS record. Supported types: A, AAAA, CNAME, MX, TXT, CAA",
+	Example: `# Add an A record
+ink dns add example.com @ A 1.2.3.4
+
+# Add a CNAME record
+ink dns add example.com www CNAME example.com
+
+# Add a TXT record with custom TTL
+ink dns add example.com @ TXT "v=spf1 include:_spf.google.com ~all" --ttl 3600`,
+	Args: exactArgs(4),
 	Run: func(cmd *cobra.Command, args []string) {
 		zone, name, typ, content := args[0], args[1], args[2], args[3]
 		ttl, _ := cmd.Flags().GetInt("ttl")
@@ -169,7 +178,10 @@ var dnsAddCmd = &cobra.Command{
 var dnsDeleteCmd = &cobra.Command{
 	Use:   "delete <zone> <record-id>",
 	Short: "Delete a DNS record",
-	Args:  exactArgs(2),
+	Example: `# List records first, then delete by ID
+ink dns records example.com
+ink dns delete example.com rec_abc123`,
+	Args: exactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		zone, recordID := args[0], args[1]
 		client := newClient()

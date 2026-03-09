@@ -7,9 +7,9 @@ import (
 )
 
 func init() {
-	activityCmd.Flags().String("entity-type", "", "Filter by entity type (service, resource, domain, workspace, member, invite, repo)")
-	activityCmd.Flags().String("entity-id", "", "Filter by entity ID (requires --entity-type)")
-	activityCmd.Flags().IntP("limit", "n", 20, "Max entries (1-100)")
+	activityCmd.Flags().String("entity-type", "", "Filter: service, resource, domain, workspace, member, invite, repo")
+	activityCmd.Flags().String("entity-id", "", "Filter by entity ID (use with --entity-type)")
+	activityCmd.Flags().IntP("limit", "n", 20, "Number of entries to show (max 100)")
 	rootCmd.AddCommand(activityCmd)
 }
 
@@ -17,6 +17,11 @@ var activityCmd = &cobra.Command{
 	Use:     "activity",
 	Aliases: []string{"audit"},
 	Short:   "View action log",
+	Example: `# Show recent activity
+ink activity
+
+# Show last 50 service-related events
+ink activity --entity-type service -n 50`,
 	Run: func(cmd *cobra.Command, args []string) {
 		entityType, _ := cmd.Flags().GetString("entity-type")
 		entityID, _ := cmd.Flags().GetString("entity-id")

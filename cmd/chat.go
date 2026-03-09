@@ -7,10 +7,10 @@ import (
 )
 
 func init() {
-	chatSendCmd.Flags().String("channel", "", "Project slug for project-scoped chat")
-	chatReadCmd.Flags().String("channel", "", "Project slug for project-scoped chat")
-	chatReadCmd.Flags().Int("cursor", 0, "Cursor from previous read for pagination")
-	chatReadCmd.Flags().Int("limit", 50, "Max messages (1-100)")
+	chatSendCmd.Flags().String("channel", "", "Project slug to scope to a project channel")
+	chatReadCmd.Flags().String("channel", "", "Project slug to scope to a project channel")
+	chatReadCmd.Flags().Int("cursor", 0, "Pagination cursor from previous read")
+	chatReadCmd.Flags().Int("limit", 50, "Number of messages to fetch (max 100)")
 	chatCmd.AddCommand(chatSendCmd)
 	chatCmd.AddCommand(chatReadCmd)
 	rootCmd.AddCommand(chatCmd)
@@ -24,7 +24,9 @@ var chatCmd = &cobra.Command{
 var chatSendCmd = &cobra.Command{
 	Use:   "send <message>",
 	Short: "Send a message to workspace chat",
-	Args:  exactArgs(1),
+	Example: `ink chat send "Deploy is done!"
+ink chat send "Frontend update" --channel my-project`,
+	Args: exactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		content := args[0]
 		channel, _ := cmd.Flags().GetString("channel")

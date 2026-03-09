@@ -12,10 +12,10 @@ import (
 func init() {
 	databasesCmd.AddCommand(databasesCreateCmd)
 	databasesCmd.AddCommand(databasesGetCmd)
-	databasesCreateCmd.Flags().String("type", "", "Database type (default: sqlite)")
-	databasesCreateCmd.Flags().String("size", "", "Size limit (default: 100mb)")
-	databasesCreateCmd.Flags().String("region", "", "Region (default: eu-central)")
-	databasesDeleteCmd.Flags().BoolP("yes", "y", false, "Skip confirmation")
+	databasesCreateCmd.Flags().String("type", "sqlite", "Database type")
+	databasesCreateCmd.Flags().String("size", "100mb", "Storage limit")
+	databasesCreateCmd.Flags().String("region", "eu-central", "Region")
+	databasesDeleteCmd.Flags().BoolP("yes", "y", false, "Skip confirmation prompt")
 	databasesCmd.AddCommand(databasesDeleteCmd)
 	rootCmd.AddCommand(databasesCmd)
 }
@@ -76,7 +76,12 @@ var databasesCmd = &cobra.Command{
 var databasesCreateCmd = &cobra.Command{
 	Use:   "create <name>",
 	Short: "Create a database",
-	Args:  exactArgs(1),
+	Example: `# Create a SQLite database
+ink db create mydb
+
+# Use the returned credentials as env vars
+ink deploy myapi --env DATABASE_URL=libsql://... --env DATABASE_AUTH_TOKEN=...`,
+	Args: exactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		name := args[0]
 		client := newClient()
