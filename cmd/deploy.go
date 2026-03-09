@@ -26,6 +26,55 @@ func init() {
 	f.String("region", "eu-central-1", "Deploy region")
 
 	rootCmd.AddCommand(deployCmd)
+	rootCmd.AddCommand(redeployCmd)
+}
+
+var redeployCmd = &cobra.Command{
+	Use:   "redeploy <name>",
+	Short: "Redeploy a service (pull latest code and rebuild)",
+	Example: `ink redeploy myapi`,
+	Args:    exactArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		name := args[0]
+		client := newClient()
+
+		existing, err := findService(client, name)
+		if err != nil {
+			fatal(err.Error())
+		}
+		if existing == nil {
+			fatal(fmt.Sprintf("Service %q not found", name))
+		}
+
+		input := map[string]any{"name": name}
+		addDefaults(input)
+
+		var result struct {
+			ServiceUpdate struct {
+				ServiceID string `json:"serviceId"`
+				Name      string `json:"name"`
+				Status    string `json:"status"`
+			} `json:"serviceUpdate"`
+		}
+
+		err = client.Do(`mutation($input: UpdateServiceInput!) {
+			serviceUpdate(input: $input) { serviceId name status }
+		}`, map[string]any{"input": input}, &result)
+		if err != nil {
+			fatal(err.Error())
+		}
+
+		s := result.ServiceUpdate
+		if jsonOutput {
+			printJSON(s)
+			return
+		}
+
+		fmt.Println()
+		success(fmt.Sprintf("Redeploying: %s", bold.Render(s.Name)))
+		kv("Status", renderStatus(s.Status))
+		fmt.Println()
+	},
 }
 
 var deployCmd = &cobra.Command{
