@@ -37,6 +37,7 @@ brews:
   - repository:
       owner: mldotink
       name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
     homepage: "https://ml.ink"
     description: "Deploy and manage services on Ink"
     license: "MIT"
