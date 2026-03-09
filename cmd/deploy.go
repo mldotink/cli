@@ -1,7 +1,9 @@
 package cmd
 
 import (
+	"bufio"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/Khan/genqlient/graphql"
@@ -36,6 +38,9 @@ func addServiceFlags(cmd *cobra.Command) {
 	if f.Lookup("env") == nil {
 		f.StringArray("env", nil, "Environment variable as KEY=VALUE (repeatable)")
 	}
+	if f.Lookup("env-file") == nil {
+		f.StringArray("env-file", nil, "Read env vars from file (repeatable, e.g. .env)")
+	}
 	if f.Lookup("build-command") == nil {
 		f.String("build-command", "", "Custom build command")
 	}
@@ -63,8 +68,11 @@ var deployCmd = &cobra.Command{
 	Example: `# Deploy a Node.js app
 ink deploy myapp
 
-# Deploy with environment variables
-ink deploy myapi --env DATABASE_URL=postgres://... --env SECRET_KEY=abc123
+# Deploy with env vars from a file (recommended for secrets)
+ink deploy myapi --env-file .env
+
+# Deploy with inline env vars (for non-sensitive values)
+ink deploy myapi --env NODE_ENV=production --env PORT=8080
 
 # Deploy with custom resources
 ink deploy myapi --memory 2Gi --vcpu 1
@@ -105,8 +113,8 @@ ink redeploy myapi
 # Redeploy and update memory
 ink redeploy myapi --memory 2Gi
 
-# Redeploy with new env vars
-ink redeploy myapi --env DATABASE_URL=postgres://... --env SECRET_KEY=abc123
+# Redeploy with env vars from file
+ink redeploy myapi --env-file .env
 
 # Redeploy with different build settings
 ink redeploy myapi --buildpack dockerfile --dockerfile Dockerfile.prod`,
@@ -186,9 +194,7 @@ func runCreate(cmd *cobra.Command, client graphql.Client, name string) {
 		input.Regions = []string{region}
 	}
 
-	if envs, _ := cmd.Flags().GetStringArray("env"); len(envs) > 0 {
-		input.EnvVars = parseEnvVars(envs)
-	}
+	input.EnvVars = collectEnvVars(cmd)
 
 	result, err := gql.CreateService(ctx(), client, input)
 	if err != nil {
@@ -264,9 +270,7 @@ func runUpdate(cmd *cobra.Command, client graphql.Client, name string) {
 		input.Port = &v
 	}
 
-	if envs, _ := cmd.Flags().GetStringArray("env"); len(envs) > 0 {
-		input.EnvVars = parseEnvVars(envs)
-	}
+	input.EnvVars = collectEnvVars(cmd)
 
 	result, err := gql.UpdateService(ctx(), client, input)
 	if err != nil {
@@ -285,12 +289,66 @@ func runUpdate(cmd *cobra.Command, client graphql.Client, name string) {
 	fmt.Println()
 }
 
-func parseEnvVars(envs []string) []gql.EnvVarInput {
-	var vars []gql.EnvVarInput
-	for _, e := range envs {
-		if k, v, ok := strings.Cut(e, "="); ok {
-			vars = append(vars, gql.EnvVarInput{Key: k, Value: v})
+func collectEnvVars(cmd *cobra.Command) []gql.EnvVarInput {
+	vars := make(map[string]string)
+
+	// env-file first (lower priority)
+	if files, _ := cmd.Flags().GetStringArray("env-file"); len(files) > 0 {
+		for _, f := range files {
+			parsed, err := parseEnvFile(f)
+			if err != nil {
+				fatal(err.Error())
+			}
+			for _, v := range parsed {
+				vars[v.Key] = v.Value
+			}
 		}
 	}
-	return vars
+
+	// --env flags override env-file
+	if envs, _ := cmd.Flags().GetStringArray("env"); len(envs) > 0 {
+		for _, e := range envs {
+			if k, v, ok := strings.Cut(e, "="); ok {
+				vars[k] = v
+			}
+		}
+	}
+
+	if len(vars) == 0 {
+		return nil
+	}
+
+	result := make([]gql.EnvVarInput, 0, len(vars))
+	for k, v := range vars {
+		result = append(result, gql.EnvVarInput{Key: k, Value: v})
+	}
+	return result
+}
+
+func parseEnvFile(path string) ([]gql.EnvVarInput, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, fmt.Errorf("cannot read env file %s: %w", path, err)
+	}
+	defer f.Close()
+
+	var vars []gql.EnvVarInput
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		k, v, ok := strings.Cut(line, "=")
+		if !ok {
+			continue
+		}
+		k = strings.TrimSpace(k)
+		v = strings.TrimSpace(v)
+		if len(v) >= 2 && ((v[0] == '"' && v[len(v)-1] == '"') || (v[0] == '\'' && v[len(v)-1] == '\'')) {
+			v = v[1 : len(v)-1]
+		}
+		vars = append(vars, gql.EnvVarInput{Key: k, Value: v})
+	}
+	return vars, scanner.Err()
 }

@@ -71,6 +71,32 @@ mutation DeleteService($name: String!, $project: String, $ws: String) {
   }
 }
 
+# ── Secrets ────────────────────────────────────────
+
+mutation SetSecrets($input: SetSecretsInput!) {
+  serviceSetSecrets(input: $input) {
+    serviceId
+    name
+    status
+  }
+}
+
+mutation DeleteSecrets($input: DeleteSecretsInput!) {
+  serviceDeleteSecrets(input: $input) {
+    serviceId
+    name
+    status
+  }
+}
+
+mutation UnsetSecret($name: String!, $key: String!, $project: String, $ws: String) {
+  serviceUnsetSecret(name: $name, key: $key, project: $project, workspaceSlug: $ws) {
+    serviceId
+    name
+    status
+  }
+}
+
 # ── Logs & Metrics ─────────────────────────────────
 
 query ServiceLogs($input: LogsInput!) {

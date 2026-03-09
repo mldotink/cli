@@ -608,6 +608,33 @@ extend type Mutation {
   serviceDelete(name: String!, project: String, workspaceSlug: String): DeleteServiceResult!
   """Update service configuration and trigger a redeployment. Only specified fields change. Can also redeploy without changes to pull latest code."""
   serviceUpdate(input: UpdateServiceInput!): UpdateServiceResult!
+  """Set env vars on a service. Merges with existing — new values override, unmentioned vars are preserved unless replace=true."""
+  serviceSetSecrets(input: SetSecretsInput!): SetSecretsResult!
+  """Remove specific env var keys from a service. Triggers a redeploy."""
+  serviceDeleteSecrets(input: DeleteSecretsInput!): SetSecretsResult!
+  """Remove a single env var from a service. Triggers a redeploy."""
+  serviceUnsetSecret(name: String!, key: String!, project: String, workspaceSlug: String): SetSecretsResult!
+}
+
+input SetSecretsInput {
+  name: String!
+  project: String
+  workspaceSlug: String
+  envVars: [EnvVarInput!]!
+  replace: Boolean = false
+}
+
+input DeleteSecretsInput {
+  name: String!
+  project: String
+  workspaceSlug: String
+  keys: [String!]!
+}
+
+type SetSecretsResult {
+  serviceId: ID!
+  name: String!
+  status: String!
 }
 
 input CreateServiceInput {

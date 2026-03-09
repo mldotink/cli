@@ -263,9 +263,9 @@ type CreateServiceInput struct {
 	Port *int `json:"port"`
 	// Environment variables injected into the container at runtime.
 	EnvVars []EnvVarInput `json:"envVars"`
-	// Memory limit: 256Mi, 512Mi, 1Gi, 2Gi, 4Gi, 8Gi.
+	// Memory limit: 128Mi, 256Mi, 512Mi, 1024Mi, 2048Mi, 4096Mi.
 	Memory *string `json:"memory"`
-	// CPU allocation: 0.25, 0.5, 1, 2, 4 vCPUs.
+	// CPU allocation: 0.1, 0.2, 0.25, 0.3, 0.4, 0.5, 1, 2, 3, 4 vCPUs.
 	Vcpus *string `json:"vcpus"`
 	// Custom build command (overrides auto-detected). Only with railpack.
 	BuildCommand *string `json:"buildCommand"`
@@ -448,6 +448,52 @@ type DeleteResourceResponse struct {
 func (v *DeleteResourceResponse) GetResourceDelete() DeleteResourceResourceDeleteDeleteResourceResult {
 	return v.ResourceDelete
 }
+
+type DeleteSecretsInput struct {
+	Name          string   `json:"name"`
+	Project       *string  `json:"project"`
+	WorkspaceSlug *string  `json:"workspaceSlug"`
+	Keys          []string `json:"keys"`
+}
+
+// GetName returns DeleteSecretsInput.Name, and is useful for accessing the field via an interface.
+func (v *DeleteSecretsInput) GetName() string { return v.Name }
+
+// GetProject returns DeleteSecretsInput.Project, and is useful for accessing the field via an interface.
+func (v *DeleteSecretsInput) GetProject() *string { return v.Project }
+
+// GetWorkspaceSlug returns DeleteSecretsInput.WorkspaceSlug, and is useful for accessing the field via an interface.
+func (v *DeleteSecretsInput) GetWorkspaceSlug() *string { return v.WorkspaceSlug }
+
+// GetKeys returns DeleteSecretsInput.Keys, and is useful for accessing the field via an interface.
+func (v *DeleteSecretsInput) GetKeys() []string { return v.Keys }
+
+// DeleteSecretsResponse is returned by DeleteSecrets on success.
+type DeleteSecretsResponse struct {
+	// Remove specific env var keys from a service. Triggers a redeploy.
+	ServiceDeleteSecrets DeleteSecretsServiceDeleteSecretsSetSecretsResult `json:"serviceDeleteSecrets"`
+}
+
+// GetServiceDeleteSecrets returns DeleteSecretsResponse.ServiceDeleteSecrets, and is useful for accessing the field via an interface.
+func (v *DeleteSecretsResponse) GetServiceDeleteSecrets() DeleteSecretsServiceDeleteSecretsSetSecretsResult {
+	return v.ServiceDeleteSecrets
+}
+
+// DeleteSecretsServiceDeleteSecretsSetSecretsResult includes the requested fields of the GraphQL type SetSecretsResult.
+type DeleteSecretsServiceDeleteSecretsSetSecretsResult struct {
+	ServiceId string `json:"serviceId"`
+	Name      string `json:"name"`
+	Status    string `json:"status"`
+}
+
+// GetServiceId returns DeleteSecretsServiceDeleteSecretsSetSecretsResult.ServiceId, and is useful for accessing the field via an interface.
+func (v *DeleteSecretsServiceDeleteSecretsSetSecretsResult) GetServiceId() string { return v.ServiceId }
+
+// GetName returns DeleteSecretsServiceDeleteSecretsSetSecretsResult.Name, and is useful for accessing the field via an interface.
+func (v *DeleteSecretsServiceDeleteSecretsSetSecretsResult) GetName() string { return v.Name }
+
+// GetStatus returns DeleteSecretsServiceDeleteSecretsSetSecretsResult.Status, and is useful for accessing the field via an interface.
+func (v *DeleteSecretsServiceDeleteSecretsSetSecretsResult) GetStatus() string { return v.Status }
 
 // DeleteServiceResponse is returned by DeleteService on success.
 type DeleteServiceResponse struct {
@@ -1543,6 +1589,83 @@ func (v *ServiceMetricsServiceMetricsMemoryUsageMBMetricSeriesDataPointsMetricDa
 	return v.Value
 }
 
+type SetSecretsInput struct {
+	Name          string        `json:"name"`
+	Project       *string       `json:"project"`
+	WorkspaceSlug *string       `json:"workspaceSlug"`
+	EnvVars       []EnvVarInput `json:"envVars"`
+	Replace       *bool         `json:"replace"`
+}
+
+// GetName returns SetSecretsInput.Name, and is useful for accessing the field via an interface.
+func (v *SetSecretsInput) GetName() string { return v.Name }
+
+// GetProject returns SetSecretsInput.Project, and is useful for accessing the field via an interface.
+func (v *SetSecretsInput) GetProject() *string { return v.Project }
+
+// GetWorkspaceSlug returns SetSecretsInput.WorkspaceSlug, and is useful for accessing the field via an interface.
+func (v *SetSecretsInput) GetWorkspaceSlug() *string { return v.WorkspaceSlug }
+
+// GetEnvVars returns SetSecretsInput.EnvVars, and is useful for accessing the field via an interface.
+func (v *SetSecretsInput) GetEnvVars() []EnvVarInput { return v.EnvVars }
+
+// GetReplace returns SetSecretsInput.Replace, and is useful for accessing the field via an interface.
+func (v *SetSecretsInput) GetReplace() *bool { return v.Replace }
+
+// SetSecretsResponse is returned by SetSecrets on success.
+type SetSecretsResponse struct {
+	// Set env vars on a service. Merges with existing — new values override, unmentioned vars are preserved unless replace=true.
+	ServiceSetSecrets SetSecretsServiceSetSecretsSetSecretsResult `json:"serviceSetSecrets"`
+}
+
+// GetServiceSetSecrets returns SetSecretsResponse.ServiceSetSecrets, and is useful for accessing the field via an interface.
+func (v *SetSecretsResponse) GetServiceSetSecrets() SetSecretsServiceSetSecretsSetSecretsResult {
+	return v.ServiceSetSecrets
+}
+
+// SetSecretsServiceSetSecretsSetSecretsResult includes the requested fields of the GraphQL type SetSecretsResult.
+type SetSecretsServiceSetSecretsSetSecretsResult struct {
+	ServiceId string `json:"serviceId"`
+	Name      string `json:"name"`
+	Status    string `json:"status"`
+}
+
+// GetServiceId returns SetSecretsServiceSetSecretsSetSecretsResult.ServiceId, and is useful for accessing the field via an interface.
+func (v *SetSecretsServiceSetSecretsSetSecretsResult) GetServiceId() string { return v.ServiceId }
+
+// GetName returns SetSecretsServiceSetSecretsSetSecretsResult.Name, and is useful for accessing the field via an interface.
+func (v *SetSecretsServiceSetSecretsSetSecretsResult) GetName() string { return v.Name }
+
+// GetStatus returns SetSecretsServiceSetSecretsSetSecretsResult.Status, and is useful for accessing the field via an interface.
+func (v *SetSecretsServiceSetSecretsSetSecretsResult) GetStatus() string { return v.Status }
+
+// UnsetSecretResponse is returned by UnsetSecret on success.
+type UnsetSecretResponse struct {
+	// Remove a single env var from a service. Triggers a redeploy.
+	ServiceUnsetSecret UnsetSecretServiceUnsetSecretSetSecretsResult `json:"serviceUnsetSecret"`
+}
+
+// GetServiceUnsetSecret returns UnsetSecretResponse.ServiceUnsetSecret, and is useful for accessing the field via an interface.
+func (v *UnsetSecretResponse) GetServiceUnsetSecret() UnsetSecretServiceUnsetSecretSetSecretsResult {
+	return v.ServiceUnsetSecret
+}
+
+// UnsetSecretServiceUnsetSecretSetSecretsResult includes the requested fields of the GraphQL type SetSecretsResult.
+type UnsetSecretServiceUnsetSecretSetSecretsResult struct {
+	ServiceId string `json:"serviceId"`
+	Name      string `json:"name"`
+	Status    string `json:"status"`
+}
+
+// GetServiceId returns UnsetSecretServiceUnsetSecretSetSecretsResult.ServiceId, and is useful for accessing the field via an interface.
+func (v *UnsetSecretServiceUnsetSecretSetSecretsResult) GetServiceId() string { return v.ServiceId }
+
+// GetName returns UnsetSecretServiceUnsetSecretSetSecretsResult.Name, and is useful for accessing the field via an interface.
+func (v *UnsetSecretServiceUnsetSecretSetSecretsResult) GetName() string { return v.Name }
+
+// GetStatus returns UnsetSecretServiceUnsetSecretSetSecretsResult.Status, and is useful for accessing the field via an interface.
+func (v *UnsetSecretServiceUnsetSecretSetSecretsResult) GetStatus() string { return v.Status }
+
 type UpdateServiceInput struct {
 	// Name of the service to update (required). Identifies the service within the project.
 	Name          string  `json:"name"`
@@ -1784,6 +1907,14 @@ func (v *__DeleteResourceInput) GetName() string { return v.Name }
 // GetWs returns __DeleteResourceInput.Ws, and is useful for accessing the field via an interface.
 func (v *__DeleteResourceInput) GetWs() *string { return v.Ws }
 
+// __DeleteSecretsInput is used internally by genqlient
+type __DeleteSecretsInput struct {
+	Input DeleteSecretsInput `json:"input"`
+}
+
+// GetInput returns __DeleteSecretsInput.Input, and is useful for accessing the field via an interface.
+func (v *__DeleteSecretsInput) GetInput() DeleteSecretsInput { return v.Input }
+
 // __DeleteServiceInput is used internally by genqlient
 type __DeleteServiceInput struct {
 	Name    string  `json:"name"`
@@ -2007,6 +2138,34 @@ func (v *__ServiceMetricsInput) GetId() string { return v.Id }
 
 // GetTimeRange returns __ServiceMetricsInput.TimeRange, and is useful for accessing the field via an interface.
 func (v *__ServiceMetricsInput) GetTimeRange() MetricTimeRange { return v.TimeRange }
+
+// __SetSecretsInput is used internally by genqlient
+type __SetSecretsInput struct {
+	Input SetSecretsInput `json:"input"`
+}
+
+// GetInput returns __SetSecretsInput.Input, and is useful for accessing the field via an interface.
+func (v *__SetSecretsInput) GetInput() SetSecretsInput { return v.Input }
+
+// __UnsetSecretInput is used internally by genqlient
+type __UnsetSecretInput struct {
+	Name    string  `json:"name"`
+	Key     string  `json:"key"`
+	Project *string `json:"project"`
+	Ws      *string `json:"ws"`
+}
+
+// GetName returns __UnsetSecretInput.Name, and is useful for accessing the field via an interface.
+func (v *__UnsetSecretInput) GetName() string { return v.Name }
+
+// GetKey returns __UnsetSecretInput.Key, and is useful for accessing the field via an interface.
+func (v *__UnsetSecretInput) GetKey() string { return v.Key }
+
+// GetProject returns __UnsetSecretInput.Project, and is useful for accessing the field via an interface.
+func (v *__UnsetSecretInput) GetProject() *string { return v.Project }
+
+// GetWs returns __UnsetSecretInput.Ws, and is useful for accessing the field via an interface.
+func (v *__UnsetSecretInput) GetWs() *string { return v.Ws }
 
 // __UpdateServiceInput is used internally by genqlient
 type __UpdateServiceInput struct {
@@ -2458,6 +2617,42 @@ func DeleteResource(
 	}
 
 	data_ = &DeleteResourceResponse{}
+	resp_ := &graphql.Response{Data: data_}
+
+	err_ = client_.MakeRequest(
+		ctx_,
+		req_,
+		resp_,
+	)
+
+	return data_, err_
+}
+
+// The mutation executed by DeleteSecrets.
+const DeleteSecrets_Operation = `
+mutation DeleteSecrets ($input: DeleteSecretsInput!) {
+	serviceDeleteSecrets(input: $input) {
+		serviceId
+		name
+		status
+	}
+}
+`
+
+func DeleteSecrets(
+	ctx_ context.Context,
+	client_ graphql.Client,
+	input DeleteSecretsInput,
+) (data_ *DeleteSecretsResponse, err_ error) {
+	req_ := &graphql.Request{
+		OpName: "DeleteSecrets",
+		Query:  DeleteSecrets_Operation,
+		Variables: &__DeleteSecretsInput{
+			Input: input,
+		},
+	}
+
+	data_ = &DeleteSecretsResponse{}
 	resp_ := &graphql.Response{Data: data_}
 
 	err_ = client_.MakeRequest(
@@ -3371,6 +3566,84 @@ func ServiceMetrics(
 	}
 
 	data_ = &ServiceMetricsResponse{}
+	resp_ := &graphql.Response{Data: data_}
+
+	err_ = client_.MakeRequest(
+		ctx_,
+		req_,
+		resp_,
+	)
+
+	return data_, err_
+}
+
+// The mutation executed by SetSecrets.
+const SetSecrets_Operation = `
+mutation SetSecrets ($input: SetSecretsInput!) {
+	serviceSetSecrets(input: $input) {
+		serviceId
+		name
+		status
+	}
+}
+`
+
+func SetSecrets(
+	ctx_ context.Context,
+	client_ graphql.Client,
+	input SetSecretsInput,
+) (data_ *SetSecretsResponse, err_ error) {
+	req_ := &graphql.Request{
+		OpName: "SetSecrets",
+		Query:  SetSecrets_Operation,
+		Variables: &__SetSecretsInput{
+			Input: input,
+		},
+	}
+
+	data_ = &SetSecretsResponse{}
+	resp_ := &graphql.Response{Data: data_}
+
+	err_ = client_.MakeRequest(
+		ctx_,
+		req_,
+		resp_,
+	)
+
+	return data_, err_
+}
+
+// The mutation executed by UnsetSecret.
+const UnsetSecret_Operation = `
+mutation UnsetSecret ($name: String!, $key: String!, $project: String, $ws: String) {
+	serviceUnsetSecret(name: $name, key: $key, project: $project, workspaceSlug: $ws) {
+		serviceId
+		name
+		status
+	}
+}
+`
+
+func UnsetSecret(
+	ctx_ context.Context,
+	client_ graphql.Client,
+	name string,
+	key string,
+	project *string,
+	ws *string,
+) (data_ *UnsetSecretResponse, err_ error) {
+	req_ := &graphql.Request{
+		OpName: "UnsetSecret",
+		Query:  UnsetSecret_Operation,
+		Variables: &__UnsetSecretInput{
+			Name:    name,
+			Key:     key,
+			Project: project,
+			Ws:      ws,
+		},
+	}
+
+	data_ = &UnsetSecretResponse{}
 	resp_ := &graphql.Response{Data: data_}
 
 	err_ = client_.MakeRequest(
