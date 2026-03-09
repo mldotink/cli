@@ -1,5 +1,5 @@
 {
-  "name": "@mldotink/ink-cli-darwin-arm64",
+  "name": "@mldotink/cli-darwin-arm64",
   "version": "0.0.0",
   "description": "ink binary for darwin-arm64",
   "os": ["darwin"],

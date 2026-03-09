@@ -1,5 +1,5 @@
 {
-  "name": "@mldotink/ink-cli-linux-x64",
+  "name": "@mldotink/cli-linux-x64",
   "version": "0.0.0",
   "description": "ink binary for linux-x64",
   "os": ["linux"],

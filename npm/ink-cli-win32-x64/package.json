@@ -1,5 +1,5 @@
 {
-  "name": "@mldotink/ink-cli-win32-x64",
+  "name": "@mldotink/cli-win32-x64",
   "version": "0.0.0",
   "description": "ink binary for win32-x64",
   "os": ["win32"],

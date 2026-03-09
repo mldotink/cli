@@ -64,6 +64,6 @@ require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n')
 "
 
 npm publish --access public
-echo "  PUBLISHED @mldotink/ink-cli@${VERSION}"
+echo "  PUBLISHED @mldotink/cli@${VERSION}"
 
 echo "Done!"

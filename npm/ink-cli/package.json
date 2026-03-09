@@ -1,5 +1,5 @@
 {
-  "name": "@mldotink/ink-cli",
+  "name": "@mldotink/cli",
   "version": "0.0.0",
   "description": "Deploy and manage services on Ink (ml.ink)",
   "bin": {
@@ -9,11 +9,11 @@
     "postinstall": "node install.js"
   },
   "optionalDependencies": {
-    "@mldotink/ink-cli-darwin-arm64": "0.0.0",
-    "@mldotink/ink-cli-darwin-x64": "0.0.0",
-    "@mldotink/ink-cli-linux-x64": "0.0.0",
-    "@mldotink/ink-cli-linux-arm64": "0.0.0",
-    "@mldotink/ink-cli-win32-x64": "0.0.0"
+    "@mldotink/cli-darwin-arm64": "0.0.0",
+    "@mldotink/cli-darwin-x64": "0.0.0",
+    "@mldotink/cli-linux-x64": "0.0.0",
+    "@mldotink/cli-linux-arm64": "0.0.0",
+    "@mldotink/cli-win32-x64": "0.0.0"
   },
   "homepage": "https://ml.ink",
   "repository": {

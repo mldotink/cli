@@ -13,7 +13,7 @@ brew install mldotink/tap/ink
 **npm:**
 
 ```bash
-npm install -g @mldotink/ink-cli
+npm install -g @mldotink/cli
 ```
 
 **From source:**
