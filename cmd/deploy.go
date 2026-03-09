@@ -28,10 +28,10 @@ func init() {
 func addServiceFlags(cmd *cobra.Command) {
 	f := cmd.Flags()
 	if f.Lookup("memory") == nil {
-		f.String("memory", "512Mi", "Memory limit: 256Mi, 512Mi, 1Gi, 2Gi, 4Gi, 8Gi")
+		f.String("memory", "256Mi", "Memory limit: 128Mi, 256Mi, 512Mi, 1024Mi, 2048Mi, 4096Mi")
 	}
 	if f.Lookup("vcpu") == nil {
-		f.String("vcpu", "0.5", "CPU cores: 0.25, 0.5, 1, 2, 4")
+		f.String("vcpu", "0.25", "CPU cores: 0.1, 0.2, 0.25, 0.3, 0.4, 0.5, 1, 2, 3, 4")
 	}
 	if f.Lookup("env") == nil {
 		f.StringArray("env", nil, "Environment variable as KEY=VALUE (repeatable)")
