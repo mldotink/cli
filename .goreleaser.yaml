@@ -34,7 +34,8 @@ release:
     name: cli
 
 brews:
-  - repository:
+  - name: ink
+    repository:
       owner: mldotink
       name: homebrew-tap
       token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
