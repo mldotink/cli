@@ -67,7 +67,7 @@ with 'ink repo create' (Ink-managed) or use a GitHub repo with the GitHub App
 installed. The service will be live at {name}.ml.ink in ~60 seconds.
 
 To update or redeploy an existing service, use 'ink redeploy'.`,
-	Example: `# Deploy from an Ink-managed repo (repo name defaults to service name)
+	Example: `# Deploy from an Ink-managed repo
 ink deploy myapp
 
 # Deploy from a GitHub repo
