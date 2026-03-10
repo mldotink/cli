@@ -138,20 +138,20 @@ func oauthBrowserLogin() (string, error) {
 
 		if errMsg != "" {
 			w.Header().Set("Content-Type", "text/html")
-			fmt.Fprintf(w, "<html><body><h2>Login failed</h2><p>%s</p><p>You can close this tab.</p></body></html>", errMsg)
+			fmt.Fprintf(w, callbackPage("Login failed", errMsg, true))
 			result <- oauthResult{err: fmt.Errorf("OAuth error: %s", errMsg)}
 			return
 		}
 
 		if returnedState != state {
 			w.Header().Set("Content-Type", "text/html")
-			fmt.Fprint(w, "<html><body><h2>Login failed</h2><p>State mismatch.</p></body></html>")
+			fmt.Fprint(w, callbackPage("Login failed", "State mismatch — please try again.", true))
 			result <- oauthResult{err: fmt.Errorf("OAuth state mismatch")}
 			return
 		}
 
 		w.Header().Set("Content-Type", "text/html")
-		fmt.Fprint(w, "<html><body><h2>Login successful!</h2><p>You can close this tab and return to the terminal.</p></body></html>")
+		fmt.Fprint(w, callbackPage("You're logged in", "You can close this tab and return to the terminal.", false))
 		result <- oauthResult{code: code}
 	})
 
@@ -211,6 +211,25 @@ func oauthBrowserLogin() (string, error) {
 type oauthResult struct {
 	code string
 	err  error
+}
+
+func callbackPage(title, message string, isError bool) string {
+	bg := "#0a0a0a"
+	color := "#e0e0e0"
+	accent := "#22c55e"
+	if isError {
+		accent = "#ef4444"
+	}
+	return fmt.Sprintf(`<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Ink — %s</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:%s;color:%s;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh}
+.card{text-align:center;max-width:420px;padding:48px}
+h1{font-size:28px;font-weight:600;margin-bottom:12px;color:%s}
+p{font-size:16px;line-height:1.5;opacity:0.7}
+</style></head>
+<body><div class="card"><h1>%s</h1><p>%s</p></div></body></html>`, title, bg, color, accent, title, message)
 }
 
 func openBrowser(url string) {
