@@ -34,10 +34,10 @@ ink login
 ink deploy my-app --repo my-repo --port 3000
 
 # List services
-ink list
+ink service
 
-# View service details
-ink status my-app
+# View service details with metrics
+ink service my-app --metrics 1h
 
 # Tail logs
 ink logs my-app
@@ -70,8 +70,8 @@ ink login
 ```
 ink deploy <name>           Deploy a new service or update existing
 ink redeploy <name>         Redeploy with optional config changes
-ink list                    List all services (aliases: ls, services)
-ink status <name>           Show service details
+ink service [name]          List services or show service details
+ink status <name>           Show service details with optional logs/metrics
 ink logs <name>             Tail service logs
 ink delete <name>           Delete a service
 

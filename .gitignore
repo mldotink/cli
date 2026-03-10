@@ -1,4 +1,6 @@
 /ink
+/cli
 dist/
 .DS_Store
 npm/ink-cli-*/bin/
+.ink

@@ -28,9 +28,7 @@ ink logs myapi -n 500`,
 		name := args[0]
 		showBuild, _ := cmd.Flags().GetBool("deploy")
 		lines, _ := cmd.Flags().GetInt("lines")
-		if lines > 500 {
-			lines = 500
-		}
+		lines = clampLogLines(lines)
 		client := newClient()
 
 		svc := findService(name)
@@ -43,41 +41,25 @@ ink logs myapi -n 500`,
 			logType = gql.LogTypeBuild
 		}
 
-		result, err := gql.ServiceLogs(ctx(), client, gql.LogsInput{
-			ServiceId: svc.Id,
-			LogType:   logType,
-			Limit:     &lines,
-		})
+		result, err := fetchServiceLogs(client, svc.Id, logType, lines)
 		if err != nil {
 			fatal(err.Error())
 		}
 
 		if jsonOutput {
-			printJSON(result.ServiceLogs)
+			printJSON(result)
 			return
 		}
 
-		entries := result.ServiceLogs.Entries
+		entries := result.Entries
 		if len(entries) == 0 {
 			fmt.Println(dim.Render("  No logs"))
 			return
 		}
 
-		for _, e := range entries {
-			ts := dim.Render(e.Timestamp)
-			level := ""
-			if e.Level != nil {
-				switch *e.Level {
-				case "error", "ERROR":
-					level = red.Render("[ERR] ")
-				case "warn", "WARN":
-					level = yellow.Render("[WRN] ")
-				}
-			}
-			fmt.Printf("%s %s%s\n", ts, level, e.Message)
-		}
+		printLogEntries(entries, "")
 
-		if result.ServiceLogs.HasMore {
+		if result.HasMore {
 			fmt.Println(dim.Render(fmt.Sprintf("\n  ... more available — use -n %d", lines+100)))
 		}
 	},

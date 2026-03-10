@@ -118,6 +118,12 @@ query ServiceMetrics($id: ID!, $timeRange: MetricTimeRange!) {
     memoryUsageMB {
       dataPoints { timestamp value }
     }
+    networkReceiveBytesPerSec {
+      dataPoints { timestamp value }
+    }
+    networkTransmitBytesPerSec {
+      dataPoints { timestamp value }
+    }
     memoryLimitMB
     cpuLimitVCPUs
   }

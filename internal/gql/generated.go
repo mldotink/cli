@@ -1519,10 +1519,12 @@ func (v *ServiceMetricsResponse) GetServiceMetrics() ServiceMetricsServiceMetric
 
 // ServiceMetricsServiceMetrics includes the requested fields of the GraphQL type ServiceMetrics.
 type ServiceMetricsServiceMetrics struct {
-	CpuUsage      ServiceMetricsServiceMetricsCpuUsageMetricSeries      `json:"cpuUsage"`
-	MemoryUsageMB ServiceMetricsServiceMetricsMemoryUsageMBMetricSeries `json:"memoryUsageMB"`
-	MemoryLimitMB float64                                               `json:"memoryLimitMB"`
-	CpuLimitVCPUs float64                                               `json:"cpuLimitVCPUs"`
+	CpuUsage                   ServiceMetricsServiceMetricsCpuUsageMetricSeries                   `json:"cpuUsage"`
+	MemoryUsageMB              ServiceMetricsServiceMetricsMemoryUsageMBMetricSeries              `json:"memoryUsageMB"`
+	NetworkReceiveBytesPerSec  ServiceMetricsServiceMetricsNetworkReceiveBytesPerSecMetricSeries  `json:"networkReceiveBytesPerSec"`
+	NetworkTransmitBytesPerSec ServiceMetricsServiceMetricsNetworkTransmitBytesPerSecMetricSeries `json:"networkTransmitBytesPerSec"`
+	MemoryLimitMB              float64                                                            `json:"memoryLimitMB"`
+	CpuLimitVCPUs              float64                                                            `json:"cpuLimitVCPUs"`
 }
 
 // GetCpuUsage returns ServiceMetricsServiceMetrics.CpuUsage, and is useful for accessing the field via an interface.
@@ -1533,6 +1535,16 @@ func (v *ServiceMetricsServiceMetrics) GetCpuUsage() ServiceMetricsServiceMetric
 // GetMemoryUsageMB returns ServiceMetricsServiceMetrics.MemoryUsageMB, and is useful for accessing the field via an interface.
 func (v *ServiceMetricsServiceMetrics) GetMemoryUsageMB() ServiceMetricsServiceMetricsMemoryUsageMBMetricSeries {
 	return v.MemoryUsageMB
+}
+
+// GetNetworkReceiveBytesPerSec returns ServiceMetricsServiceMetrics.NetworkReceiveBytesPerSec, and is useful for accessing the field via an interface.
+func (v *ServiceMetricsServiceMetrics) GetNetworkReceiveBytesPerSec() ServiceMetricsServiceMetricsNetworkReceiveBytesPerSecMetricSeries {
+	return v.NetworkReceiveBytesPerSec
+}
+
+// GetNetworkTransmitBytesPerSec returns ServiceMetricsServiceMetrics.NetworkTransmitBytesPerSec, and is useful for accessing the field via an interface.
+func (v *ServiceMetricsServiceMetrics) GetNetworkTransmitBytesPerSec() ServiceMetricsServiceMetricsNetworkTransmitBytesPerSecMetricSeries {
+	return v.NetworkTransmitBytesPerSec
 }
 
 // GetMemoryLimitMB returns ServiceMetricsServiceMetrics.MemoryLimitMB, and is useful for accessing the field via an interface.
@@ -1590,6 +1602,58 @@ func (v *ServiceMetricsServiceMetricsMemoryUsageMBMetricSeriesDataPointsMetricDa
 
 // GetValue returns ServiceMetricsServiceMetricsMemoryUsageMBMetricSeriesDataPointsMetricDataPoint.Value, and is useful for accessing the field via an interface.
 func (v *ServiceMetricsServiceMetricsMemoryUsageMBMetricSeriesDataPointsMetricDataPoint) GetValue() float64 {
+	return v.Value
+}
+
+// ServiceMetricsServiceMetricsNetworkReceiveBytesPerSecMetricSeries includes the requested fields of the GraphQL type MetricSeries.
+type ServiceMetricsServiceMetricsNetworkReceiveBytesPerSecMetricSeries struct {
+	DataPoints []ServiceMetricsServiceMetricsNetworkReceiveBytesPerSecMetricSeriesDataPointsMetricDataPoint `json:"dataPoints"`
+}
+
+// GetDataPoints returns ServiceMetricsServiceMetricsNetworkReceiveBytesPerSecMetricSeries.DataPoints, and is useful for accessing the field via an interface.
+func (v *ServiceMetricsServiceMetricsNetworkReceiveBytesPerSecMetricSeries) GetDataPoints() []ServiceMetricsServiceMetricsNetworkReceiveBytesPerSecMetricSeriesDataPointsMetricDataPoint {
+	return v.DataPoints
+}
+
+// ServiceMetricsServiceMetricsNetworkReceiveBytesPerSecMetricSeriesDataPointsMetricDataPoint includes the requested fields of the GraphQL type MetricDataPoint.
+type ServiceMetricsServiceMetricsNetworkReceiveBytesPerSecMetricSeriesDataPointsMetricDataPoint struct {
+	Timestamp string  `json:"timestamp"`
+	Value     float64 `json:"value"`
+}
+
+// GetTimestamp returns ServiceMetricsServiceMetricsNetworkReceiveBytesPerSecMetricSeriesDataPointsMetricDataPoint.Timestamp, and is useful for accessing the field via an interface.
+func (v *ServiceMetricsServiceMetricsNetworkReceiveBytesPerSecMetricSeriesDataPointsMetricDataPoint) GetTimestamp() string {
+	return v.Timestamp
+}
+
+// GetValue returns ServiceMetricsServiceMetricsNetworkReceiveBytesPerSecMetricSeriesDataPointsMetricDataPoint.Value, and is useful for accessing the field via an interface.
+func (v *ServiceMetricsServiceMetricsNetworkReceiveBytesPerSecMetricSeriesDataPointsMetricDataPoint) GetValue() float64 {
+	return v.Value
+}
+
+// ServiceMetricsServiceMetricsNetworkTransmitBytesPerSecMetricSeries includes the requested fields of the GraphQL type MetricSeries.
+type ServiceMetricsServiceMetricsNetworkTransmitBytesPerSecMetricSeries struct {
+	DataPoints []ServiceMetricsServiceMetricsNetworkTransmitBytesPerSecMetricSeriesDataPointsMetricDataPoint `json:"dataPoints"`
+}
+
+// GetDataPoints returns ServiceMetricsServiceMetricsNetworkTransmitBytesPerSecMetricSeries.DataPoints, and is useful for accessing the field via an interface.
+func (v *ServiceMetricsServiceMetricsNetworkTransmitBytesPerSecMetricSeries) GetDataPoints() []ServiceMetricsServiceMetricsNetworkTransmitBytesPerSecMetricSeriesDataPointsMetricDataPoint {
+	return v.DataPoints
+}
+
+// ServiceMetricsServiceMetricsNetworkTransmitBytesPerSecMetricSeriesDataPointsMetricDataPoint includes the requested fields of the GraphQL type MetricDataPoint.
+type ServiceMetricsServiceMetricsNetworkTransmitBytesPerSecMetricSeriesDataPointsMetricDataPoint struct {
+	Timestamp string  `json:"timestamp"`
+	Value     float64 `json:"value"`
+}
+
+// GetTimestamp returns ServiceMetricsServiceMetricsNetworkTransmitBytesPerSecMetricSeriesDataPointsMetricDataPoint.Timestamp, and is useful for accessing the field via an interface.
+func (v *ServiceMetricsServiceMetricsNetworkTransmitBytesPerSecMetricSeriesDataPointsMetricDataPoint) GetTimestamp() string {
+	return v.Timestamp
+}
+
+// GetValue returns ServiceMetricsServiceMetricsNetworkTransmitBytesPerSecMetricSeriesDataPointsMetricDataPoint.Value, and is useful for accessing the field via an interface.
+func (v *ServiceMetricsServiceMetricsNetworkTransmitBytesPerSecMetricSeriesDataPointsMetricDataPoint) GetValue() float64 {
 	return v.Value
 }
 
@@ -3550,6 +3614,18 @@ query ServiceMetrics ($id: ID!, $timeRange: MetricTimeRange!) {
 			}
 		}
 		memoryUsageMB {
+			dataPoints {
+				timestamp
+				value
+			}
+		}
+		networkReceiveBytesPerSec {
+			dataPoints {
+				timestamp
+				value
+			}
+		}
+		networkTransmitBytesPerSec {
 			dataPoints {
 				timestamp
 				value
