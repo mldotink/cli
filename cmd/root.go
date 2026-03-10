@@ -158,13 +158,21 @@ var rootCmd = &cobra.Command{
 }
 
 func init() {
+	cobra.EnableCommandSorting = false
+
 	rootCmd.PersistentFlags().BoolVar(&jsonOutput, "json", false, "Output as JSON")
 	rootCmd.PersistentFlags().StringVar(&apiKeyFlag, "api-key", "", "API key (overrides config)")
 	rootCmd.PersistentFlags().StringVarP(&wsFlag, "workspace", "w", "", "Workspace slug (overrides config)")
 	rootCmd.PersistentFlags().StringVar(&projectFlag, "project", "", "Project slug (overrides config)")
+
+	rootCmd.AddGroup(
+		&cobra.Group{ID: "core", Title: "Core"},
+		&cobra.Group{ID: "manage", Title: "Manage"},
+	)
 }
 
 func Execute() {
+	registerCommands()
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 
 	opts := []fang.Option{

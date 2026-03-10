@@ -10,12 +10,12 @@ import (
 func init() {
 	domainsCmd.AddCommand(domainsAddCmd)
 	domainsCmd.AddCommand(domainsRemoveCmd)
-	rootCmd.AddCommand(domainsCmd)
 }
 
 var domainsCmd = &cobra.Command{
-	Use:   "domains",
-	Short: "Manage custom domains",
+	GroupID: "manage",
+	Use:     "domains",
+	Short:   "Manage custom domains",
 }
 
 var domainsAddCmd = &cobra.Command{

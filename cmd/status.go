@@ -16,12 +16,12 @@ func init() {
 	statusCmd.Flags().Int("deploy-logs", 0, "Include N deploy log lines (max 500)")
 	statusCmd.Flags().Int("runtime-logs", 0, "Include N runtime log lines (max 500)")
 	statusCmd.Flags().String("metrics", "", "Include CPU/memory metrics: 1h, 6h, 7d, 30d")
-	rootCmd.AddCommand(statusCmd)
 }
 
 var statusCmd = &cobra.Command{
-	Use:   "status <name>",
-	Short: "Get service details",
+	GroupID: "core",
+	Use:     "status <name>",
+	Short:   "Get service details",
 	Example: `# Show service status
 ink status myapi
 

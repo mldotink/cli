@@ -13,12 +13,12 @@ func init() {
 	reposTokenCmd.Flags().String("host", "ink", "Git host: ink, github")
 	reposCmd.AddCommand(reposCreateCmd)
 	reposCmd.AddCommand(reposTokenCmd)
-	rootCmd.AddCommand(reposCmd)
 }
 
 var reposCmd = &cobra.Command{
-	Use:   "repos",
-	Short: "Manage repositories",
+	GroupID: "core",
+	Use:     "repos",
+	Short:   "Manage repositories",
 }
 
 var reposCreateCmd = &cobra.Command{

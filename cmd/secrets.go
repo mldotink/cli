@@ -21,10 +21,10 @@ func init() {
 	secretsCmd.AddCommand(secretsListCmd)
 	secretsCmd.AddCommand(secretsDeleteCmd)
 	secretsCmd.AddCommand(secretsUnsetCmd)
-	rootCmd.AddCommand(secretsCmd)
 }
 
 var secretsCmd = &cobra.Command{
+	GroupID: "manage",
 	Use:     "secrets",
 	Aliases: []string{"env"},
 	Short:   "Manage service environment variables and secrets",

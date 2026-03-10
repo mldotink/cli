@@ -14,12 +14,12 @@ var deleteYes bool
 
 func init() {
 	deleteCmd.Flags().BoolVarP(&deleteYes, "yes", "y", false, "Skip confirmation prompt")
-	rootCmd.AddCommand(deleteCmd)
 }
 
 var deleteCmd = &cobra.Command{
-	Use:   "delete <name>",
-	Short: "Delete a service",
+	GroupID: "manage",
+	Use:     "delete <name>",
+	Short:   "Delete a service",
 	Example: `ink delete myapi
 ink delete myapi -y`,
 	Args: exactArgs(1),

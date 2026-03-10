@@ -22,8 +22,6 @@ func init() {
 
 	addServiceFlags(redeployCmd)
 
-	rootCmd.AddCommand(deployCmd)
-	rootCmd.AddCommand(redeployCmd)
 }
 
 // addServiceFlags registers the flags shared between deploy and redeploy.
@@ -62,8 +60,9 @@ func addServiceFlags(cmd *cobra.Command) {
 }
 
 var deployCmd = &cobra.Command{
-	Use:   "deploy <name> [flags]",
-	Short: "Create or update a service",
+	GroupID: "core",
+	Use:     "deploy <name> [flags]",
+	Short:   "Create or update a service",
 	Long:  "Creates a new service or updates an existing one. Detects automatically.",
 	Example: `# Deploy a Node.js app
 ink deploy myapp
@@ -104,8 +103,9 @@ ink deploy myapi --memory 4Gi`,
 }
 
 var redeployCmd = &cobra.Command{
-	Use:   "redeploy <name>",
-	Short: "Redeploy a service (pull latest code and rebuild)",
+	GroupID: "core",
+	Use:     "redeploy <name>",
+	Short:   "Redeploy a service (pull latest code and rebuild)",
 	Long:  "Triggers a rebuild and redeploy. Optionally update configuration at the same time.",
 	Example: `# Redeploy with latest code
 ink redeploy myapi

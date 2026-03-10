@@ -19,10 +19,10 @@ func init() {
 	workspacesCmd.AddCommand(workspacesDeclineCmd)
 	workspacesCmd.AddCommand(workspacesRevokeCmd)
 	workspacesCmd.AddCommand(workspacesRemoveCmd)
-	rootCmd.AddCommand(workspacesCmd)
 }
 
 var workspacesCmd = &cobra.Command{
+	GroupID: "core",
 	Use:     "workspaces",
 	Aliases: []string{"ws"},
 	Short:   "Manage workspaces",

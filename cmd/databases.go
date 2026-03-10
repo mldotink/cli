@@ -18,10 +18,10 @@ func init() {
 	databasesCreateCmd.Flags().String("region", "eu-central", "Region")
 	databasesDeleteCmd.Flags().BoolP("yes", "y", false, "Skip confirmation prompt")
 	databasesCmd.AddCommand(databasesDeleteCmd)
-	rootCmd.AddCommand(databasesCmd)
 }
 
 var databasesCmd = &cobra.Command{
+	GroupID: "manage",
 	Use:     "databases",
 	Aliases: []string{"db"},
 	Short:   "Manage databases",

@@ -10,12 +10,12 @@ import (
 func init() {
 	logsCmd.Flags().Bool("deploy", false, "Show deploy logs instead of runtime logs")
 	logsCmd.Flags().IntP("lines", "n", 100, "Number of lines to show (max 500)")
-	rootCmd.AddCommand(logsCmd)
 }
 
 var logsCmd = &cobra.Command{
-	Use:   "logs <name>",
-	Short: "View service logs",
+	GroupID: "manage",
+	Use:     "logs <name>",
+	Short:   "View service logs",
 	Example: `# View runtime logs (last 100 lines)
 ink logs myapi
 

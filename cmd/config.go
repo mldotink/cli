@@ -13,12 +13,12 @@ func init() {
 
 	configCmd.AddCommand(configSetCmd)
 	configCmd.AddCommand(configShowCmd)
-	rootCmd.AddCommand(configCmd)
 }
 
 var configCmd = &cobra.Command{
-	Use:   "config",
-	Short: "Manage CLI configuration",
+	GroupID: "manage",
+	Use:     "config",
+	Short:   "Manage CLI configuration",
 	Example: `# Set default workspace
 ink config set workspace my-team
 

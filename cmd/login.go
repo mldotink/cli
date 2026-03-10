@@ -23,12 +23,12 @@ const oauthServerBase = "https://mcp.ml.ink"
 func init() {
 	loginCmd.Flags().Bool("global", true, "Save globally (~/.config/ink/config)")
 	loginCmd.Flags().String("api-key", "", "Authenticate with an API key directly")
-	rootCmd.AddCommand(loginCmd)
 }
 
 var loginCmd = &cobra.Command{
-	Use:   "login",
-	Short: "Authenticate with Ink",
+	GroupID: "core",
+	Use:     "login",
+	Short:   "Authenticate with Ink",
 	Long:  "Log in via browser (default) or provide an API key directly.",
 	Example: `# Browser login (opens browser, recommended)
 ink login

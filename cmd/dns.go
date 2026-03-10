@@ -14,12 +14,12 @@ func init() {
 	dnsAddCmd.Flags().Int("ttl", 300, "Time to live in seconds")
 	dnsCmd.AddCommand(dnsAddCmd)
 	dnsCmd.AddCommand(dnsDeleteCmd)
-	rootCmd.AddCommand(dnsCmd)
 }
 
 var dnsCmd = &cobra.Command{
-	Use:   "dns",
-	Short: "Manage DNS zones and records",
+	GroupID: "manage",
+	Use:     "dns",
+	Short:   "Manage DNS zones and records",
 }
 
 var dnsZonesCmd = &cobra.Command{

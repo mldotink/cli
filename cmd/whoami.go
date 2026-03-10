@@ -7,12 +7,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func init() {
-	rootCmd.AddCommand(whoamiCmd)
-}
 
 var whoamiCmd = &cobra.Command{
-	Use:   "whoami",
+	GroupID: "core",
+	Use:     "whoami",
 	Short: "Show current account",
 	Run: func(cmd *cobra.Command, args []string) {
 		client := newClient()

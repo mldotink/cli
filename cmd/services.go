@@ -8,11 +8,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func init() {
-	rootCmd.AddCommand(listCmd)
-}
 
 var listCmd = &cobra.Command{
+	GroupID: "core",
 	Use:     "services [name]",
 	Aliases: []string{"service"},
 	Short:   "List services or show service details",

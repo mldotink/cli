@@ -13,10 +13,10 @@ import (
 func init() {
 	projectsDeleteCmd.Flags().BoolP("yes", "y", false, "Skip confirmation")
 	projectsCmd.AddCommand(projectsDeleteCmd)
-	rootCmd.AddCommand(projectsCmd)
 }
 
 var projectsCmd = &cobra.Command{
+	GroupID: "manage",
 	Use:     "projects",
 	Aliases: []string{"proj"},
 	Short:   "List projects",

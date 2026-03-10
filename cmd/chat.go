@@ -14,12 +14,12 @@ func init() {
 	chatReadCmd.Flags().Int("limit", 50, "Number of messages to fetch (max 100)")
 	chatCmd.AddCommand(chatSendCmd)
 	chatCmd.AddCommand(chatReadCmd)
-	rootCmd.AddCommand(chatCmd)
 }
 
 var chatCmd = &cobra.Command{
-	Use:   "chat",
-	Short: "Workspace chat",
+	GroupID: "manage",
+	Use:     "chat",
+	Short:   "Workspace chat",
 }
 
 var chatSendCmd = &cobra.Command{
