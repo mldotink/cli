@@ -266,6 +266,7 @@ func resolveMetricTimeRange(timeRange string) (gql.MetricTimeRange, string, bool
 	gqlRange := map[string]gql.MetricTimeRange{
 		"1h":  gql.MetricTimeRangeOneHour,
 		"6h":  gql.MetricTimeRangeSixHours,
+		"24h": gql.MetricTimeRangeTwentyFourHours,
 		"7d":  gql.MetricTimeRangeSevenDays,
 		"30d": gql.MetricTimeRangeThirtyDays,
 	}
@@ -296,7 +297,7 @@ func latestMetricPoint[T any](points []T, timestamp func(T) string, value func(T
 func fetchServiceMetrics(client graphql.Client, serviceID, timeRange string) (gql.ServiceMetricsServiceMetrics, string, error) {
 	tr, normalized, ok := resolveMetricTimeRange(timeRange)
 	if !ok {
-		return gql.ServiceMetricsServiceMetrics{}, "", fmt.Errorf("invalid metrics range %q (use 1h, 6h, 7d, 30d)", timeRange)
+		return gql.ServiceMetricsServiceMetrics{}, "", fmt.Errorf("invalid metrics range %q (use 1h, 6h, 24h, 7d, 30d)", timeRange)
 	}
 
 	maxDataPoints := defaultMetricsMaxDataPoints
@@ -577,7 +578,7 @@ func formatMetricTimeLabel(sample *metricSample, timeRange string) string {
 	}
 
 	layout := "15:04"
-	if timeRange == "7d" || timeRange == "30d" {
+	if timeRange == "24h" || timeRange == "7d" || timeRange == "30d" {
 		layout = "01-02 15:04"
 	}
 

@@ -39,6 +39,9 @@ ink service
 # View service details with metrics
 ink service my-app --metrics 1h
 
+# View the last 24 hours of metrics
+ink metrics my-app --range 24h
+
 # Query logs from the last hour
 ink logs my-app --query timeout --since 1h
 

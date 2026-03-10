@@ -13,7 +13,7 @@ func init() {
 	listCmd.Flags().BoolP("env", "e", false, "Show environment variables when inspecting one service")
 	listCmd.Flags().Int("deploy-logs", 0, "Include N deploy log lines when inspecting one service (max 500)")
 	listCmd.Flags().Int("runtime-logs", 0, "Include N runtime log lines when inspecting one service (max 500)")
-	listCmd.Flags().String("metrics", "", "Include CPU/memory/network metrics when inspecting one service: 1h, 6h, 7d, 30d")
+	listCmd.Flags().String("metrics", "", "Include CPU/memory/network metrics when inspecting one service: 1h, 6h, 24h, 7d, 30d")
 	listCmd.Flags().String("log-query", "", "Filter included logs by text query when inspecting one service")
 	listCmd.Flags().String("since", "", "Filter included logs from this time (RFC3339 or relative duration like 1h)")
 	listCmd.Flags().String("until", "", "Filter included logs until this time (RFC3339 or relative duration like 30m)")
@@ -38,6 +38,9 @@ ink service myapp
 
 # Include logs and metrics in the service detail view
 ink service myapp --runtime-logs 50 --metrics 1h
+
+# Include metrics for the last 24 hours
+ink service myapp --metrics 24h
 
 # Filter included runtime logs
 ink service myapp --runtime-logs 100 --log-query timeout --since 1h`,

@@ -7,7 +7,7 @@ import (
 )
 
 func init() {
-	metricsCmd.Flags().StringP("range", "r", "1h", "Metrics range: 1h, 6h, 7d, 30d")
+	metricsCmd.Flags().StringP("range", "r", "1h", "Metrics range: 1h, 6h, 24h, 7d, 30d")
 }
 
 var metricsCmd = &cobra.Command{
@@ -18,6 +18,9 @@ ink metrics myapi
 
 # View the last 7 days
 ink metrics myapi --range 7d
+
+# View the last 24 hours
+ink metrics myapi --range 24h
 
 # Output raw metric series as JSON
 ink metrics myapi --range 30d --json`,

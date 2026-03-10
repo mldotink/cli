@@ -1289,15 +1289,17 @@ func (v *LogsInput) GetLimit() *int { return v.Limit }
 type MetricTimeRange string
 
 const (
-	MetricTimeRangeOneHour    MetricTimeRange = "ONE_HOUR"
-	MetricTimeRangeSixHours   MetricTimeRange = "SIX_HOURS"
-	MetricTimeRangeSevenDays  MetricTimeRange = "SEVEN_DAYS"
-	MetricTimeRangeThirtyDays MetricTimeRange = "THIRTY_DAYS"
+	MetricTimeRangeOneHour         MetricTimeRange = "ONE_HOUR"
+	MetricTimeRangeSixHours        MetricTimeRange = "SIX_HOURS"
+	MetricTimeRangeTwentyFourHours MetricTimeRange = "TWENTY_FOUR_HOURS"
+	MetricTimeRangeSevenDays       MetricTimeRange = "SEVEN_DAYS"
+	MetricTimeRangeThirtyDays      MetricTimeRange = "THIRTY_DAYS"
 )
 
 var AllMetricTimeRange = []MetricTimeRange{
 	MetricTimeRangeOneHour,
 	MetricTimeRangeSixHours,
+	MetricTimeRangeTwentyFourHours,
 	MetricTimeRangeSevenDays,
 	MetricTimeRangeThirtyDays,
 }
