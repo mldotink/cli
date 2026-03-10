@@ -39,8 +39,11 @@ ink service
 # View service details with metrics
 ink service my-app --metrics 1h
 
-# Tail logs
-ink logs my-app
+# Query logs from the last hour
+ink logs my-app --query timeout --since 1h
+
+# View metrics directly
+ink metrics my-app --range 7d
 
 # Redeploy
 ink redeploy my-app
@@ -72,6 +75,7 @@ ink deploy <name>           Deploy a new service or update existing
 ink redeploy <name>         Redeploy with optional config changes
 ink service [name]          List services or show service details
 ink status <name>           Show service details with optional logs/metrics
+ink metrics <name>          Show service metrics
 ink logs <name>             Tail service logs
 ink delete <name>           Delete a service
 

@@ -14,6 +14,9 @@ func init() {
 	listCmd.Flags().Int("deploy-logs", 0, "Include N deploy log lines when inspecting one service (max 500)")
 	listCmd.Flags().Int("runtime-logs", 0, "Include N runtime log lines when inspecting one service (max 500)")
 	listCmd.Flags().String("metrics", "", "Include CPU/memory/network metrics when inspecting one service: 1h, 6h, 7d, 30d")
+	listCmd.Flags().String("log-query", "", "Filter included logs by text query when inspecting one service")
+	listCmd.Flags().String("since", "", "Filter included logs from this time (RFC3339 or relative duration like 1h)")
+	listCmd.Flags().String("until", "", "Filter included logs until this time (RFC3339 or relative duration like 30m)")
 }
 
 var listCmd = &cobra.Command{
@@ -34,15 +37,26 @@ ink service --all
 ink service myapp
 
 # Include logs and metrics in the service detail view
-ink service myapp --runtime-logs 50 --metrics 1h`,
+ink service myapp --runtime-logs 50 --metrics 1h
+
+# Filter included runtime logs
+ink service myapp --runtime-logs 100 --log-query timeout --since 1h`,
 	Args: maxArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
+		opts, err := inspectOptionsFromCommand(cmd)
+		if err != nil {
+			fatal(err.Error())
+		}
+		if err := validateInspectOptions(opts); err != nil {
+			fatal(err.Error())
+		}
+
 		if len(args) == 1 {
-			showServiceDetail(args[0], inspectOptionsFromCommand(cmd))
+			showServiceDetail(args[0], opts)
 			return
 		}
 
-		if hasInspectFlags(inspectOptionsFromCommand(cmd)) {
+		if hasInspectFlags(opts) {
 			fatal("Detail flags require a service name: ink service <name> --metrics 1h")
 		}
 

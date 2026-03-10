@@ -10,6 +10,9 @@ import (
 func init() {
 	logsCmd.Flags().Bool("deploy", false, "Show deploy logs instead of runtime logs")
 	logsCmd.Flags().IntP("lines", "n", 100, "Number of lines to show (max 500)")
+	logsCmd.Flags().String("query", "", "Filter logs by text query")
+	logsCmd.Flags().String("since", "", "Filter logs from this time (RFC3339 or relative duration like 1h)")
+	logsCmd.Flags().String("until", "", "Filter logs until this time (RFC3339 or relative duration like 30m)")
 }
 
 var logsCmd = &cobra.Command{
@@ -20,6 +23,9 @@ ink logs myapi
 
 # View deploy/build logs
 ink logs myapi --deploy
+
+# Search runtime logs from the last hour
+ink logs myapi --query timeout --since 1h
 
 # View last 500 lines
 ink logs myapi -n 500`,
@@ -41,7 +47,12 @@ ink logs myapi -n 500`,
 			logType = gql.LogTypeBuild
 		}
 
-		result, err := fetchServiceLogs(client, svc.Id, logType, lines)
+		filters, err := logFiltersFromCommand(cmd, "query")
+		if err != nil {
+			fatal(err.Error())
+		}
+
+		result, err := fetchServiceLogs(client, svc.Id, logType, lines, filters)
 		if err != nil {
 			fatal(err.Error())
 		}

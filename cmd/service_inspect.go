@@ -4,35 +4,106 @@ import (
 	"fmt"
 	"math"
 	"strings"
+	"time"
 
 	"github.com/Khan/genqlient/graphql"
 	"github.com/mldotink/cli/internal/gql"
 	"github.com/spf13/cobra"
 )
 
+type logFilterOptions struct {
+	query     *string
+	startTime *string
+	endTime   *string
+}
+
+func (f logFilterOptions) used() bool {
+	return f.query != nil || f.startTime != nil || f.endTime != nil
+}
+
 type serviceInspectOptions struct {
 	includeEnv   bool
 	deployLines  int
 	runtimeLines int
 	metricsRange string
+	logFilters   logFilterOptions
 }
 
-func inspectOptionsFromCommand(cmd *cobra.Command) serviceInspectOptions {
+func inspectOptionsFromCommand(cmd *cobra.Command) (serviceInspectOptions, error) {
 	includeEnv, _ := cmd.Flags().GetBool("env")
 	deployLines, _ := cmd.Flags().GetInt("deploy-logs")
 	runtimeLines, _ := cmd.Flags().GetInt("runtime-logs")
 	metricsRange, _ := cmd.Flags().GetString("metrics")
+	logFilters, err := logFiltersFromCommand(cmd, "log-query")
+	if err != nil {
+		return serviceInspectOptions{}, err
+	}
 
 	return serviceInspectOptions{
 		includeEnv:   includeEnv,
 		deployLines:  clampLogLines(deployLines),
 		runtimeLines: clampLogLines(runtimeLines),
 		metricsRange: strings.TrimSpace(metricsRange),
+		logFilters:   logFilters,
+	}, nil
+}
+
+func logFiltersFromCommand(cmd *cobra.Command, queryFlagName string) (logFilterOptions, error) {
+	query, _ := cmd.Flags().GetString(queryFlagName)
+	since, _ := cmd.Flags().GetString("since")
+	until, _ := cmd.Flags().GetString("until")
+
+	filters := logFilterOptions{
+		query: ptr(strings.TrimSpace(query)),
 	}
+
+	if strings.TrimSpace(since) != "" {
+		parsed, err := parseLogTimeFlag(since)
+		if err != nil {
+			return logFilterOptions{}, fmt.Errorf("invalid --since: %w", err)
+		}
+		filters.startTime = &parsed
+	}
+
+	if strings.TrimSpace(until) != "" {
+		parsed, err := parseLogTimeFlag(until)
+		if err != nil {
+			return logFilterOptions{}, fmt.Errorf("invalid --until: %w", err)
+		}
+		filters.endTime = &parsed
+	}
+
+	if filters.startTime != nil && filters.endTime != nil && *filters.startTime > *filters.endTime {
+		return logFilterOptions{}, fmt.Errorf("--since must be before --until")
+	}
+
+	return filters, nil
+}
+
+func parseLogTimeFlag(raw string) (string, error) {
+	value := strings.TrimSpace(raw)
+	for _, layout := range []string{time.RFC3339Nano, time.RFC3339} {
+		if parsed, err := time.Parse(layout, value); err == nil {
+			return parsed.UTC().Format(time.RFC3339Nano), nil
+		}
+	}
+
+	if duration, err := time.ParseDuration(value); err == nil {
+		return time.Now().Add(-duration).UTC().Format(time.RFC3339Nano), nil
+	}
+
+	return "", fmt.Errorf("use RFC3339 or a relative duration like 1h")
+}
+
+func validateInspectOptions(opts serviceInspectOptions) error {
+	if opts.logFilters.used() && opts.deployLines == 0 && opts.runtimeLines == 0 {
+		return fmt.Errorf("log filters require --deploy-logs and/or --runtime-logs")
+	}
+	return nil
 }
 
 func hasInspectFlags(opts serviceInspectOptions) bool {
-	return opts.includeEnv || opts.deployLines > 0 || opts.runtimeLines > 0 || opts.metricsRange != ""
+	return opts.includeEnv || opts.deployLines > 0 || opts.runtimeLines > 0 || opts.metricsRange != "" || opts.logFilters.used()
 }
 
 func clampLogLines(lines int) int {
@@ -63,11 +134,11 @@ func inspectService(name string, opts serviceInspectOptions, printTip bool) {
 	client := newClient()
 
 	if opts.deployLines > 0 {
-		fetchAndPrintLogs(client, svc.Id, gql.LogTypeBuild, opts.deployLines, "Deploy Logs")
+		fetchAndPrintLogs(client, svc.Id, gql.LogTypeBuild, opts.deployLines, opts.logFilters, "Deploy Logs")
 	}
 
 	if opts.runtimeLines > 0 {
-		fetchAndPrintLogs(client, svc.Id, gql.LogTypeRuntime, opts.runtimeLines, "Runtime Logs")
+		fetchAndPrintLogs(client, svc.Id, gql.LogTypeRuntime, opts.runtimeLines, opts.logFilters, "Runtime Logs")
 	}
 
 	if opts.metricsRange != "" {
@@ -135,10 +206,13 @@ func renderServiceDetail(svc *gql.FindServiceServiceListServiceConnectionNodesSe
 	return d.String()
 }
 
-func fetchServiceLogs(client graphql.Client, serviceID string, logType gql.LogType, lines int) (gql.ServiceLogsServiceLogsLogsResult, error) {
+func fetchServiceLogs(client graphql.Client, serviceID string, logType gql.LogType, lines int, filters logFilterOptions) (gql.ServiceLogsServiceLogsLogsResult, error) {
 	result, err := gql.ServiceLogs(ctx(), client, gql.LogsInput{
 		ServiceId: serviceID,
 		LogType:   logType,
+		StartTime: filters.startTime,
+		EndTime:   filters.endTime,
+		Query:     filters.query,
 		Limit:     &lines,
 	})
 	if err != nil {
@@ -147,8 +221,8 @@ func fetchServiceLogs(client graphql.Client, serviceID string, logType gql.LogTy
 	return result.ServiceLogs, nil
 }
 
-func fetchAndPrintLogs(client graphql.Client, serviceID string, logType gql.LogType, lines int, title string) {
-	result, err := fetchServiceLogs(client, serviceID, logType, lines)
+func fetchAndPrintLogs(client graphql.Client, serviceID string, logType gql.LogType, lines int, filters logFilterOptions, title string) {
+	result, err := fetchServiceLogs(client, serviceID, logType, lines, filters)
 	if err != nil {
 		fmt.Println()
 		fmt.Printf("  %s %s\n", red.Render("!"), dim.Render(title+": "+err.Error()))
@@ -194,20 +268,14 @@ func resolveMetricTimeRange(timeRange string) (gql.MetricTimeRange, string, bool
 }
 
 func fetchAndPrintMetrics(client graphql.Client, serviceID, timeRange string) {
-	tr, normalized, ok := resolveMetricTimeRange(timeRange)
-	if !ok {
-		fmt.Printf("  %s Invalid metrics range %q (use 1h, 6h, 7d, 30d)\n", red.Render("!"), timeRange)
-		return
-	}
-
-	result, err := gql.ServiceMetrics(ctx(), client, serviceID, tr)
+	metrics, normalized, err := fetchServiceMetrics(client, serviceID, timeRange)
 	if err != nil {
 		fmt.Println()
-		fmt.Printf("  %s %s\n", red.Render("!"), dim.Render("Metrics: "+err.Error()))
+		fmt.Printf("  %s %s\n", red.Render("!"), dim.Render(err.Error()))
 		return
 	}
 
-	printMetricsSection(result.ServiceMetrics, normalized)
+	printMetricsSection(metrics, normalized)
 }
 
 func latestMetricPoint[T any](points []T, timestamp func(T) string, value func(T) float64) (string, float64, bool) {
@@ -218,12 +286,26 @@ func latestMetricPoint[T any](points []T, timestamp func(T) string, value func(T
 	return timestamp(latest), value(latest), true
 }
 
-func printMetricsSection(m gql.ServiceMetricsServiceMetrics, timeRange string) {
+func fetchServiceMetrics(client graphql.Client, serviceID, timeRange string) (gql.ServiceMetricsServiceMetrics, string, error) {
+	tr, normalized, ok := resolveMetricTimeRange(timeRange)
+	if !ok {
+		return gql.ServiceMetricsServiceMetrics{}, "", fmt.Errorf("invalid metrics range %q (use 1h, 6h, 7d, 30d)", timeRange)
+	}
+
+	result, err := gql.ServiceMetrics(ctx(), client, serviceID, tr)
+	if err != nil {
+		return gql.ServiceMetricsServiceMetrics{}, "", fmt.Errorf("metrics: %w", err)
+	}
+
+	return result.ServiceMetrics, normalized, nil
+}
+
+func printMetricsSection(m gql.ServiceMetricsServiceMetrics, timeRange string) bool {
 	if len(m.CpuUsage.DataPoints) == 0 &&
 		len(m.MemoryUsageMB.DataPoints) == 0 &&
 		len(m.NetworkReceiveBytesPerSec.DataPoints) == 0 &&
 		len(m.NetworkTransmitBytesPerSec.DataPoints) == 0 {
-		return
+		return false
 	}
 
 	fmt.Println()
@@ -276,6 +358,8 @@ func printMetricsSection(m gql.ServiceMetricsServiceMetrics, timeRange string) {
 		fmt.Printf("  Net TX     %s  %s\n",
 			formatBytesPerSecond(value), dim.Render(ts))
 	}
+
+	return true
 }
 
 func formatBytesPerSecond(value float64) string {

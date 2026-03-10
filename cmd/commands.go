@@ -10,6 +10,7 @@ func registerCommands() {
 	rootCmd.AddCommand(listCmd) // services
 	rootCmd.AddCommand(reposCmd)
 	rootCmd.AddCommand(statusCmd)
+	rootCmd.AddCommand(metricsCmd)
 	rootCmd.AddCommand(redeployCmd)
 	rootCmd.AddCommand(workspacesCmd)
 
