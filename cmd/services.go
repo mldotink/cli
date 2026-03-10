@@ -12,9 +12,8 @@ func init() {
 }
 
 var listCmd = &cobra.Command{
-	Use:     "list",
-	Aliases: []string{"ls", "services"},
-	Short:   "List services",
+	Use:   "services",
+	Short: "List services",
 	Run: func(cmd *cobra.Command, args []string) {
 		client := newClient()
 
