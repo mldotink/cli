@@ -24,26 +24,15 @@ func init() {
 }
 
 var secretsCmd = &cobra.Command{
-	Use:     "secrets",
-	Aliases: []string{"env"},
-	Short:   "Manage service environment variables and secrets",
-	Example: `# Import secrets from file
-ink secrets import myapi --file .env
-
-# Import from stdin
-cat .env | ink secrets import myapi
-
-# Set individual vars
-ink secrets set myapi KEY1=value1 KEY2=value2
-
-# List all vars
-ink secrets list myapi
-
-# Remove a single var
-ink secrets unset myapi DATABASE_URL
-
-# Remove multiple vars
-ink secrets delete myapi KEY1 KEY2`,
+	Use:     "secret",
+	Aliases: []string{"secrets", "env"},
+	Short:   "Set, list, and remove environment variables and secrets on a service",
+	Example: `ink secret import myapi --file .env
+cat .env | ink secret import myapi
+ink secret set myapi KEY1=value1 KEY2=value2
+ink secret list myapi
+ink secret unset myapi DATABASE_URL
+ink secret delete myapi KEY1 KEY2`,
 }
 
 var secretsImportCmd = &cobra.Command{
@@ -51,13 +40,13 @@ var secretsImportCmd = &cobra.Command{
 	Short: "Import env vars from file or stdin",
 	Long:  "Reads KEY=VALUE pairs and merges them with existing vars. Triggers a redeploy.",
 	Example: `# From file
-ink secrets import myapi --file .env
+ink secret import myapi --file .env
 
 # From stdin
-cat .env | ink secrets import myapi
+cat .env | ink secret import myapi
 
 # Replace all vars (removes unspecified)
-ink secrets import myapi --file .env --replace`,
+ink secret import myapi --file .env --replace`,
 	Args: exactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		name := args[0]

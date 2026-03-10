@@ -21,9 +21,12 @@ func init() {
 }
 
 var databasesCmd = &cobra.Command{
-	Use:     "databases",
-	Aliases: []string{"db"},
-	Short:   "Manage databases",
+	Use:     "database",
+	Aliases: []string{"databases", "db"},
+	Short:   "Provision and manage SQLite databases. Returns connection URL and auth token.",
+	Example: `ink database create mydb
+ink database get mydb
+ink database delete mydb`,
 	Run: func(cmd *cobra.Command, args []string) {
 		client := newClient()
 
@@ -40,26 +43,26 @@ var databasesCmd = &cobra.Command{
 		nodes := result.ResourceList.Nodes
 		if len(nodes) == 0 {
 			fmt.Println(dim.Render("  No databases"))
-			return
+		} else {
+			var rows [][]string
+			for _, r := range nodes {
+				rows = append(rows, []string{r.Name, r.Type, renderStatus(r.Status), r.Region})
+			}
+
+			fmt.Println()
+			fmt.Println(styledTable([]string{"NAME", "TYPE", "STATUS", "REGION"}, rows))
+			tableFooter(len(nodes), "database")
 		}
 
-		var rows [][]string
-		for _, r := range nodes {
-			rows = append(rows, []string{r.Name, r.Type, renderStatus(r.Status), r.Region})
-		}
-
-		fmt.Println()
-		fmt.Println(styledTable([]string{"NAME", "TYPE", "STATUS", "REGION"}, rows))
-		tableFooter(len(nodes), "database")
-		fmt.Println()
+		printSubcommands(cmd)
 	},
 }
 
 var databasesCreateCmd = &cobra.Command{
 	Use:   "create <name>",
-	Short: "Create a database",
+	Short: "Create a managed SQLite database. Returns libSQL URL and auth token.",
 	Example: `# Create a SQLite database
-ink db create mydb
+ink database create mydb
 
 # Use the returned credentials as env vars
 ink deploy myapi --env DATABASE_URL=libsql://... --env DATABASE_AUTH_TOKEN=...`,

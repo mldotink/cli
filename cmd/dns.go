@@ -17,8 +17,16 @@ func init() {
 }
 
 var dnsCmd = &cobra.Command{
-	Use:     "dns",
-	Short:   "Manage DNS zones and records",
+	Use:   "dns",
+	Short: "Manage DNS zones and records for delegated domains",
+	Long: `Manage DNS zones and records. Zone delegation must be set up first at
+https://ml.ink/dns — add a TXT verification record and point NS records
+to ns1.ml.ink / ns2.ml.ink. Once active, add A, AAAA, CNAME, MX, TXT, and CAA records.`,
+	Example: `ink dns zones
+ink dns records example.com
+ink dns add example.com www A 1.2.3.4
+ink dns add example.com api CNAME myapi.ml.ink
+ink dns delete example.com rec_abc123`,
 }
 
 var dnsZonesCmd = &cobra.Command{

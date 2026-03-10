@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/Khan/genqlient/graphql"
 	"github.com/charmbracelet/fang"
@@ -142,12 +143,12 @@ var Version = "dev"
 
 var rootCmd = &cobra.Command{
 	Use:   "ink",
-	Short: "Deploy and manage services on Ink (ml.ink)",
+	Short: "Deploy apps and services to the cloud in seconds (ml.ink)",
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		cfg = config.Resolve(apiKeyFlag, wsFlag, projectFlag)
 
 		switch cmd.Name() {
-		case "login", "help", "completion", "workspaces", "whoami", "account", "services", "service", "config":
+		case "login", "help", "completion", "workspace", "workspaces", "whoami", "account", "service", "services", "config":
 			// These commands don't operate within a workspace/project scope.
 		default:
 			if !jsonOutput {
@@ -261,6 +262,42 @@ func tableFooter(count int, noun string) {
 		noun += "s"
 	}
 	fmt.Println(dim.Render(fmt.Sprintf("  %d %s", count, noun)))
+}
+
+// ── Subcommand footer ─────────────────────────────
+
+func printSubcommands(cmd *cobra.Command) {
+	fmt.Println()
+	fmt.Println(bold.Render("  Commands"))
+	for _, sub := range cmd.Commands() {
+		if !sub.Hidden {
+			fmt.Printf("    %-20s %s\n", accent.Render(sub.Name()), dim.Render(sub.Short))
+		}
+	}
+	if cmd.HasExample() {
+		fmt.Println()
+		fmt.Println(bold.Render("  Examples"))
+		for _, line := range strings.Split(cmd.Example, "\n") {
+			if strings.HasPrefix(line, "#") {
+				fmt.Println("    " + dim.Render(line))
+			} else {
+				fmt.Println("    " + line)
+			}
+		}
+	}
+	fmt.Println()
+	fmt.Println(dim.Render(fmt.Sprintf("  Use \"ink %s <command> --help\" for more information.", cmd.Name())))
+	fmt.Println()
+}
+
+// ── Time formatting ───────────────────────────────
+
+func fmtTime(raw string) string {
+	t, err := time.Parse(time.RFC3339Nano, raw)
+	if err != nil {
+		return raw
+	}
+	return t.Local().Format("2006-01-02 15:04:05")
 }
 
 // ── Config helpers ─────────────────────────────────

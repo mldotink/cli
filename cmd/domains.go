@@ -13,14 +13,20 @@ func init() {
 }
 
 var domainsCmd = &cobra.Command{
-	Use:     "domains",
-	Short:   "Manage custom domains",
+	Use:     "domain",
+	Aliases: []string{"domains"},
+	Short:   "Attach or remove custom domains from services",
+	Long: `Manage custom domains for your services. Requires a delegated DNS zone first —
+visit https://ml.ink/dns to add a TXT verification record and point NS records
+to ns1.ml.ink / ns2.ml.ink. Once the zone is active, attach subdomains to services.`,
+	Example: `ink domain add myapi api.example.com
+ink domain remove myapi`,
 }
 
 var domainsAddCmd = &cobra.Command{
 	Use:   "add <service> <domain>",
 	Short: "Add a custom domain to a service",
-	Example: `ink domains add myapi api.example.com`,
+	Example: `ink domain add myapi api.example.com`,
 	Args:    exactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		svc, domain := args[0], args[1]
@@ -50,7 +56,7 @@ var domainsAddCmd = &cobra.Command{
 var domainsRemoveCmd = &cobra.Command{
 	Use:   "remove <service>",
 	Short: "Remove custom domain from a service",
-	Example: `ink domains remove myapi`,
+	Example: `ink domain remove myapi`,
 	Args:    exactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		svc := args[0]

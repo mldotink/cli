@@ -13,8 +13,8 @@ func init() {
 }
 
 var logsCmd = &cobra.Command{
-	Use:     "logs <name>",
-	Short:   "View service logs",
+	Use:   "logs <name>",
+	Short: "View runtime or deploy/build logs for a service",
 	Example: `# View runtime logs (last 100 lines)
 ink logs myapi
 

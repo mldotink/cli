@@ -19,8 +19,8 @@ func init() {
 }
 
 var statusCmd = &cobra.Command{
-	Use:     "status <name>",
-	Short:   "Get service details",
+	Use:   "status <name>",
+	Short: "Get service details with optional logs and CPU/memory metrics",
 	Example: `# Show service status
 ink status myapi
 

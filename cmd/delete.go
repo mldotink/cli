@@ -17,8 +17,8 @@ func init() {
 }
 
 var deleteCmd = &cobra.Command{
-	Use:     "delete <name>",
-	Short:   "Delete a service",
+	Use:   "delete <name>",
+	Short: "Permanently delete a service and its deployment",
 	Example: `ink delete myapi
 ink delete myapi -y`,
 	Args: exactArgs(1),

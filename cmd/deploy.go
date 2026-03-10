@@ -62,7 +62,9 @@ func addServiceFlags(cmd *cobra.Command) {
 var deployCmd = &cobra.Command{
 	Use:     "deploy <name> [flags]",
 	Short:   "Create or update a service",
-	Long:  "Creates a new service or updates an existing one. Detects automatically.",
+	Long: `Creates a new service or updates an existing one (auto-detected). Takes code
+from a git repo to a running service at {name}.ml.ink in ~60 seconds. Supports
+web apps, APIs, static sites, background workers, and any containerizable process.`,
 	Example: `# Deploy a Node.js app
 ink deploy myapp
 
@@ -104,7 +106,8 @@ ink deploy myapi --memory 4Gi`,
 var redeployCmd = &cobra.Command{
 	Use:     "redeploy <name>",
 	Short:   "Redeploy a service (pull latest code and rebuild)",
-	Long:  "Triggers a rebuild and redeploy. Optionally update configuration at the same time.",
+	Long: `Triggers a rebuild and redeploy by pulling the latest code. Optionally update
+configuration (memory, env vars, buildpack) at the same time.`,
 	Example: `# Redeploy with latest code
 ink redeploy myapi
 

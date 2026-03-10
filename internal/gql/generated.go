@@ -26,7 +26,8 @@ type AccountStatusAccountStatusUser struct {
 	// Whether the user has connected GitHub via OAuth, enabling repo creation and code push on their behalf.
 	HasGitHubOAuth bool `json:"hasGitHubOAuth"`
 	// Whether the Ink GitHub App is installed on at least one repo, enabling code pulls during deployment.
-	HasGitHubApp bool `json:"hasGitHubApp"`
+	HasGitHubApp bool     `json:"hasGitHubApp"`
+	GithubScopes []string `json:"githubScopes"`
 	// Slug of the user's personal workspace (used when workspaceSlug is omitted).
 	DefaultWorkspace string `json:"defaultWorkspace"`
 	// Subscription tier for the default workspace: 'free', 'pro', 'team'. Null if no subscription.
@@ -47,6 +48,9 @@ func (v *AccountStatusAccountStatusUser) GetHasGitHubOAuth() bool { return v.Has
 
 // GetHasGitHubApp returns AccountStatusAccountStatusUser.HasGitHubApp, and is useful for accessing the field via an interface.
 func (v *AccountStatusAccountStatusUser) GetHasGitHubApp() bool { return v.HasGitHubApp }
+
+// GetGithubScopes returns AccountStatusAccountStatusUser.GithubScopes, and is useful for accessing the field via an interface.
+func (v *AccountStatusAccountStatusUser) GetGithubScopes() []string { return v.GithubScopes }
 
 // GetDefaultWorkspace returns AccountStatusAccountStatusUser.DefaultWorkspace, and is useful for accessing the field via an interface.
 func (v *AccountStatusAccountStatusUser) GetDefaultWorkspace() string { return v.DefaultWorkspace }
@@ -2216,6 +2220,7 @@ query AccountStatus {
 		githubUsername
 		hasGitHubOAuth
 		hasGitHubApp
+		githubScopes
 		defaultWorkspace
 		subscriptionTier
 	}

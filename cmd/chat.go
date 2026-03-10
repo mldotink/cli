@@ -17,8 +17,11 @@ func init() {
 }
 
 var chatCmd = &cobra.Command{
-	Use:     "chat",
-	Short:   "Workspace chat",
+	Use:   "chat",
+	Short: "Send and read messages in workspace or project channels",
+	Example: `ink chat send "hello team" -w my-team
+ink chat read -w my-team
+ink chat read -w my-team --channel backend`,
 }
 
 var chatSendCmd = &cobra.Command{
@@ -88,7 +91,7 @@ var chatReadCmd = &cobra.Command{
 
 		fmt.Println()
 		for _, m := range msgs {
-			fmt.Printf("  %s  %s\n", bold.Render(m.SenderName), dim.Render(m.CreatedAt))
+			fmt.Printf("  %s  %s\n", bold.Render(m.SenderName), dim.Render(fmtTime(m.CreatedAt)))
 			fmt.Printf("  %s\n\n", m.Content)
 		}
 		if result.ChatRead.HasMore {

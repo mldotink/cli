@@ -22,17 +22,20 @@ func init() {
 }
 
 var workspacesCmd = &cobra.Command{
-	Use:     "workspaces",
-	Aliases: []string{"ws"},
-	Short:   "Manage workspaces",
+	Use:     "workspace",
+	Aliases: []string{"workspaces", "ws"},
+	Short:   "Create and manage team workspaces, members, and invites",
 	Example: `# List workspaces
-ink ws
+ink workspace
 
 # Create a workspace
-ink ws create "My Team" my-team
+ink workspace create "My Team" my-team
 
 # Invite a member
-ink ws invite my-team user@example.com admin`,
+ink workspace invite my-team user@example.com admin
+
+# List members
+ink workspace members my-team`,
 	Run: func(cmd *cobra.Command, args []string) {
 		client := newClient()
 
@@ -64,16 +67,7 @@ ink ws invite my-team user@example.com admin`,
 			tableFooter(len(wsList), "workspace")
 		}
 
-		fmt.Println()
-		fmt.Println(dim.Render("Available Commands:"))
-		for _, sub := range cmd.Commands() {
-			if !sub.Hidden {
-				fmt.Printf("  %-20s %s\n", sub.Name(), sub.Short)
-			}
-		}
-		fmt.Println()
-		fmt.Println(dim.Render(fmt.Sprintf("Use \"ink ws <command> --help\" for more information about a command.")))
-		fmt.Println()
+		printSubcommands(cmd)
 	},
 }
 

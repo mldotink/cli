@@ -23,11 +23,8 @@ type Resolved struct {
 func Resolve(flagAPIKey, flagWorkspace, flagProject string) *Resolved {
 	r := &Resolved{Sources: make(map[string]string)}
 
-	// 1. Global config (try new path, fall back to legacy)
+	// 1. Global config
 	g := loadFile(GlobalPath())
-	if g == nil {
-		g = loadFile(legacyGlobalPath())
-	}
 	if g != nil {
 		set(r, "api_key", g.APIKey, "global")
 		set(r, "workspace", g.Workspace, "global")
@@ -86,11 +83,6 @@ func loadFile(path string) *Config {
 	}
 	var cfg Config
 	if err := json.Unmarshal(data, &cfg); err != nil {
-		// Fallback: plain text API key (backward compat with skill format)
-		key := strings.TrimSpace(string(data))
-		if strings.HasPrefix(key, "dk_") {
-			return &Config{APIKey: key}
-		}
 		return nil
 	}
 	return &cfg
@@ -102,14 +94,6 @@ func GlobalPath() string {
 		return ""
 	}
 	return filepath.Join(home, ".config", "ink", "config")
-}
-
-func legacyGlobalPath() string {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return ""
-	}
-	return filepath.Join(home, ".config", "ink", "credentials")
 }
 
 func SaveGlobal(cfg *Config) error {

@@ -26,8 +26,8 @@ func init() {
 }
 
 var loginCmd = &cobra.Command{
-	Use:     "login",
-	Short:   "Authenticate with Ink",
+	Use:   "login",
+	Short: "Authenticate with Ink via browser OAuth or API key",
 	Long:  "Log in via browser (default) or provide an API key directly.",
 	Example: `# Browser login (opens browser, recommended)
 ink login

@@ -375,6 +375,7 @@ query AccountStatus {
     githubUsername
     hasGitHubOAuth
     hasGitHubApp
+    githubScopes
     defaultWorkspace
     subscriptionTier
   }

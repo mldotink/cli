@@ -16,9 +16,11 @@ func init() {
 }
 
 var projectsCmd = &cobra.Command{
-	Use:     "projects",
-	Aliases: []string{"proj"},
-	Short:   "List projects",
+	Use:     "project",
+	Aliases: []string{"projects", "proj"},
+	Short:   "List and manage projects. Services are grouped into projects.",
+	Example: `ink project
+ink project delete my-project`,
 	Run: func(cmd *cobra.Command, args []string) {
 		client := newClient()
 
@@ -46,16 +48,7 @@ var projectsCmd = &cobra.Command{
 			tableFooter(len(nodes), "project")
 		}
 
-		fmt.Println()
-		fmt.Println(dim.Render("Available Commands:"))
-		for _, sub := range cmd.Commands() {
-			if !sub.Hidden {
-				fmt.Printf("  %-20s %s\n", sub.Name(), sub.Short)
-			}
-		}
-		fmt.Println()
-		fmt.Println(dim.Render(fmt.Sprintf("Use \"ink projects <command> --help\" for more information about a command.")))
-		fmt.Println()
+		printSubcommands(cmd)
 	},
 }
 

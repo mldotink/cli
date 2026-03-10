@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/mldotink/cli/internal/gql"
 	"github.com/spf13/cobra"
@@ -11,7 +12,9 @@ import (
 var whoamiCmd = &cobra.Command{
 	Use:     "account",
 	Aliases: []string{"whoami"},
-	Short:   "Show current account",
+	Short:   "Show account info, plan, and GitHub App/OAuth connection status",
+	Example: `ink account
+ink account --json`,
 	Run: func(cmd *cobra.Command, args []string) {
 		client := newClient()
 
@@ -42,19 +45,28 @@ var whoamiCmd = &cobra.Command{
 		}
 		d.kv("Plan", tier)
 
-		gh := dim.Render("not connected")
+		// GitHub App — required for deploying from GitHub repos
+		if a.HasGitHubApp {
+			d.kv("GitHub App", green.Render("installed")+"  "+dim.Render("deploy from GitHub repos"))
+		} else {
+			d.kv("GitHub App", dim.Render("not installed")+"  "+dim.Render("install at ml.ink to deploy GitHub repos"))
+		}
+
+		// GitHub OAuth — enables agents to create repos on your behalf
 		if a.HasGitHubOAuth {
 			name := ""
 			if a.GithubUsername != nil {
 				name = " (" + *a.GithubUsername + ")"
 			}
-			if a.HasGitHubApp {
-				gh = green.Render("connected") + name
-			} else {
-				gh = "OAuth only" + name + dim.Render(" — install GitHub App at ml.ink")
-			}
+			d.kv("GitHub OAuth", green.Render("connected")+name+"  "+dim.Render("agents can create GitHub repos"))
+		} else {
+			d.kv("GitHub OAuth", dim.Render("not connected")+"  "+dim.Render("connect to let agents create GitHub repos"))
 		}
-		d.kv("GitHub", gh)
+
+		// GitHub scopes
+		if len(a.GithubScopes) > 0 {
+			d.kv("OAuth Scopes", strings.Join(a.GithubScopes, ", "))
+		}
 
 		fmt.Println()
 		fmt.Println(d.String())

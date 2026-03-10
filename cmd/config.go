@@ -18,16 +18,9 @@ func init() {
 var configCmd = &cobra.Command{
 	Use:     "config",
 	Short:   "Manage CLI configuration",
-	Example: `# Set default workspace
-ink config set workspace my-team
-
-# Set default project
+	Example: `ink config set workspace my-team
 ink config set project backend
-
-# Save to local .ink file (project-scoped)
 ink config set workspace my-team --local
-
-# Show current config
 ink config show`,
 }
 

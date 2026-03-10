@@ -10,15 +10,15 @@ import (
 
 
 var listCmd = &cobra.Command{
-	Use:     "services [name]",
-	Aliases: []string{"service"},
-	Short:   "List services or show service details",
-	Long:    "Lists services across all workspaces by default. Pass a service name to see details.",
+	Use:     "service [name]",
+	Aliases: []string{"services"},
+	Short:   "List all deployed services or show details for one",
+	Long: `Lists all deployed services across workspaces. Use -w to filter by workspace.
+Pass a service name to see full details including repo, branch, resources, and URLs.`,
 	Example: `# List all services
-ink services
+ink service
 
 # Show service details
-ink services myapp
 ink service myapp`,
 	Args: maxArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
@@ -194,10 +194,10 @@ func showServiceDetail(name string) {
 
 	// Timestamps
 	if svc.CreatedAt != "" {
-		d.kv("Created", dim.Render(svc.CreatedAt))
+		d.kv("Created", dim.Render(fmtTime(svc.CreatedAt)))
 	}
 	if svc.UpdatedAt != "" {
-		d.kv("Updated", dim.Render(svc.UpdatedAt))
+		d.kv("Updated", dim.Render(fmtTime(svc.UpdatedAt)))
 	}
 
 	// Env var count hint
