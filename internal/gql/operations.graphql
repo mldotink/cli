@@ -1,7 +1,7 @@
 # ── Services ───────────────────────────────────────
 
-query ListServices($ws: String) {
-  serviceList(workspaceSlug: $ws) {
+query ListServices($ws: String, $proj: String) {
+  serviceList(workspaceSlug: $ws, projectSlug: $proj) {
     nodes {
       name
       status

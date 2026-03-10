@@ -596,7 +596,7 @@ type Mutation {
 }
 extend type Query {
   """Paginated list of all services in a workspace. Returns status from the latest deployment."""
-  serviceList(first: Int, after: String, workspaceSlug: String): ServiceConnection!
+  serviceList(first: Int, after: String, workspaceSlug: String, projectSlug: String): ServiceConnection!
   """Full details for a single service including config, env vars, custom domain, and deployment status."""
   serviceGet(id: ID!): Service
 }

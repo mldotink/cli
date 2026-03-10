@@ -2029,11 +2029,15 @@ func (v *__ListResourcesInput) GetWs() *string { return v.Ws }
 
 // __ListServicesInput is used internally by genqlient
 type __ListServicesInput struct {
-	Ws *string `json:"ws"`
+	Ws   *string `json:"ws"`
+	Proj *string `json:"proj"`
 }
 
 // GetWs returns __ListServicesInput.Ws, and is useful for accessing the field via an interface.
 func (v *__ListServicesInput) GetWs() *string { return v.Ws }
+
+// GetProj returns __ListServicesInput.Proj, and is useful for accessing the field via an interface.
+func (v *__ListServicesInput) GetProj() *string { return v.Proj }
 
 // __ListWorkspaceInvitesInput is used internally by genqlient
 type __ListWorkspaceInvitesInput struct {
@@ -3148,8 +3152,8 @@ func ListResources(
 
 // The query executed by ListServices.
 const ListServices_Operation = `
-query ListServices ($ws: String) {
-	serviceList(workspaceSlug: $ws) {
+query ListServices ($ws: String, $proj: String) {
+	serviceList(workspaceSlug: $ws, projectSlug: $proj) {
 		nodes {
 			name
 			status
@@ -3173,12 +3177,14 @@ func ListServices(
 	ctx_ context.Context,
 	client_ graphql.Client,
 	ws *string,
+	proj *string,
 ) (data_ *ListServicesResponse, err_ error) {
 	req_ := &graphql.Request{
 		OpName: "ListServices",
 		Query:  ListServices_Operation,
 		Variables: &__ListServicesInput{
-			Ws: ws,
+			Ws:   ws,
+			Proj: proj,
 		},
 	}
 

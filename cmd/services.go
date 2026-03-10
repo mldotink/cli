@@ -8,111 +8,107 @@ import (
 	"github.com/spf13/cobra"
 )
 
+func init() {
+	listCmd.Flags().Bool("all", false, "List services across all workspaces and projects")
+}
 
 var listCmd = &cobra.Command{
 	Use:     "service [name]",
 	Aliases: []string{"services"},
 	Short:   "List all deployed services or show details for one",
-	Long: `Lists all deployed services across workspaces. Use -w to filter by workspace.
+	Long: `Lists deployed services in the current workspace and project (from config).
+Use --all to list across all workspaces and projects regardless of config.
 Pass a service name to see full details including repo, branch, resources, and URLs.`,
-	Example: `# List all services
+	Example: `# List services in configured workspace/project
 ink service
+
+# List across all workspaces and projects
+ink service --all
 
 # Show service details
 ink service myapp`,
 	Args: maxArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		// If a name is given, show service details
 		if len(args) == 1 {
 			showServiceDetail(args[0])
 			return
 		}
 
+		all, _ := cmd.Flags().GetBool("all")
 		client := newClient()
 
-		// If workspace explicitly set, list only that workspace
-		if ws := wsPtr(); ws != nil {
-			listServicesForWorkspace(client, *ws)
-			return
-		}
-
-		// Otherwise list across all workspaces
-		wsResult, err := gql.ListWorkspaces(ctx(), client)
-		if err != nil {
-			fatal(err.Error())
-		}
-
-		type svcRow struct {
-			name, workspace, project, status, url, memory, vcpus string
-		}
-		var allRows []svcRow
-
-		for _, ws := range wsResult.WorkspaceList {
-			result, err := gql.ListServices(ctx(), client, &ws.Slug)
-			if err != nil {
-				continue
-			}
-			projMap := make(map[string]string)
-			for _, p := range result.ProjectList.Nodes {
-				projMap[p.Id] = p.Slug
-			}
-			for _, s := range result.ServiceList.Nodes {
-				url := dim.Render("—")
-				if s.Fqdn != nil {
-					url = *s.Fqdn
-				}
-				allRows = append(allRows, svcRow{
-					name:      deref(s.Name, ""),
-					workspace: ws.Slug,
-					project:   projMap[s.ProjectId],
-					status:    s.Status,
-					url:       url,
-					memory:    s.Memory,
-					vcpus:     s.Vcpus,
-				})
-			}
-		}
-
-		if jsonOutput {
-			printJSON(allRows)
-			return
-		}
-
-		if len(allRows) == 0 {
-			fmt.Println(dim.Render("  No services"))
-			return
-		}
-
-		// If all services are in the same workspace, hide the workspace column
-		singleWS := true
-		for _, r := range allRows[1:] {
-			if r.workspace != allRows[0].workspace {
-				singleWS = false
-				break
-			}
-		}
-
-		var rows [][]string
-		if singleWS {
-			for _, r := range allRows {
-				rows = append(rows, []string{r.name, r.project, renderStatus(r.status), r.url, r.memory, r.vcpus})
-			}
-			fmt.Println()
-			fmt.Println(styledTable([]string{"NAME", "PROJECT", "STATUS", "URL", "MEMORY", "vCPU"}, rows))
+		if all {
+			listAllServices(client)
 		} else {
-			for _, r := range allRows {
-				rows = append(rows, []string{r.name, r.workspace, r.project, renderStatus(r.status), r.url, r.memory, r.vcpus})
+			ws := cfg.Workspace
+			if ws == "" {
+				ws = "default"
 			}
-			fmt.Println()
-			fmt.Println(styledTable([]string{"NAME", "WORKSPACE", "PROJECT", "STATUS", "URL", "MEMORY", "vCPU"}, rows))
+			listServicesForWorkspace(client, ws, projPtr())
 		}
-		tableFooter(len(allRows), "service")
-		fmt.Println()
 	},
 }
 
-func listServicesForWorkspace(client graphql.Client, ws string) {
-	result, err := gql.ListServices(ctx(), client, &ws)
+func listAllServices(client graphql.Client) {
+	wsResult, err := gql.ListWorkspaces(ctx(), client)
+	if err != nil {
+		fatal(err.Error())
+	}
+
+	type svcRow struct {
+		name, workspace, project, status, url, memory, vcpus string
+	}
+	var allRows []svcRow
+
+	for _, ws := range wsResult.WorkspaceList {
+		result, err := gql.ListServices(ctx(), client, &ws.Slug, nil)
+		if err != nil {
+			continue
+		}
+		projMap := make(map[string]string)
+		for _, p := range result.ProjectList.Nodes {
+			projMap[p.Id] = p.Slug
+		}
+		for _, s := range result.ServiceList.Nodes {
+			url := dim.Render("—")
+			if s.Fqdn != nil {
+				url = *s.Fqdn
+			}
+			allRows = append(allRows, svcRow{
+				name:      deref(s.Name, ""),
+				workspace: ws.Slug,
+				project:   projMap[s.ProjectId],
+				status:    s.Status,
+				url:       url,
+				memory:    s.Memory,
+				vcpus:     s.Vcpus,
+			})
+		}
+	}
+
+	if jsonOutput {
+		printJSON(allRows)
+		return
+	}
+
+	if len(allRows) == 0 {
+		fmt.Println(dim.Render("  No services"))
+		return
+	}
+
+	var rows [][]string
+	for _, r := range allRows {
+		rows = append(rows, []string{r.name, r.workspace, r.project, renderStatus(r.status), r.url, r.memory, r.vcpus})
+	}
+
+	fmt.Println()
+	fmt.Println(styledTable([]string{"NAME", "WORKSPACE", "PROJECT", "STATUS", "URL", "MEMORY", "vCPU"}, rows))
+	tableFooter(len(allRows), "service")
+	fmt.Println()
+}
+
+func listServicesForWorkspace(client graphql.Client, ws string, proj *string) {
+	result, err := gql.ListServices(ctx(), client, &ws, proj)
 	if err != nil {
 		fatal(err.Error())
 	}
@@ -192,7 +188,6 @@ func showServiceDetail(name string) {
 		d.kv("Project", svc.Project.Slug)
 	}
 
-	// Timestamps
 	if svc.CreatedAt != "" {
 		d.kv("Created", dim.Render(fmtTime(svc.CreatedAt)))
 	}
@@ -200,7 +195,6 @@ func showServiceDetail(name string) {
 		d.kv("Updated", dim.Render(fmtTime(svc.UpdatedAt)))
 	}
 
-	// Env var count hint
 	if len(svc.EnvVars) > 0 {
 		d.blank()
 		d.line(dim.Render(fmt.Sprintf("  %d env var%s (use ink status %s -e to view)", len(svc.EnvVars), pluralS(len(svc.EnvVars)), name)))
@@ -210,7 +204,6 @@ func showServiceDetail(name string) {
 	fmt.Println(d.String())
 	fmt.Println()
 
-	// Hint for more details
 	fmt.Println(dim.Render(fmt.Sprintf("  Tip: ink status %s --deploy-logs 20 --runtime-logs 50 --metrics 1h", name)))
 	fmt.Println()
 }
