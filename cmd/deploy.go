@@ -61,33 +61,33 @@ func addServiceFlags(cmd *cobra.Command) {
 
 var deployCmd = &cobra.Command{
 	Use:     "deploy <name> [flags]",
-	Short:   "Create or update a service",
-	Long: `Creates a new service or updates an existing one (auto-detected). Takes code
-from a git repo to a running service at {name}.ml.ink in ~60 seconds. Supports
-web apps, APIs, static sites, background workers, and any containerizable process.`,
-	Example: `# Deploy a Node.js app
+	Short:   "Deploy a service for the first time",
+	Long: `Creates a new service from a git repo. The repo must exist first — create one
+with 'ink repo create' (Ink-managed) or use a GitHub repo with the GitHub App
+installed. The service will be live at {name}.ml.ink in ~60 seconds.
+
+To update or redeploy an existing service, use 'ink redeploy'.`,
+	Example: `# Deploy from an Ink-managed repo (repo name defaults to service name)
 ink deploy myapp
 
-# Deploy with env vars from a file (recommended for secrets)
-ink deploy myapi --env-file .env
+# Deploy from a GitHub repo
+ink deploy myapi --host github --repo myorg/myapi
 
-# Deploy with inline env vars (for non-sensitive values)
+# Deploy on a specific branch
+ink deploy myapi --host github --repo myorg/myapi --branch develop
+
+# Deploy with env vars
+ink deploy myapi --env-file .env
 ink deploy myapi --env NODE_ENV=production --env PORT=8080
 
 # Deploy with custom resources
-ink deploy myapi --memory 2Gi --vcpu 1
-
-# Deploy from a GitHub repo on a specific branch
-ink deploy myapi --host github --repo myorg/myrepo --branch develop
+ink deploy myapi --memory 512Mi --vcpu 0.5
 
 # Deploy a static site
 ink deploy docs --buildpack static --publish-dir dist
 
 # Deploy with a Dockerfile
-ink deploy myapi --buildpack dockerfile --dockerfile Dockerfile.prod
-
-# Update memory on an existing service
-ink deploy myapi --memory 4Gi`,
+ink deploy myapi --buildpack dockerfile --dockerfile Dockerfile.prod`,
 	Args: exactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		name := args[0]
@@ -105,19 +105,20 @@ ink deploy myapi --memory 4Gi`,
 
 var redeployCmd = &cobra.Command{
 	Use:     "redeploy <name>",
-	Short:   "Redeploy a service (pull latest code and rebuild)",
-	Long: `Triggers a rebuild and redeploy by pulling the latest code. Optionally update
-configuration (memory, env vars, buildpack) at the same time.`,
+	Short:   "Rebuild and redeploy a service, optionally updating its config",
+	Long: `Pulls the latest code from the repo, rebuilds, and redeploys. Use this to pick
+up new commits or to change configuration (memory, CPU, env vars, buildpack).`,
 	Example: `# Redeploy with latest code
 ink redeploy myapi
 
-# Redeploy and update memory
-ink redeploy myapi --memory 2Gi
+# Update memory and CPU
+ink redeploy myapi --memory 2Gi --vcpu 1
 
-# Redeploy with env vars from file
+# Update env vars
 ink redeploy myapi --env-file .env
+ink redeploy myapi --env NODE_ENV=production
 
-# Redeploy with different build settings
+# Switch to Dockerfile build
 ink redeploy myapi --buildpack dockerfile --dockerfile Dockerfile.prod`,
 	Args: exactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
