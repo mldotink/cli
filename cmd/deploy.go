@@ -67,27 +67,18 @@ with 'ink repo create' (Ink-managed) or use a GitHub repo with the GitHub App
 installed. The service will be live at {name}.ml.ink in ~60 seconds.
 
 To update or redeploy an existing service, use 'ink redeploy'.`,
-	Example: `# Deploy from an Ink-managed repo
+	Example: `# Ink-managed repo
+ink repo create myapp
+git remote add ink <remote-url-from-output>
+git push ink main
 ink deploy myapp
 
-# Deploy from a GitHub repo
+# GitHub repo (requires GitHub App installed)
 ink deploy myapi --host github --repo myorg/myapi
 
-# Deploy on a specific branch
-ink deploy myapi --host github --repo myorg/myapi --branch develop
-
-# Deploy with env vars
-ink deploy myapi --env-file .env
-ink deploy myapi --env NODE_ENV=production --env PORT=8080
-
-# Deploy with custom resources
-ink deploy myapi --memory 512Mi --vcpu 0.5
-
-# Deploy a static site
-ink deploy docs --buildpack static --publish-dir dist
-
-# Deploy with a Dockerfile
-ink deploy myapi --buildpack dockerfile --dockerfile Dockerfile.prod`,
+# With options
+ink deploy myapi --memory 512Mi --vcpu 0.5 --env-file .env
+ink deploy docs --buildpack static --publish-dir dist`,
 	Args: exactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		name := args[0]
