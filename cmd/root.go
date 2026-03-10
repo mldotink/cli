@@ -148,7 +148,7 @@ var rootCmd = &cobra.Command{
 		cfg = config.Resolve(apiKeyFlag, wsFlag, projectFlag)
 
 		switch cmd.Name() {
-		case "login", "help", "completion", "workspace", "workspaces", "whoami", "account", "service", "services", "config":
+		case "login", "help", "completion", "workspace", "workspaces", "whoami", "account", "config":
 			// These commands don't operate within a workspace/project scope.
 		default:
 			if !jsonOutput {

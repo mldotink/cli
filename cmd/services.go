@@ -104,7 +104,7 @@ func listAllServices(client graphql.Client) {
 	fmt.Println()
 	fmt.Println(styledTable([]string{"NAME", "WORKSPACE", "PROJECT", "STATUS", "URL", "MEMORY", "vCPU"}, rows))
 	tableFooter(len(allRows), "service")
-	fmt.Println()
+	serviceHints()
 }
 
 func listServicesForWorkspace(client graphql.Client, ws string, proj *string) {
@@ -141,6 +141,15 @@ func listServicesForWorkspace(client graphql.Client, ws string, proj *string) {
 	fmt.Println()
 	fmt.Println(styledTable([]string{"NAME", "PROJECT", "STATUS", "URL", "MEMORY", "vCPU"}, rows))
 	tableFooter(len(nodes), "service")
+	serviceHints()
+}
+
+func serviceHints() {
+	fmt.Println()
+	fmt.Println(dim.Render("  ink service <name>       Show service details"))
+	fmt.Println(dim.Render("  ink deploy <name>        Deploy a new service"))
+	fmt.Println(dim.Render("  ink redeploy <name>      Rebuild and update a service"))
+	fmt.Println(dim.Render("  ink service --all        List across all workspaces"))
 	fmt.Println()
 }
 
