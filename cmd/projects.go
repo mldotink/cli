@@ -36,17 +36,26 @@ var projectsCmd = &cobra.Command{
 		nodes := result.ProjectList.Nodes
 		if len(nodes) == 0 {
 			fmt.Println(dim.Render("  No projects"))
-			return
-		}
+		} else {
+			var rows [][]string
+			for _, p := range nodes {
+				rows = append(rows, []string{p.Name, p.Slug})
+			}
 
-		var rows [][]string
-		for _, p := range nodes {
-			rows = append(rows, []string{p.Name, p.Slug})
+			fmt.Println()
+			fmt.Println(styledTable([]string{"NAME", "SLUG"}, rows))
+			tableFooter(len(nodes), "project")
 		}
 
 		fmt.Println()
-		fmt.Println(styledTable([]string{"NAME", "SLUG"}, rows))
-		tableFooter(len(nodes), "project")
+		fmt.Println(dim.Render("Available Commands:"))
+		for _, sub := range cmd.Commands() {
+			if !sub.Hidden {
+				fmt.Printf("  %-20s %s\n", sub.Name(), sub.Short)
+			}
+		}
+		fmt.Println()
+		fmt.Println(dim.Render(fmt.Sprintf("Use \"ink projects <command> --help\" for more information about a command.")))
 		fmt.Println()
 	},
 }

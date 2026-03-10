@@ -50,21 +50,30 @@ ink ws invite my-team user@example.com admin`,
 		wsList := result.WorkspaceList
 		if len(wsList) == 0 {
 			fmt.Println(dim.Render("  No workspaces"))
-			return
-		}
-
-		var rows [][]string
-		for _, ws := range wsList {
-			name := ws.Name
-			if ws.IsDefault {
-				name += dim.Render(" (default)")
+		} else {
+			var rows [][]string
+			for _, ws := range wsList {
+				name := ws.Name
+				if ws.IsDefault {
+					name += dim.Render(" (default)")
+				}
+				rows = append(rows, []string{name, ws.Slug, ws.Role})
 			}
-			rows = append(rows, []string{name, ws.Slug, ws.Role})
+
+			fmt.Println()
+			fmt.Println(styledTable([]string{"NAME", "SLUG", "ROLE"}, rows))
+			tableFooter(len(wsList), "workspace")
 		}
 
 		fmt.Println()
-		fmt.Println(styledTable([]string{"NAME", "SLUG", "ROLE"}, rows))
-		tableFooter(len(wsList), "workspace")
+		fmt.Println(dim.Render("Available Commands:"))
+		for _, sub := range cmd.Commands() {
+			if !sub.Hidden {
+				fmt.Printf("  %-20s %s\n", sub.Name(), sub.Short)
+			}
+		}
+		fmt.Println()
+		fmt.Println(dim.Render(fmt.Sprintf("Use \"ink ws <command> --help\" for more information about a command.")))
 		fmt.Println()
 	},
 }
