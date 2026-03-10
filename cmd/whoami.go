@@ -10,11 +10,11 @@ import (
 
 
 var whoamiCmd = &cobra.Command{
-	Use:     "account",
-	Aliases: []string{"whoami"},
+	Use:     "whoami",
+	Aliases: []string{"account"},
 	Short:   "Show account info, plan, and GitHub App/OAuth connection status",
-	Example: `ink account
-ink account --json`,
+	Example: `ink whoami
+ink whoami --json`,
 	Run: func(cmd *cobra.Command, args []string) {
 		client := newClient()
 
