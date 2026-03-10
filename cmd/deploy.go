@@ -64,7 +64,7 @@ var deployCmd = &cobra.Command{
 	Short:   "Deploy a service for the first time",
 	Long: `Creates a new service from a git repo. The repo must exist first — create one
 with 'ink repo create' (Ink-managed) or use a GitHub repo with the GitHub App
-installed. The service will be live at {name}.ml.ink in ~60 seconds.
+installed. The service will be live at {name}.ml.ink.
 
 To update or redeploy an existing service, use 'ink redeploy'.`,
 	Example: `# Ink-managed repo
