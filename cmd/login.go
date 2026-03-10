@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"bufio"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
@@ -10,11 +9,11 @@ import (
 	"net"
 	"net/http"
 	"net/url"
-	"os"
 	"os/exec"
 	"runtime"
 	"strings"
 
+	"github.com/charmbracelet/huh"
 	"github.com/mldotink/cli/internal/config"
 	"github.com/spf13/cobra"
 )
@@ -49,40 +48,43 @@ ink login --api-key dk_live_abc123`,
 			}
 			key = apiKey
 		} else {
-			fmt.Println()
-			fmt.Println("  How would you like to authenticate?")
-			fmt.Println()
-			fmt.Println("  " + bold.Render("1") + "  Log in with browser " + dim.Render("(recommended)"))
-			fmt.Println("  " + bold.Render("2") + "  Paste an API key")
-			fmt.Println()
-			fmt.Print("  Choice [1]: ")
-
-			scanner := bufio.NewScanner(os.Stdin)
-			choice := "1"
-			if scanner.Scan() {
-				c := strings.TrimSpace(scanner.Text())
-				if c != "" {
-					choice = c
-				}
+			var method string
+			err := huh.NewSelect[string]().
+				Title("How would you like to authenticate?").
+				Options(
+					huh.NewOption("Log in with browser (recommended)", "browser"),
+					huh.NewOption("Paste an API key", "apikey"),
+				).
+				Value(&method).
+				Run()
+			if err != nil {
+				fatal("Login cancelled")
 			}
 
-			switch choice {
-			case "1":
+			switch method {
+			case "browser":
 				k, err := oauthBrowserLogin()
 				if err != nil {
 					fatal(err.Error())
 				}
 				key = k
-			case "2":
-				fmt.Print("  API key: ")
-				if scanner.Scan() {
-					key = strings.TrimSpace(scanner.Text())
+			case "apikey":
+				var inputKey string
+				err := huh.NewInput().
+					Title("API key").
+					Placeholder("dk_live_...").
+					Value(&inputKey).
+					Validate(func(s string) error {
+						if !strings.HasPrefix(s, "dk_") {
+							return fmt.Errorf("keys start with dk_live_ or dk_test_")
+						}
+						return nil
+					}).
+					Run()
+				if err != nil {
+					fatal("Login cancelled")
 				}
-				if !strings.HasPrefix(key, "dk_") {
-					fatal("Invalid API key — keys start with dk_live_ or dk_test_")
-				}
-			default:
-				fatal(fmt.Sprintf("Invalid choice %q", choice))
+				key = inputKey
 			}
 		}
 
