@@ -21,7 +21,6 @@ func init() {
 }
 
 var databasesCmd = &cobra.Command{
-	GroupID: "manage",
 	Use:     "databases",
 	Aliases: []string{"db"},
 	Short:   "Manage databases",

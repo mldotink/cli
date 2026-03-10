@@ -147,7 +147,7 @@ var rootCmd = &cobra.Command{
 		cfg = config.Resolve(apiKeyFlag, wsFlag, projectFlag)
 
 		switch cmd.Name() {
-		case "login", "help", "completion", "workspaces", "whoami", "services", "service", "config":
+		case "login", "help", "completion", "workspaces", "whoami", "account", "services", "service", "config":
 			// These commands don't operate within a workspace/project scope.
 		default:
 			if !jsonOutput {
@@ -165,10 +165,6 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&wsFlag, "workspace", "w", "", "Workspace slug (overrides config)")
 	rootCmd.PersistentFlags().StringVar(&projectFlag, "project", "", "Project slug (overrides config)")
 
-	rootCmd.AddGroup(
-		&cobra.Group{ID: "core", Title: "Core"},
-		&cobra.Group{ID: "manage", Title: "Manage"},
-	)
 }
 
 func Execute() {

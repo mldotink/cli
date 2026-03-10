@@ -16,7 +16,6 @@ func init() {
 }
 
 var projectsCmd = &cobra.Command{
-	GroupID: "manage",
 	Use:     "projects",
 	Aliases: []string{"proj"},
 	Short:   "List projects",

@@ -10,7 +10,6 @@ import (
 
 
 var listCmd = &cobra.Command{
-	GroupID: "core",
 	Use:     "services [name]",
 	Aliases: []string{"service"},
 	Short:   "List services or show service details",

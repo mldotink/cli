@@ -24,7 +24,6 @@ func init() {
 }
 
 var secretsCmd = &cobra.Command{
-	GroupID: "manage",
 	Use:     "secrets",
 	Aliases: []string{"env"},
 	Short:   "Manage service environment variables and secrets",

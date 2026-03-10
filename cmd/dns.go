@@ -17,7 +17,6 @@ func init() {
 }
 
 var dnsCmd = &cobra.Command{
-	GroupID: "manage",
 	Use:     "dns",
 	Short:   "Manage DNS zones and records",
 }

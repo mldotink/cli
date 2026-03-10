@@ -17,7 +17,6 @@ func init() {
 }
 
 var deleteCmd = &cobra.Command{
-	GroupID: "manage",
 	Use:     "delete <name>",
 	Short:   "Delete a service",
 	Example: `ink delete myapi

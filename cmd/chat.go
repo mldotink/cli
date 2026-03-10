@@ -17,7 +17,6 @@ func init() {
 }
 
 var chatCmd = &cobra.Command{
-	GroupID: "manage",
 	Use:     "chat",
 	Short:   "Workspace chat",
 }

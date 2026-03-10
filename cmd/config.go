@@ -16,7 +16,6 @@ func init() {
 }
 
 var configCmd = &cobra.Command{
-	GroupID: "manage",
 	Use:     "config",
 	Short:   "Manage CLI configuration",
 	Example: `# Set default workspace

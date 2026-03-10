@@ -60,7 +60,6 @@ func addServiceFlags(cmd *cobra.Command) {
 }
 
 var deployCmd = &cobra.Command{
-	GroupID: "core",
 	Use:     "deploy <name> [flags]",
 	Short:   "Create or update a service",
 	Long:  "Creates a new service or updates an existing one. Detects automatically.",
@@ -103,7 +102,6 @@ ink deploy myapi --memory 4Gi`,
 }
 
 var redeployCmd = &cobra.Command{
-	GroupID: "core",
 	Use:     "redeploy <name>",
 	Short:   "Redeploy a service (pull latest code and rebuild)",
 	Long:  "Triggers a rebuild and redeploy. Optionally update configuration at the same time.",

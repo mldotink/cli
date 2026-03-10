@@ -19,7 +19,6 @@ func init() {
 }
 
 var statusCmd = &cobra.Command{
-	GroupID: "core",
 	Use:     "status <name>",
 	Short:   "Get service details",
 	Example: `# Show service status

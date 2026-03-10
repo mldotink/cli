@@ -26,7 +26,6 @@ func init() {
 }
 
 var loginCmd = &cobra.Command{
-	GroupID: "core",
 	Use:     "login",
 	Short:   "Authenticate with Ink",
 	Long:  "Log in via browser (default) or provide an API key directly.",

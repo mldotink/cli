@@ -22,7 +22,6 @@ func init() {
 }
 
 var workspacesCmd = &cobra.Command{
-	GroupID: "core",
 	Use:     "workspaces",
 	Aliases: []string{"ws"},
 	Short:   "Manage workspaces",

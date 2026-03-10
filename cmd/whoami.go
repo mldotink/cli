@@ -9,9 +9,9 @@ import (
 
 
 var whoamiCmd = &cobra.Command{
-	GroupID: "core",
-	Use:     "whoami",
-	Short: "Show current account",
+	Use:     "account",
+	Aliases: []string{"whoami"},
+	Short:   "Show current account",
 	Run: func(cmd *cobra.Command, args []string) {
 		client := newClient()
 

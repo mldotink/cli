@@ -13,7 +13,6 @@ func init() {
 }
 
 var domainsCmd = &cobra.Command{
-	GroupID: "manage",
 	Use:     "domains",
 	Short:   "Manage custom domains",
 }

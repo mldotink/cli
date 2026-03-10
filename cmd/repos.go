@@ -16,7 +16,6 @@ func init() {
 }
 
 var reposCmd = &cobra.Command{
-	GroupID: "core",
 	Use:     "repos",
 	Short:   "Manage repositories",
 }

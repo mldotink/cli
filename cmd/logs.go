@@ -13,7 +13,6 @@ func init() {
 }
 
 var logsCmd = &cobra.Command{
-	GroupID: "manage",
 	Use:     "logs <name>",
 	Short:   "View service logs",
 	Example: `# View runtime logs (last 100 lines)
