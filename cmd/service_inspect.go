@@ -350,39 +350,47 @@ func printMetricsSection(m gql.ServiceMetricsServiceMetrics, timeRange string) b
 		return false
 	}
 
+	start, end := metricWindowBounds(cpu, memory, netRx, netTx)
+	pointCount := maxInt(len(cpu), len(memory), len(netRx), len(netTx))
+
 	fmt.Println()
 	fmt.Printf("  %s  %s\n",
 		bold.Render("Metrics"),
 		dim.Render(fmt.Sprintf("(%s, up to %d points)", timeRange, defaultMetricsMaxDataPoints)))
+	if start != "" && end != "" {
+		fmt.Printf("  %-10s %s -> %s  %s\n",
+			"Window",
+			dim.Render(fmtTime(start)),
+			dim.Render(fmtTime(end)),
+			dim.Render(fmt.Sprintf("(%d samples)", pointCount)),
+		)
+	}
 
 	printMetricSeries(
 		"CPU",
 		cpu,
-		accent,
 		func(value float64) string { return fmt.Sprintf("%.4f vCPUs", value) },
-		func() string { return fmt.Sprintf("limit %.2f vCPUs", m.CpuLimitVCPUs) },
+		&m.CpuLimitVCPUs,
 	)
 	printMetricSeries(
 		"Memory",
 		memory,
-		green,
 		func(value float64) string { return fmt.Sprintf("%.1f MB", value) },
-		func() string { return fmt.Sprintf("limit %.0f MB", m.MemoryLimitMB) },
+		&m.MemoryLimitMB,
 	)
 	printMetricSeries(
 		"Net RX",
 		netRx,
-		yellow,
 		formatBytesPerSecond,
 		nil,
 	)
 	printMetricSeries(
 		"Net TX",
 		netTx,
-		titleStyle,
 		formatBytesPerSecond,
 		nil,
 	)
+	printMetricHistoryTable(timeRange, cpu, memory, netRx, netTx)
 
 	return true
 }
@@ -415,74 +423,169 @@ func clampMetricSamples(samples []metricSample, maxPoints int) []metricSample {
 	return out
 }
 
-func printMetricSeries(label string, samples []metricSample, style interface{ Render(...string) string }, formatValue func(float64) string, extra func() string) {
+func printMetricSeries(label string, samples []metricSample, formatValue func(float64) string, limit *float64) {
 	if len(samples) == 0 {
 		return
 	}
 
 	latest := samples[len(samples)-1]
-	avg, peak := metricStats(samples)
-	headline := fmt.Sprintf("now %s  avg %s  peak %s", formatValue(latest.value), formatValue(avg), formatValue(peak))
-	if extra != nil {
-		headline += "  " + dim.Render("("+extra()+")")
-	}
+	avg, minValue, peak := metricStats(samples)
 
-	fmt.Printf("  %-10s %s\n", label, headline)
-	fmt.Printf("  %-10s %s\n", "", style.Render(metricSparkline(samples)))
-	fmt.Printf("  %-10s %s\n", "", dim.Render(fmt.Sprintf("%s -> %s", fmtTime(samples[0].timestamp), fmtTime(samples[len(samples)-1].timestamp))))
+	if limit != nil && *limit > 0 {
+		percent := (latest.value / *limit) * 100
+		fmt.Printf("  %-10s current %s  %s of limit\n", label, formatValue(latest.value), dim.Render(fmt.Sprintf("%.1f%%", percent)))
+		fmt.Printf("  %-10s avg %s  min %s  peak %s  %s\n",
+			"",
+			formatValue(avg),
+			formatValue(minValue),
+			formatValue(peak),
+			dim.Render(fmt.Sprintf("(limit %s)", formatValue(*limit))),
+		)
+	} else {
+		fmt.Printf("  %-10s current %s\n", label, formatValue(latest.value))
+		fmt.Printf("  %-10s avg %s  min %s  peak %s\n",
+			"",
+			formatValue(avg),
+			formatValue(minValue),
+			formatValue(peak),
+		)
+	}
 }
 
-func metricStats(samples []metricSample) (avg, peak float64) {
+func metricStats(samples []metricSample) (avg, minValue, peak float64) {
 	if len(samples) == 0 {
-		return 0, 0
+		return 0, 0, 0
 	}
 
+	minValue = samples[0].value
 	peak = samples[0].value
 	for _, sample := range samples {
 		avg += sample.value
+		if sample.value < minValue {
+			minValue = sample.value
+		}
 		if sample.value > peak {
 			peak = sample.value
 		}
 	}
-	return avg / float64(len(samples)), peak
+	return avg / float64(len(samples)), minValue, peak
 }
 
-func metricSparkline(samples []metricSample) string {
-	if len(samples) == 0 {
-		return ""
+func metricWindowBounds(series ...[]metricSample) (string, string) {
+	var start string
+	var end string
+	for _, samples := range series {
+		if len(samples) == 0 {
+			continue
+		}
+		if start == "" || samples[0].timestamp < start {
+			start = samples[0].timestamp
+		}
+		last := samples[len(samples)-1].timestamp
+		if end == "" || last > end {
+			end = last
+		}
+	}
+	return start, end
+}
+
+func printMetricHistoryTable(timeRange string, cpu, memory, netRx, netTx []metricSample) {
+	total := maxInt(len(cpu), len(memory), len(netRx), len(netTx))
+	if total == 0 {
+		return
 	}
 
-	const ramp = ".:-=+*#%@"
-	minValue := samples[0].value
-	maxValue := samples[0].value
-	for _, sample := range samples[1:] {
-		if sample.value < minValue {
-			minValue = sample.value
+	indices := selectEvenIndices(total, 8)
+	var rows [][]string
+	for _, idx := range indices {
+		row := []string{
+			formatMetricTimeLabel(sampleAtRelativeIndex(cpu, idx, total), timeRange),
+			formatMetricValueAt(cpu, idx, total, func(value float64) string { return fmt.Sprintf("%.4f", value) }),
+			formatMetricValueAt(memory, idx, total, func(value float64) string { return fmt.Sprintf("%.1f MB", value) }),
+			formatMetricValueAt(netRx, idx, total, formatBytesPerSecond),
+			formatMetricValueAt(netTx, idx, total, formatBytesPerSecond),
 		}
-		if sample.value > maxValue {
-			maxValue = sample.value
-		}
+		rows = append(rows, row)
 	}
 
-	if maxValue == minValue {
-		return strings.Repeat("=", len(samples))
+	if len(rows) == 0 {
+		return
 	}
 
-	var builder strings.Builder
-	builder.Grow(len(samples))
-	scale := float64(len(ramp) - 1)
-	for _, sample := range samples {
-		normalized := (sample.value - minValue) / (maxValue - minValue)
-		index := int(math.Round(normalized * scale))
-		if index < 0 {
-			index = 0
-		}
-		if index >= len(ramp) {
-			index = len(ramp) - 1
-		}
-		builder.WriteByte(ramp[index])
+	fmt.Println()
+	fmt.Println(bold.Render("  History"))
+	fmt.Println(styledTable([]string{"TIME", "CPU", "MEMORY", "NET RX", "NET TX"}, rows))
+}
+
+func selectEvenIndices(total, maxRows int) []int {
+	if total <= 0 || maxRows <= 0 {
+		return nil
 	}
-	return builder.String()
+	if total <= maxRows {
+		out := make([]int, total)
+		for i := range total {
+			out[i] = i
+		}
+		return out
+	}
+
+	out := make([]int, 0, maxRows)
+	seen := make(map[int]struct{}, maxRows)
+	for i := 0; i < maxRows; i++ {
+		idx := int(math.Round(float64(i*(total-1)) / float64(maxRows-1)))
+		if _, ok := seen[idx]; ok {
+			continue
+		}
+		seen[idx] = struct{}{}
+		out = append(out, idx)
+	}
+	return out
+}
+
+func sampleAtRelativeIndex(samples []metricSample, index, total int) *metricSample {
+	if len(samples) == 0 || total <= 0 {
+		return nil
+	}
+	if len(samples) == total {
+		return &samples[index]
+	}
+	if total == 1 {
+		return &samples[len(samples)-1]
+	}
+
+	mapped := int(math.Round(float64(index*(len(samples)-1)) / float64(total-1)))
+	if mapped < 0 {
+		mapped = 0
+	}
+	if mapped >= len(samples) {
+		mapped = len(samples) - 1
+	}
+	return &samples[mapped]
+}
+
+func formatMetricValueAt(samples []metricSample, index, total int, formatValue func(float64) string) string {
+	sample := sampleAtRelativeIndex(samples, index, total)
+	if sample == nil {
+		return dim.Render("—")
+	}
+	return formatValue(sample.value)
+}
+
+func formatMetricTimeLabel(sample *metricSample, timeRange string) string {
+	if sample == nil {
+		return dim.Render("—")
+	}
+
+	layout := "15:04"
+	if timeRange == "7d" || timeRange == "30d" {
+		layout = "01-02 15:04"
+	}
+
+	t, err := time.Parse(time.RFC3339Nano, sample.timestamp)
+	if err != nil {
+		return sample.timestamp
+	}
+	return t.Local().Format(layout)
 }
 
 func maxInt(values ...int) int {
