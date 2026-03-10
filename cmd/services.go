@@ -13,10 +13,24 @@ func init() {
 }
 
 var listCmd = &cobra.Command{
-	Use:   "services",
-	Short: "List services",
-	Long:  "Lists services across all workspaces by default. Use -w to filter by workspace.",
+	Use:     "services [name]",
+	Aliases: []string{"service"},
+	Short:   "List services or show service details",
+	Long:    "Lists services across all workspaces by default. Pass a service name to see details.",
+	Example: `# List all services
+ink services
+
+# Show service details
+ink services myapp
+ink service myapp`,
+	Args: maxArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
+		// If a name is given, show service details
+		if len(args) == 1 {
+			showServiceDetail(args[0])
+			return
+		}
+
 		client := newClient()
 
 		// If workspace explicitly set, list only that workspace
@@ -135,6 +149,80 @@ func listServicesForWorkspace(client graphql.Client, ws string) {
 	fmt.Println(styledTable([]string{"NAME", "PROJECT", "STATUS", "URL", "MEMORY", "vCPU"}, rows))
 	tableFooter(len(nodes), "service")
 	fmt.Println()
+}
+
+func showServiceDetail(name string) {
+	svc := findService(name)
+	if svc == nil {
+		fatal(fmt.Sprintf("Service %q not found", name))
+	}
+
+	if jsonOutput {
+		printJSON(svc)
+		return
+	}
+
+	d := newDetail(deref(svc.Name, ""))
+	d.kv("Status", renderStatus(svc.Status))
+	if svc.ErrorMessage != nil {
+		d.kv("Error", red.Render(*svc.ErrorMessage))
+	}
+	if svc.Fqdn != nil {
+		d.kv("URL", accent.Render(*svc.Fqdn))
+	}
+	d.kv("Repo", svc.Repo)
+	d.kv("Branch", svc.Branch)
+	if svc.CommitHash != nil {
+		hash := *svc.CommitHash
+		if len(hash) > 12 {
+			hash = hash[:12]
+		}
+		d.kv("Commit", dim.Render(hash))
+	}
+	d.kv("Memory", svc.Memory)
+	d.kv("vCPU", svc.Vcpus)
+	d.kv("Port", svc.Port)
+	d.kv("Git host", svc.GitProvider)
+	if svc.CustomDomain != nil {
+		status := ""
+		if svc.CustomDomainStatus != nil {
+			status = " " + renderStatus(*svc.CustomDomainStatus)
+		}
+		d.kv("Domain", *svc.CustomDomain+status)
+	}
+	d.kv("Internal URL", svc.InternalUrl)
+	if svc.Project != nil && svc.Project.Slug != "" {
+		d.kv("Project", svc.Project.Slug)
+	}
+
+	// Timestamps
+	if svc.CreatedAt != "" {
+		d.kv("Created", dim.Render(svc.CreatedAt))
+	}
+	if svc.UpdatedAt != "" {
+		d.kv("Updated", dim.Render(svc.UpdatedAt))
+	}
+
+	// Env var count hint
+	if len(svc.EnvVars) > 0 {
+		d.blank()
+		d.line(dim.Render(fmt.Sprintf("  %d env var%s (use ink status %s -e to view)", len(svc.EnvVars), pluralS(len(svc.EnvVars)), name)))
+	}
+
+	fmt.Println()
+	fmt.Println(d.String())
+	fmt.Println()
+
+	// Hint for more details
+	fmt.Println(dim.Render(fmt.Sprintf("  Tip: ink status %s --deploy-logs 20 --runtime-logs 50 --metrics 1h", name)))
+	fmt.Println()
+}
+
+func pluralS(n int) string {
+	if n == 1 {
+		return ""
+	}
+	return "s"
 }
 
 func findService(name string) *gql.FindServiceServiceListServiceConnectionNodesService {

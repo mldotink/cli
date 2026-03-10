@@ -69,6 +69,9 @@ ink login --api-key dk_live_abc123`,
 				}
 				key = k
 			case "apikey":
+				fmt.Println()
+				fmt.Println(dim.Render("  Create an API key at: ") + accent.Render("https://ml.ink/account/api-keys"))
+				fmt.Println()
 				var inputKey string
 				err := huh.NewInput().
 					Title("API key").
