@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bufio"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
@@ -9,6 +10,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"os"
 	"os/exec"
 	"runtime"
 	"strings"
@@ -47,11 +49,41 @@ ink login --api-key dk_live_abc123`,
 			}
 			key = apiKey
 		} else {
-			k, err := oauthBrowserLogin()
-			if err != nil {
-				fatal(err.Error())
+			fmt.Println()
+			fmt.Println("  How would you like to authenticate?")
+			fmt.Println()
+			fmt.Println("  " + bold.Render("1") + "  Log in with browser " + dim.Render("(recommended)"))
+			fmt.Println("  " + bold.Render("2") + "  Paste an API key")
+			fmt.Println()
+			fmt.Print("  Choice [1]: ")
+
+			scanner := bufio.NewScanner(os.Stdin)
+			choice := "1"
+			if scanner.Scan() {
+				c := strings.TrimSpace(scanner.Text())
+				if c != "" {
+					choice = c
+				}
 			}
-			key = k
+
+			switch choice {
+			case "1":
+				k, err := oauthBrowserLogin()
+				if err != nil {
+					fatal(err.Error())
+				}
+				key = k
+			case "2":
+				fmt.Print("  API key: ")
+				if scanner.Scan() {
+					key = strings.TrimSpace(scanner.Text())
+				}
+				if !strings.HasPrefix(key, "dk_") {
+					fatal("Invalid API key — keys start with dk_live_ or dk_test_")
+				}
+			default:
+				fatal(fmt.Sprintf("Invalid choice %q", choice))
+			}
 		}
 
 		c := &config.Config{APIKey: key}
