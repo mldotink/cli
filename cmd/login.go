@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bufio"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
@@ -9,9 +10,11 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"os"
 	"os/exec"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/charmbracelet/huh"
 	"github.com/mldotink/cli/internal/config"
@@ -174,21 +177,21 @@ func oauthBrowserLogin() (string, error) {
 
 		if errMsg != "" {
 			w.Header().Set("Content-Type", "text/html")
-			fmt.Fprintf(w, callbackPage("Login failed", errMsg, true))
-			result <- oauthResult{err: fmt.Errorf("OAuth error: %s", errMsg)}
+			fmt.Fprint(w, callbackPage("Login failed", errMsg, true))
+			sendOAuthResult(result, oauthResult{err: fmt.Errorf("OAuth error: %s", errMsg)})
 			return
 		}
 
 		if returnedState != state {
 			w.Header().Set("Content-Type", "text/html")
 			fmt.Fprint(w, callbackPage("Login failed", "State mismatch — please try again.", true))
-			result <- oauthResult{err: fmt.Errorf("OAuth state mismatch")}
+			sendOAuthResult(result, oauthResult{err: fmt.Errorf("OAuth state mismatch")})
 			return
 		}
 
 		w.Header().Set("Content-Type", "text/html")
 		fmt.Fprint(w, callbackPage("You're logged in", "You can close this tab and return to the terminal.", false))
-		result <- oauthResult{code: code}
+		sendOAuthResult(result, oauthResult{code: code})
 	})
 
 	server := &http.Server{Handler: mux}
@@ -202,6 +205,7 @@ func oauthBrowserLogin() (string, error) {
 	fmt.Println()
 
 	openBrowser(authorizeURL.String())
+	startManualOAuthFallback(result, state)
 
 	// Wait for callback
 	res := <-result
@@ -249,10 +253,85 @@ type oauthResult struct {
 	err  error
 }
 
+func sendOAuthResult(ch chan<- oauthResult, res oauthResult) {
+	select {
+	case ch <- res:
+	default:
+	}
+}
+
+func startManualOAuthFallback(result chan<- oauthResult, expectedState string) {
+	go func() {
+		time.Sleep(5 * time.Second)
+
+		fmt.Println()
+		fmt.Println(dim.Render("  If the browser lands on a 127.0.0.1 page that can't load, paste the full callback URL here."))
+		fmt.Print(dim.Render("  Callback URL or code: "))
+
+		reader := bufio.NewReader(os.Stdin)
+		for {
+			line, err := reader.ReadString('\n')
+			if err != nil {
+				return
+			}
+
+			line = strings.TrimSpace(line)
+			if line == "" {
+				fmt.Print(dim.Render("  Callback URL or code: "))
+				continue
+			}
+
+			res, err := parseOAuthCallbackInput(line, expectedState)
+			if err != nil {
+				fmt.Println()
+				fmt.Println(red.Render("  ✕ ") + err.Error())
+				fmt.Print(dim.Render("  Callback URL or code: "))
+				continue
+			}
+
+			sendOAuthResult(result, res)
+			return
+		}
+	}()
+}
+
+func parseOAuthCallbackInput(input, expectedState string) (oauthResult, error) {
+	input = strings.TrimSpace(input)
+	if input == "" {
+		return oauthResult{}, fmt.Errorf("callback URL or code is required")
+	}
+
+	if !strings.Contains(input, "://") {
+		return oauthResult{code: input}, nil
+	}
+
+	parsed, err := url.Parse(input)
+	if err != nil {
+		return oauthResult{}, fmt.Errorf("invalid callback URL")
+	}
+
+	q := parsed.Query()
+	if errMsg := q.Get("error"); errMsg != "" {
+		return oauthResult{}, fmt.Errorf("OAuth error: %s", errMsg)
+	}
+
+	code := q.Get("code")
+	if code == "" {
+		return oauthResult{}, fmt.Errorf("callback URL is missing code")
+	}
+
+	returnedState := q.Get("state")
+	if returnedState != "" && returnedState != expectedState {
+		return oauthResult{}, fmt.Errorf("callback URL state does not match this login attempt")
+	}
+
+	return oauthResult{code: code}, nil
+}
+
 func callbackPage(title, message string, isError bool) string {
 	bg := "#0a0a0a"
 	color := "#e0e0e0"
-	accent := "#22c55e"
+	accent := "#06B6D4"
 	if isError {
 		accent = "#ef4444"
 	}
