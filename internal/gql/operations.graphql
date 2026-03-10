@@ -110,8 +110,8 @@ query ServiceLogs($input: LogsInput!) {
   }
 }
 
-query ServiceMetrics($id: ID!, $timeRange: MetricTimeRange!) {
-  serviceMetrics(serviceId: $id, timeRange: $timeRange) {
+query ServiceMetrics($id: ID!, $timeRange: MetricTimeRange!, $maxDataPoints: Int) {
+  serviceMetrics(serviceId: $id, timeRange: $timeRange, maxDataPoints: $maxDataPoints) {
     cpuUsage {
       dataPoints { timestamp value }
     }

@@ -432,7 +432,7 @@ type ServiceMetrics {
 }
 
 extend type Query {
-  serviceMetrics(serviceId: ID!, timeRange: MetricTimeRange!): ServiceMetrics!
+  serviceMetrics(serviceId: ID!, timeRange: MetricTimeRange!, maxDataPoints: Int): ServiceMetrics!
 }
 extend type Query {
   """Paginated list of projects in a workspace. Each project contains services and resources."""
@@ -835,4 +835,3 @@ type WorkspaceInvite {
   status: String!
   createdAt: Time!
 }
-

@@ -29,6 +29,13 @@ type serviceInspectOptions struct {
 	logFilters   logFilterOptions
 }
 
+const defaultMetricsMaxDataPoints = 50
+
+type metricSample struct {
+	timestamp string
+	value     float64
+}
+
 func inspectOptionsFromCommand(cmd *cobra.Command) (serviceInspectOptions, error) {
 	includeEnv, _ := cmd.Flags().GetBool("env")
 	deployLines, _ := cmd.Flags().GetInt("deploy-logs")
@@ -292,7 +299,8 @@ func fetchServiceMetrics(client graphql.Client, serviceID, timeRange string) (gq
 		return gql.ServiceMetricsServiceMetrics{}, "", fmt.Errorf("invalid metrics range %q (use 1h, 6h, 7d, 30d)", timeRange)
 	}
 
-	result, err := gql.ServiceMetrics(ctx(), client, serviceID, tr)
+	maxDataPoints := defaultMetricsMaxDataPoints
+	result, err := gql.ServiceMetrics(ctx(), client, serviceID, tr, &maxDataPoints)
 	if err != nil {
 		return gql.ServiceMetricsServiceMetrics{}, "", fmt.Errorf("metrics: %w", err)
 	}
@@ -301,65 +309,190 @@ func fetchServiceMetrics(client graphql.Client, serviceID, timeRange string) (gq
 }
 
 func printMetricsSection(m gql.ServiceMetricsServiceMetrics, timeRange string) bool {
-	if len(m.CpuUsage.DataPoints) == 0 &&
-		len(m.MemoryUsageMB.DataPoints) == 0 &&
-		len(m.NetworkReceiveBytesPerSec.DataPoints) == 0 &&
-		len(m.NetworkTransmitBytesPerSec.DataPoints) == 0 {
-		return false
-	}
-
-	fmt.Println()
-	fmt.Printf("  %s  %s\n", bold.Render("Metrics"), dim.Render("("+timeRange+")"))
-
-	if ts, value, ok := latestMetricPoint(m.CpuUsage.DataPoints,
+	cpu := metricSamples(m.CpuUsage.DataPoints,
 		func(point gql.ServiceMetricsServiceMetricsCpuUsageMetricSeriesDataPointsMetricDataPoint) string {
 			return point.Timestamp
 		},
 		func(point gql.ServiceMetricsServiceMetricsCpuUsageMetricSeriesDataPointsMetricDataPoint) float64 {
 			return point.Value
 		},
-	); ok {
-		fmt.Printf("  CPU        %.4f / %.2f vCPUs  %s\n",
-			value, m.CpuLimitVCPUs, dim.Render(ts))
-	}
-
-	if ts, value, ok := latestMetricPoint(m.MemoryUsageMB.DataPoints,
+	)
+	cpu = clampMetricSamples(cpu, defaultMetricsMaxDataPoints)
+	memory := metricSamples(m.MemoryUsageMB.DataPoints,
 		func(point gql.ServiceMetricsServiceMetricsMemoryUsageMBMetricSeriesDataPointsMetricDataPoint) string {
 			return point.Timestamp
 		},
 		func(point gql.ServiceMetricsServiceMetricsMemoryUsageMBMetricSeriesDataPointsMetricDataPoint) float64 {
 			return point.Value
 		},
-	); ok {
-		fmt.Printf("  Memory     %.1f / %.0f MB  %s\n",
-			value, m.MemoryLimitMB, dim.Render(ts))
-	}
-
-	if ts, value, ok := latestMetricPoint(m.NetworkReceiveBytesPerSec.DataPoints,
+	)
+	memory = clampMetricSamples(memory, defaultMetricsMaxDataPoints)
+	netRx := metricSamples(m.NetworkReceiveBytesPerSec.DataPoints,
 		func(point gql.ServiceMetricsServiceMetricsNetworkReceiveBytesPerSecMetricSeriesDataPointsMetricDataPoint) string {
 			return point.Timestamp
 		},
 		func(point gql.ServiceMetricsServiceMetricsNetworkReceiveBytesPerSecMetricSeriesDataPointsMetricDataPoint) float64 {
 			return point.Value
 		},
-	); ok {
-		fmt.Printf("  Net RX     %s  %s\n",
-			formatBytesPerSecond(value), dim.Render(ts))
-	}
-
-	if ts, value, ok := latestMetricPoint(m.NetworkTransmitBytesPerSec.DataPoints,
+	)
+	netRx = clampMetricSamples(netRx, defaultMetricsMaxDataPoints)
+	netTx := metricSamples(m.NetworkTransmitBytesPerSec.DataPoints,
 		func(point gql.ServiceMetricsServiceMetricsNetworkTransmitBytesPerSecMetricSeriesDataPointsMetricDataPoint) string {
 			return point.Timestamp
 		},
 		func(point gql.ServiceMetricsServiceMetricsNetworkTransmitBytesPerSecMetricSeriesDataPointsMetricDataPoint) float64 {
 			return point.Value
 		},
-	); ok {
-		fmt.Printf("  Net TX     %s  %s\n",
-			formatBytesPerSecond(value), dim.Render(ts))
+	)
+	netTx = clampMetricSamples(netTx, defaultMetricsMaxDataPoints)
+
+	if maxInt(len(cpu), len(memory), len(netRx), len(netTx)) == 0 {
+		return false
 	}
 
+	fmt.Println()
+	fmt.Printf("  %s  %s\n",
+		bold.Render("Metrics"),
+		dim.Render(fmt.Sprintf("(%s, up to %d points)", timeRange, defaultMetricsMaxDataPoints)))
+
+	printMetricSeries(
+		"CPU",
+		cpu,
+		accent,
+		func(value float64) string { return fmt.Sprintf("%.4f vCPUs", value) },
+		func() string { return fmt.Sprintf("limit %.2f vCPUs", m.CpuLimitVCPUs) },
+	)
+	printMetricSeries(
+		"Memory",
+		memory,
+		green,
+		func(value float64) string { return fmt.Sprintf("%.1f MB", value) },
+		func() string { return fmt.Sprintf("limit %.0f MB", m.MemoryLimitMB) },
+	)
+	printMetricSeries(
+		"Net RX",
+		netRx,
+		yellow,
+		formatBytesPerSecond,
+		nil,
+	)
+	printMetricSeries(
+		"Net TX",
+		netTx,
+		titleStyle,
+		formatBytesPerSecond,
+		nil,
+	)
+
 	return true
+}
+
+func metricSamples[T any](points []T, timestamp func(T) string, value func(T) float64) []metricSample {
+	samples := make([]metricSample, 0, len(points))
+	for _, point := range points {
+		samples = append(samples, metricSample{
+			timestamp: timestamp(point),
+			value:     value(point),
+		})
+	}
+	return samples
+}
+
+func clampMetricSamples(samples []metricSample, maxPoints int) []metricSample {
+	if len(samples) <= maxPoints || maxPoints <= 0 {
+		return samples
+	}
+	if maxPoints == 1 {
+		return []metricSample{samples[len(samples)-1]}
+	}
+
+	out := make([]metricSample, 0, maxPoints)
+	lastIndex := len(samples) - 1
+	for i := 0; i < maxPoints; i++ {
+		index := int(math.Round(float64(i*lastIndex) / float64(maxPoints-1)))
+		out = append(out, samples[index])
+	}
+	return out
+}
+
+func printMetricSeries(label string, samples []metricSample, style interface{ Render(...string) string }, formatValue func(float64) string, extra func() string) {
+	if len(samples) == 0 {
+		return
+	}
+
+	latest := samples[len(samples)-1]
+	avg, peak := metricStats(samples)
+	headline := fmt.Sprintf("now %s  avg %s  peak %s", formatValue(latest.value), formatValue(avg), formatValue(peak))
+	if extra != nil {
+		headline += "  " + dim.Render("("+extra()+")")
+	}
+
+	fmt.Printf("  %-10s %s\n", label, headline)
+	fmt.Printf("  %-10s %s\n", "", style.Render(metricSparkline(samples)))
+	fmt.Printf("  %-10s %s\n", "", dim.Render(fmt.Sprintf("%s -> %s", fmtTime(samples[0].timestamp), fmtTime(samples[len(samples)-1].timestamp))))
+}
+
+func metricStats(samples []metricSample) (avg, peak float64) {
+	if len(samples) == 0 {
+		return 0, 0
+	}
+
+	peak = samples[0].value
+	for _, sample := range samples {
+		avg += sample.value
+		if sample.value > peak {
+			peak = sample.value
+		}
+	}
+	return avg / float64(len(samples)), peak
+}
+
+func metricSparkline(samples []metricSample) string {
+	if len(samples) == 0 {
+		return ""
+	}
+
+	const ramp = ".:-=+*#%@"
+	minValue := samples[0].value
+	maxValue := samples[0].value
+	for _, sample := range samples[1:] {
+		if sample.value < minValue {
+			minValue = sample.value
+		}
+		if sample.value > maxValue {
+			maxValue = sample.value
+		}
+	}
+
+	if maxValue == minValue {
+		return strings.Repeat("=", len(samples))
+	}
+
+	var builder strings.Builder
+	builder.Grow(len(samples))
+	scale := float64(len(ramp) - 1)
+	for _, sample := range samples {
+		normalized := (sample.value - minValue) / (maxValue - minValue)
+		index := int(math.Round(normalized * scale))
+		if index < 0 {
+			index = 0
+		}
+		if index >= len(ramp) {
+			index = len(ramp) - 1
+		}
+		builder.WriteByte(ramp[index])
+	}
+	return builder.String()
+}
+
+func maxInt(values ...int) int {
+	best := 0
+	for _, value := range values {
+		if value > best {
+			best = value
+		}
+	}
+	return best
 }
 
 func formatBytesPerSecond(value float64) string {

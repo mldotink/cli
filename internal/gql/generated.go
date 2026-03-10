@@ -2201,8 +2201,9 @@ func (v *__ServiceLogsInput) GetInput() LogsInput { return v.Input }
 
 // __ServiceMetricsInput is used internally by genqlient
 type __ServiceMetricsInput struct {
-	Id        string          `json:"id"`
-	TimeRange MetricTimeRange `json:"timeRange"`
+	Id            string          `json:"id"`
+	TimeRange     MetricTimeRange `json:"timeRange"`
+	MaxDataPoints *int            `json:"maxDataPoints"`
 }
 
 // GetId returns __ServiceMetricsInput.Id, and is useful for accessing the field via an interface.
@@ -2210,6 +2211,9 @@ func (v *__ServiceMetricsInput) GetId() string { return v.Id }
 
 // GetTimeRange returns __ServiceMetricsInput.TimeRange, and is useful for accessing the field via an interface.
 func (v *__ServiceMetricsInput) GetTimeRange() MetricTimeRange { return v.TimeRange }
+
+// GetMaxDataPoints returns __ServiceMetricsInput.MaxDataPoints, and is useful for accessing the field via an interface.
+func (v *__ServiceMetricsInput) GetMaxDataPoints() *int { return v.MaxDataPoints }
 
 // __SetSecretsInput is used internally by genqlient
 type __SetSecretsInput struct {
@@ -3605,8 +3609,8 @@ func ServiceLogs(
 
 // The query executed by ServiceMetrics.
 const ServiceMetrics_Operation = `
-query ServiceMetrics ($id: ID!, $timeRange: MetricTimeRange!) {
-	serviceMetrics(serviceId: $id, timeRange: $timeRange) {
+query ServiceMetrics ($id: ID!, $timeRange: MetricTimeRange!, $maxDataPoints: Int) {
+	serviceMetrics(serviceId: $id, timeRange: $timeRange, maxDataPoints: $maxDataPoints) {
 		cpuUsage {
 			dataPoints {
 				timestamp
@@ -3642,13 +3646,15 @@ func ServiceMetrics(
 	client_ graphql.Client,
 	id string,
 	timeRange MetricTimeRange,
+	maxDataPoints *int,
 ) (data_ *ServiceMetricsResponse, err_ error) {
 	req_ := &graphql.Request{
 		OpName: "ServiceMetrics",
 		Query:  ServiceMetrics_Operation,
 		Variables: &__ServiceMetricsInput{
-			Id:        id,
-			TimeRange: timeRange,
+			Id:            id,
+			TimeRange:     timeRange,
+			MaxDataPoints: maxDataPoints,
 		},
 	}
 
