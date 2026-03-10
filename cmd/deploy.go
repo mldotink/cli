@@ -71,14 +71,14 @@ To update or redeploy an existing service, use 'ink redeploy'.`,
 ink repo create myapp
 git remote add ink <remote-url-from-output>
 git push ink main
-ink deploy myapp
+ink deploy myapi --repo myapp
 
 # GitHub repo (requires GitHub App installed)
-ink deploy myapi --host github --repo myorg/myapi
+ink deploy myapi --host github --repo myorg/myapp
 
 # With options
-ink deploy myapi --memory 512Mi --vcpu 0.5 --env-file .env
-ink deploy docs --buildpack static --publish-dir dist`,
+ink deploy myapi --repo myapp --memory 512Mi --vcpu 0.5 --env-file .env
+ink deploy docs --repo docs --buildpack static --publish-dir dist`,
 	Args: exactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		name := args[0]
