@@ -31,8 +31,8 @@ func Resolve(flagAPIKey, flagWorkspace, flagProject string) *Resolved {
 		set(r, "project", g.Project, "global")
 	}
 
-	// 2. Local .ink (overrides global)
-	if l := loadFile(".ink"); l != nil {
+	// 2. Local .ink from current directory or nearest ancestor (overrides global)
+	if l := loadFile(localPath()); l != nil {
 		set(r, "api_key", l.APIKey, "local")
 		set(r, "workspace", l.Workspace, "local")
 		set(r, "project", l.Project, "local")
@@ -59,6 +59,26 @@ func Resolve(flagAPIKey, flagWorkspace, flagProject string) *Resolved {
 	}
 
 	return r
+}
+
+func localPath() string {
+	dir, err := os.Getwd()
+	if err != nil {
+		return ""
+	}
+
+	for {
+		path := filepath.Join(dir, ".ink")
+		if info, err := os.Stat(path); err == nil && !info.IsDir() {
+			return path
+		}
+
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			return ""
+		}
+		dir = parent
+	}
 }
 
 func set(r *Resolved, field, value, source string) {

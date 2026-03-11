@@ -58,7 +58,7 @@ Ink CLI resolves configuration in this order (highest priority first):
 
 1. **CLI flags** — `--api-key`, `--workspace`, `--project`
 2. **Environment** — `INK_API_KEY`
-3. **Local config** — `.ink` file in current directory
+3. **Local config** — nearest `.ink` file in current directory or a parent directory
 4. **Global config** — `~/.config/ink/config`
 
 Set workspace/project context:

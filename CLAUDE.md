@@ -7,7 +7,7 @@ Go CLI for the Ink PaaS (ml.ink). Built with Cobra + Charm lipgloss for terminal
 - `main.go` — entry point, injects version via ldflags (`-X main.version=...`)
 - `cmd/` — one file per command, flat structure (no noun groups for services)
 - `internal/api/` — GraphQL client with Bearer auth via `authTransport` RoundTripper
-- `internal/config/` — config resolution: flags > env > `.ink` (local) > `~/.config/ink/config` (global)
+- `internal/config/` — config resolution: flags > env > nearest `.ink` (local) > `~/.config/ink/config` (global)
 - `internal/gql/` — genqlient-generated typed GraphQL client code
 - `schema.graphql` — concatenated from backend `go-backend/internal/graph/*.graphqls` (server directives stripped)
 - `npm/` — per-platform npm packages for `npx` distribution
