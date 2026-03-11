@@ -386,3 +386,19 @@ query AccountStatus {
     subscriptionTier
   }
 }
+
+# ── Usage / Billing ───────────────────────────────
+
+query UsageBillBreakdown($ws: String) {
+  usageBillBreakdown(workspaceSlug: $ws) {
+    memory { quantity unitPrice unit totalCents }
+    cpu { quantity unitPrice unit totalCents }
+    egress { quantity unitPrice unit totalCents }
+    subtotal
+    includedUsageCents
+    planFeeCents
+    currentBillCents
+    periodStart
+    periodEnd
+  }
+}

@@ -1833,6 +1833,142 @@ func (v *UpdateServiceServiceUpdateUpdateServiceResult) GetName() string { retur
 // GetStatus returns UpdateServiceServiceUpdateUpdateServiceResult.Status, and is useful for accessing the field via an interface.
 func (v *UpdateServiceServiceUpdateUpdateServiceResult) GetStatus() string { return v.Status }
 
+// UsageBillBreakdownResponse is returned by UsageBillBreakdown on success.
+type UsageBillBreakdownResponse struct {
+	UsageBillBreakdown UsageBillBreakdownUsageBillBreakdown `json:"usageBillBreakdown"`
+}
+
+// GetUsageBillBreakdown returns UsageBillBreakdownResponse.UsageBillBreakdown, and is useful for accessing the field via an interface.
+func (v *UsageBillBreakdownResponse) GetUsageBillBreakdown() UsageBillBreakdownUsageBillBreakdown {
+	return v.UsageBillBreakdown
+}
+
+// UsageBillBreakdownUsageBillBreakdown includes the requested fields of the GraphQL type UsageBillBreakdown.
+type UsageBillBreakdownUsageBillBreakdown struct {
+	Memory             UsageBillBreakdownUsageBillBreakdownMemoryUsageLineItem `json:"memory"`
+	Cpu                UsageBillBreakdownUsageBillBreakdownCpuUsageLineItem    `json:"cpu"`
+	Egress             UsageBillBreakdownUsageBillBreakdownEgressUsageLineItem `json:"egress"`
+	Subtotal           string                                                  `json:"subtotal"`
+	IncludedUsageCents int                                                     `json:"includedUsageCents"`
+	PlanFeeCents       int                                                     `json:"planFeeCents"`
+	CurrentBillCents   int                                                     `json:"currentBillCents"`
+	PeriodStart        string                                                  `json:"periodStart"`
+	PeriodEnd          string                                                  `json:"periodEnd"`
+}
+
+// GetMemory returns UsageBillBreakdownUsageBillBreakdown.Memory, and is useful for accessing the field via an interface.
+func (v *UsageBillBreakdownUsageBillBreakdown) GetMemory() UsageBillBreakdownUsageBillBreakdownMemoryUsageLineItem {
+	return v.Memory
+}
+
+// GetCpu returns UsageBillBreakdownUsageBillBreakdown.Cpu, and is useful for accessing the field via an interface.
+func (v *UsageBillBreakdownUsageBillBreakdown) GetCpu() UsageBillBreakdownUsageBillBreakdownCpuUsageLineItem {
+	return v.Cpu
+}
+
+// GetEgress returns UsageBillBreakdownUsageBillBreakdown.Egress, and is useful for accessing the field via an interface.
+func (v *UsageBillBreakdownUsageBillBreakdown) GetEgress() UsageBillBreakdownUsageBillBreakdownEgressUsageLineItem {
+	return v.Egress
+}
+
+// GetSubtotal returns UsageBillBreakdownUsageBillBreakdown.Subtotal, and is useful for accessing the field via an interface.
+func (v *UsageBillBreakdownUsageBillBreakdown) GetSubtotal() string { return v.Subtotal }
+
+// GetIncludedUsageCents returns UsageBillBreakdownUsageBillBreakdown.IncludedUsageCents, and is useful for accessing the field via an interface.
+func (v *UsageBillBreakdownUsageBillBreakdown) GetIncludedUsageCents() int {
+	return v.IncludedUsageCents
+}
+
+// GetPlanFeeCents returns UsageBillBreakdownUsageBillBreakdown.PlanFeeCents, and is useful for accessing the field via an interface.
+func (v *UsageBillBreakdownUsageBillBreakdown) GetPlanFeeCents() int { return v.PlanFeeCents }
+
+// GetCurrentBillCents returns UsageBillBreakdownUsageBillBreakdown.CurrentBillCents, and is useful for accessing the field via an interface.
+func (v *UsageBillBreakdownUsageBillBreakdown) GetCurrentBillCents() int { return v.CurrentBillCents }
+
+// GetPeriodStart returns UsageBillBreakdownUsageBillBreakdown.PeriodStart, and is useful for accessing the field via an interface.
+func (v *UsageBillBreakdownUsageBillBreakdown) GetPeriodStart() string { return v.PeriodStart }
+
+// GetPeriodEnd returns UsageBillBreakdownUsageBillBreakdown.PeriodEnd, and is useful for accessing the field via an interface.
+func (v *UsageBillBreakdownUsageBillBreakdown) GetPeriodEnd() string { return v.PeriodEnd }
+
+// UsageBillBreakdownUsageBillBreakdownCpuUsageLineItem includes the requested fields of the GraphQL type UsageLineItem.
+type UsageBillBreakdownUsageBillBreakdownCpuUsageLineItem struct {
+	Quantity   string `json:"quantity"`
+	UnitPrice  string `json:"unitPrice"`
+	Unit       string `json:"unit"`
+	TotalCents int    `json:"totalCents"`
+}
+
+// GetQuantity returns UsageBillBreakdownUsageBillBreakdownCpuUsageLineItem.Quantity, and is useful for accessing the field via an interface.
+func (v *UsageBillBreakdownUsageBillBreakdownCpuUsageLineItem) GetQuantity() string {
+	return v.Quantity
+}
+
+// GetUnitPrice returns UsageBillBreakdownUsageBillBreakdownCpuUsageLineItem.UnitPrice, and is useful for accessing the field via an interface.
+func (v *UsageBillBreakdownUsageBillBreakdownCpuUsageLineItem) GetUnitPrice() string {
+	return v.UnitPrice
+}
+
+// GetUnit returns UsageBillBreakdownUsageBillBreakdownCpuUsageLineItem.Unit, and is useful for accessing the field via an interface.
+func (v *UsageBillBreakdownUsageBillBreakdownCpuUsageLineItem) GetUnit() string { return v.Unit }
+
+// GetTotalCents returns UsageBillBreakdownUsageBillBreakdownCpuUsageLineItem.TotalCents, and is useful for accessing the field via an interface.
+func (v *UsageBillBreakdownUsageBillBreakdownCpuUsageLineItem) GetTotalCents() int {
+	return v.TotalCents
+}
+
+// UsageBillBreakdownUsageBillBreakdownEgressUsageLineItem includes the requested fields of the GraphQL type UsageLineItem.
+type UsageBillBreakdownUsageBillBreakdownEgressUsageLineItem struct {
+	Quantity   string `json:"quantity"`
+	UnitPrice  string `json:"unitPrice"`
+	Unit       string `json:"unit"`
+	TotalCents int    `json:"totalCents"`
+}
+
+// GetQuantity returns UsageBillBreakdownUsageBillBreakdownEgressUsageLineItem.Quantity, and is useful for accessing the field via an interface.
+func (v *UsageBillBreakdownUsageBillBreakdownEgressUsageLineItem) GetQuantity() string {
+	return v.Quantity
+}
+
+// GetUnitPrice returns UsageBillBreakdownUsageBillBreakdownEgressUsageLineItem.UnitPrice, and is useful for accessing the field via an interface.
+func (v *UsageBillBreakdownUsageBillBreakdownEgressUsageLineItem) GetUnitPrice() string {
+	return v.UnitPrice
+}
+
+// GetUnit returns UsageBillBreakdownUsageBillBreakdownEgressUsageLineItem.Unit, and is useful for accessing the field via an interface.
+func (v *UsageBillBreakdownUsageBillBreakdownEgressUsageLineItem) GetUnit() string { return v.Unit }
+
+// GetTotalCents returns UsageBillBreakdownUsageBillBreakdownEgressUsageLineItem.TotalCents, and is useful for accessing the field via an interface.
+func (v *UsageBillBreakdownUsageBillBreakdownEgressUsageLineItem) GetTotalCents() int {
+	return v.TotalCents
+}
+
+// UsageBillBreakdownUsageBillBreakdownMemoryUsageLineItem includes the requested fields of the GraphQL type UsageLineItem.
+type UsageBillBreakdownUsageBillBreakdownMemoryUsageLineItem struct {
+	Quantity   string `json:"quantity"`
+	UnitPrice  string `json:"unitPrice"`
+	Unit       string `json:"unit"`
+	TotalCents int    `json:"totalCents"`
+}
+
+// GetQuantity returns UsageBillBreakdownUsageBillBreakdownMemoryUsageLineItem.Quantity, and is useful for accessing the field via an interface.
+func (v *UsageBillBreakdownUsageBillBreakdownMemoryUsageLineItem) GetQuantity() string {
+	return v.Quantity
+}
+
+// GetUnitPrice returns UsageBillBreakdownUsageBillBreakdownMemoryUsageLineItem.UnitPrice, and is useful for accessing the field via an interface.
+func (v *UsageBillBreakdownUsageBillBreakdownMemoryUsageLineItem) GetUnitPrice() string {
+	return v.UnitPrice
+}
+
+// GetUnit returns UsageBillBreakdownUsageBillBreakdownMemoryUsageLineItem.Unit, and is useful for accessing the field via an interface.
+func (v *UsageBillBreakdownUsageBillBreakdownMemoryUsageLineItem) GetUnit() string { return v.Unit }
+
+// GetTotalCents returns UsageBillBreakdownUsageBillBreakdownMemoryUsageLineItem.TotalCents, and is useful for accessing the field via an interface.
+func (v *UsageBillBreakdownUsageBillBreakdownMemoryUsageLineItem) GetTotalCents() int {
+	return v.TotalCents
+}
+
 // __AcceptInviteInput is used internally by genqlient
 type __AcceptInviteInput struct {
 	Id string `json:"id"`
@@ -2252,6 +2388,14 @@ type __UpdateServiceInput struct {
 
 // GetInput returns __UpdateServiceInput.Input, and is useful for accessing the field via an interface.
 func (v *__UpdateServiceInput) GetInput() UpdateServiceInput { return v.Input }
+
+// __UsageBillBreakdownInput is used internally by genqlient
+type __UsageBillBreakdownInput struct {
+	Ws *string `json:"ws"`
+}
+
+// GetWs returns __UsageBillBreakdownInput.Ws, and is useful for accessing the field via an interface.
+func (v *__UsageBillBreakdownInput) GetWs() *string { return v.Ws }
 
 // The mutation executed by AcceptInvite.
 const AcceptInvite_Operation = `
@@ -3775,6 +3919,63 @@ func UpdateService(
 	}
 
 	data_ = &UpdateServiceResponse{}
+	resp_ := &graphql.Response{Data: data_}
+
+	err_ = client_.MakeRequest(
+		ctx_,
+		req_,
+		resp_,
+	)
+
+	return data_, err_
+}
+
+// The query executed by UsageBillBreakdown.
+const UsageBillBreakdown_Operation = `
+query UsageBillBreakdown ($ws: String) {
+	usageBillBreakdown(workspaceSlug: $ws) {
+		memory {
+			quantity
+			unitPrice
+			unit
+			totalCents
+		}
+		cpu {
+			quantity
+			unitPrice
+			unit
+			totalCents
+		}
+		egress {
+			quantity
+			unitPrice
+			unit
+			totalCents
+		}
+		subtotal
+		includedUsageCents
+		planFeeCents
+		currentBillCents
+		periodStart
+		periodEnd
+	}
+}
+`
+
+func UsageBillBreakdown(
+	ctx_ context.Context,
+	client_ graphql.Client,
+	ws *string,
+) (data_ *UsageBillBreakdownResponse, err_ error) {
+	req_ := &graphql.Request{
+		OpName: "UsageBillBreakdown",
+		Query:  UsageBillBreakdown_Operation,
+		Variables: &__UsageBillBreakdownInput{
+			Ws: ws,
+		},
+	}
+
+	data_ = &UsageBillBreakdownResponse{}
 	resp_ := &graphql.Response{Data: data_}
 
 	err_ = client_.MakeRequest(
