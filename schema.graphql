@@ -551,7 +551,6 @@ type User {
   githubUsername: String
   avatarUrl: String
   createdAt: Time!
-  githubAppInstallationId: String
   githubScopes: [String!]!
   tosAcceptedAt: Time
   """Whether the user has connected GitHub via OAuth, enabling repo creation and code push on their behalf."""
