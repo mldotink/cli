@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -13,14 +12,6 @@ import (
 
 func formatCents(cents int) string {
 	return fmt.Sprintf("$%.2f", float64(cents)/100)
-}
-
-func formatSubtotal(s string) string {
-	v, err := strconv.ParseFloat(s, 64)
-	if err != nil {
-		return "$" + s
-	}
-	return fmt.Sprintf("$%.2f", v)
 }
 
 func shortDate(raw string) string {
@@ -41,11 +32,11 @@ ink whoami --json`,
 		client := newClient()
 
 		var (
-			result   *gql.AccountStatusResponse
-			accErr   error
-			usage    *gql.UsageBillBreakdownResponse
-			usageErr error
-			wg       sync.WaitGroup
+			result *gql.AccountStatusResponse
+			accErr error
+			wsList *gql.ListWorkspacesResponse
+			wsErr  error
+			wg     sync.WaitGroup
 		)
 
 		wg.Add(2)
@@ -55,7 +46,7 @@ ink whoami --json`,
 		}()
 		go func() {
 			defer wg.Done()
-			usage, usageErr = gql.UsageBillBreakdown(ctx(), client, wsPtr())
+			wsList, wsErr = gql.ListWorkspaces(ctx(), client)
 		}()
 		wg.Wait()
 
@@ -68,10 +59,44 @@ ink whoami --json`,
 			fatal("Could not fetch account")
 		}
 
+		// Fetch billing for each workspace in parallel
+		type wsBilling struct {
+			slug string
+			data *gql.UsageBillBreakdownResponse
+		}
+		var billings []wsBilling
+		if wsErr == nil && len(wsList.WorkspaceList) > 0 {
+			billings = make([]wsBilling, len(wsList.WorkspaceList))
+			var bwg sync.WaitGroup
+			for i, ws := range wsList.WorkspaceList {
+				billings[i].slug = ws.Slug
+				bwg.Add(1)
+				go func(idx int, slug string) {
+					defer bwg.Done()
+					s := slug
+					billings[idx].data, _ = gql.UsageBillBreakdown(ctx(), client, &s)
+				}(i, ws.Slug)
+			}
+			bwg.Wait()
+		}
+
 		if jsonOutput {
 			out := map[string]any{"account": a}
-			if usageErr == nil {
-				out["usage"] = usage.UsageBillBreakdown
+			if wsErr == nil {
+				out["workspaces"] = wsList.WorkspaceList
+			}
+			if len(billings) > 0 {
+				bmap := make(map[string]any)
+				for _, b := range billings {
+					if b.data != nil {
+						bmap[b.slug] = b.data.UsageBillBreakdown
+					}
+				}
+				out["billing"] = bmap
+			}
+			out["config"] = map[string]string{
+				"workspace": cfg.Workspace,
+				"project":   cfg.Project,
 			}
 			printJSON(out)
 			return
@@ -81,7 +106,6 @@ ink whoami --json`,
 		if a.Email != nil {
 			d.kv("Email", *a.Email)
 		}
-		d.kv("Workspace", a.DefaultWorkspace)
 
 		tier := "free"
 		if a.SubscriptionTier != nil {
@@ -89,16 +113,42 @@ ink whoami --json`,
 		}
 		d.kv("Plan", tier)
 
-		// Usage / Billing
-		if usageErr == nil {
-			u := usage.UsageBillBreakdown
-			period := shortDate(u.PeriodStart) + " – " + shortDate(u.PeriodEnd)
+		// Config
+		d.blank()
+		d.section("Config")
+		cfgWs := cfg.Workspace
+		if cfgWs == "" {
+			cfgWs = dim.Render("(default)")
+		}
+		d.kv("Workspace", cfgWs)
+		cfgProj := cfg.Project
+		if cfgProj == "" {
+			cfgProj = dim.Render("(default)")
+		}
+		d.kv("Project", cfgProj)
+
+		// Workspaces
+		if wsErr == nil && len(wsList.WorkspaceList) > 0 {
 			d.blank()
-			d.section("Usage (" + period + ")")
-			d.kv("Current Usage", formatSubtotal(u.Subtotal))
-			d.kv("Current Bill", formatCents(u.CurrentBillCents))
-			if u.IncludedUsageCents > 0 {
-				d.kv("Included", formatCents(u.IncludedUsageCents))
+			d.section("Workspaces")
+
+			// Build billing lookup
+			billingMap := make(map[string]*gql.UsageBillBreakdownResponse)
+			for _, b := range billings {
+				if b.data != nil {
+					billingMap[b.slug] = b.data
+				}
+			}
+
+			for _, ws := range wsList.WorkspaceList {
+				role := dim.Render(ws.Role)
+				line := role
+				if b, ok := billingMap[ws.Slug]; ok {
+					u := b.UsageBillBreakdown
+					period := shortDate(u.PeriodStart) + " – " + shortDate(u.PeriodEnd)
+					line += "  " + formatCents(u.CurrentBillCents) + "  " + dim.Render(period)
+				}
+				d.kv(ws.Slug, line)
 			}
 		}
 
