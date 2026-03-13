@@ -188,7 +188,7 @@ func runCreate(cmd *cobra.Command, client graphql.Client, name string) {
 		v, _ := cmd.Flags().GetString("dockerfile")
 		input.DockerfilePath = ptr(v)
 	}
-	if cmd.Flags().Changed("buildpack") {
+	{
 		v, _ := cmd.Flags().GetString("buildpack")
 		input.BuildPack = ptr(v)
 	}

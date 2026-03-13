@@ -14,6 +14,11 @@ import (
 
 const githubRepo = "mldotink/cli"
 
+const (
+	homebrewFormula = "mldotink/tap/ink"
+	npmPackage      = "@mldotink/cli"
+)
+
 type ghRelease struct {
 	TagName string `json:"tag_name"`
 }
@@ -40,9 +45,9 @@ var updateCmd = &cobra.Command{
 
 		if jsonOutput {
 			printJSON(map[string]any{
-				"current":       current,
-				"latest":        latest,
-				"up_to_date":    current == latest,
+				"current":        current,
+				"latest":         latest,
+				"up_to_date":     current == latest,
 				"install_method": method,
 			})
 			return
@@ -60,18 +65,8 @@ var updateCmd = &cobra.Command{
 		}
 
 		fmt.Println()
-		switch method {
-		case "homebrew":
-			fmt.Println("  Run: " + bold.Render("brew upgrade ink"))
-		case "npm":
-			fmt.Println("  Run: " + bold.Render("npm update -g @mldotink/ink-cli"))
-		default:
-			fmt.Println("  Install the latest version:")
-			fmt.Println("    " + accent.Render("brew install mldotink/tap/ink"))
-			fmt.Println("    " + dim.Render("or"))
-			fmt.Println("    " + accent.Render("npx @mldotink/ink-cli@latest"))
-			fmt.Println("    " + dim.Render("or download from"))
-			fmt.Println("    " + accent.Render(fmt.Sprintf("https://github.com/%s/releases/tag/v%s", githubRepo, latest)))
+		for _, line := range updateInstructionLines(method, latest) {
+			fmt.Println(line)
 		}
 		fmt.Println()
 	},
@@ -110,19 +105,46 @@ func detectInstallMethod() string {
 		return "unknown"
 	}
 
-	// Check unresolved path first (npm often uses symlinks)
-	if strings.Contains(exe, "/node_modules/") || strings.Contains(exe, `\node_modules\`) {
-		return "npm"
+	resolved := exe
+	if eval, err := filepath.EvalSymlinks(exe); err == nil {
+		resolved = eval
 	}
 
-	resolved, _ := filepath.EvalSymlinks(exe)
+	return detectInstallMethodFromPaths(exe, resolved)
+}
 
-	// Cellar is the definitive Homebrew marker (not just /homebrew/ which is ambiguous)
-	if strings.Contains(resolved, "/Cellar/") {
-		return "homebrew"
+func updateInstructionLines(method, latest string) []string {
+	switch method {
+	case "homebrew":
+		return []string{
+			"  Run: " + bold.Render("brew upgrade "+homebrewFormula),
+		}
+	case "npm":
+		return []string{
+			"  Run: " + bold.Render("npm update -g "+npmPackage),
+		}
+	default:
+		return []string{
+			"  Install the latest version:",
+			"    " + accent.Render("brew install "+homebrewFormula),
+			"    " + dim.Render("or"),
+			"    " + accent.Render("npx "+npmPackage+"@latest"),
+			"    " + dim.Render("or download from"),
+			"    " + accent.Render(fmt.Sprintf("https://github.com/%s/releases/tag/v%s", githubRepo, latest)),
+		}
 	}
-	if strings.Contains(resolved, "/node_modules/") || strings.Contains(resolved, `\node_modules\`) {
-		return "npm"
+}
+
+func detectInstallMethodFromPaths(paths ...string) string {
+	for _, path := range paths {
+		if strings.Contains(path, "/node_modules/") || strings.Contains(path, `\node_modules\`) {
+			return "npm"
+		}
+	}
+	for _, path := range paths {
+		if strings.Contains(path, "/Cellar/") {
+			return "homebrew"
+		}
 	}
 	return "binary"
 }

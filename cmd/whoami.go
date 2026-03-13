@@ -140,15 +140,29 @@ ink whoami --json`,
 				}
 			}
 
+			// Find max slug width for alignment
+			maxSlug := 0
 			for _, ws := range wsList.WorkspaceList {
-				role := dim.Render(ws.Role)
-				line := role
+				if len(ws.Slug) > maxSlug {
+					maxSlug = len(ws.Slug)
+				}
+			}
+
+			for _, ws := range wsList.WorkspaceList {
+				slug := ws.Slug
+				if ws.IsDefault {
+					slug += dim.Render("*")
+				}
+				d.line(fmt.Sprintf("  %-*s  %s", maxSlug, slug, dim.Render(ws.Role)))
 				if b, ok := billingMap[ws.Slug]; ok {
 					u := b.UsageBillBreakdown
-					period := shortDate(u.PeriodStart) + " – " + shortDate(u.PeriodEnd)
-					line += "  " + formatCents(u.CurrentBillCents) + "  " + dim.Render(period)
+					period := dim.Render(shortDate(u.PeriodStart) + " – " + shortDate(u.PeriodEnd))
+					d.line(fmt.Sprintf("    CPU %s  Mem %s  Egress %s",
+						formatCents(u.Cpu.TotalCents),
+						formatCents(u.Memory.TotalCents),
+						formatCents(u.Egress.TotalCents)))
+					d.line(fmt.Sprintf("    Bill %s  %s", formatCents(u.CurrentBillCents), period))
 				}
-				d.kv(ws.Slug, line)
 			}
 		}
 
