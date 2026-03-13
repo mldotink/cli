@@ -109,12 +109,19 @@ func detectInstallMethod() string {
 	if err != nil {
 		return "unknown"
 	}
-	exe, _ = filepath.EvalSymlinks(exe)
 
-	if strings.Contains(exe, "/Cellar/") || strings.Contains(exe, "/homebrew/") {
+	// Check unresolved path first (npm often uses symlinks)
+	if strings.Contains(exe, "/node_modules/") || strings.Contains(exe, `\node_modules\`) {
+		return "npm"
+	}
+
+	resolved, _ := filepath.EvalSymlinks(exe)
+
+	// Cellar is the definitive Homebrew marker (not just /homebrew/ which is ambiguous)
+	if strings.Contains(resolved, "/Cellar/") {
 		return "homebrew"
 	}
-	if strings.Contains(exe, "/node_modules/") || strings.Contains(exe, `\node_modules\`) {
+	if strings.Contains(resolved, "/node_modules/") || strings.Contains(resolved, `\node_modules\`) {
 		return "npm"
 	}
 	return "binary"

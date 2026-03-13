@@ -169,19 +169,25 @@ func renderServiceDetail(svc *gql.FindServiceServiceListServiceConnectionNodesSe
 	if svc.Fqdn != nil {
 		d.kv("URL", accent.Render(*svc.Fqdn))
 	}
-	d.kv("Repo", svc.Repo)
-	d.kv("Branch", svc.Branch)
-	if svc.CommitHash != nil {
-		hash := *svc.CommitHash
-		if len(hash) > 12 {
-			hash = hash[:12]
+	if svc.Source == "image" {
+		if svc.Image != nil {
+			d.kv("Image", *svc.Image)
 		}
-		d.kv("Commit", dim.Render(hash))
+	} else {
+		d.kv("Repo", svc.Repo)
+		d.kv("Branch", svc.Branch)
+		if svc.CommitHash != nil {
+			hash := *svc.CommitHash
+			if len(hash) > 12 {
+				hash = hash[:12]
+			}
+			d.kv("Commit", dim.Render(hash))
+		}
+		d.kv("Git host", svc.GitProvider)
 	}
 	d.kv("Memory", svc.Memory)
 	d.kv("vCPU", svc.Vcpus)
 	d.kv("Port", svc.Port)
-	d.kv("Git host", svc.GitProvider)
 	if svc.CustomDomain != nil {
 		status := ""
 		if svc.CustomDomainStatus != nil {

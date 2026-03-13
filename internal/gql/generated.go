@@ -138,6 +138,46 @@ type AddDomainResponse struct {
 // GetDomainAdd returns AddDomainResponse.DomainAdd, and is useful for accessing the field via an interface.
 func (v *AddDomainResponse) GetDomainAdd() AddDomainDomainAddDomainAddResult { return v.DomainAdd }
 
+type CreateProjectInput struct {
+	// Display name for the project. A URL-friendly slug is auto-generated from this.
+	Name          string  `json:"name"`
+	WorkspaceSlug *string `json:"workspaceSlug"`
+}
+
+// GetName returns CreateProjectInput.Name, and is useful for accessing the field via an interface.
+func (v *CreateProjectInput) GetName() string { return v.Name }
+
+// GetWorkspaceSlug returns CreateProjectInput.WorkspaceSlug, and is useful for accessing the field via an interface.
+func (v *CreateProjectInput) GetWorkspaceSlug() *string { return v.WorkspaceSlug }
+
+// CreateProjectProjectCreateProject includes the requested fields of the GraphQL type Project.
+type CreateProjectProjectCreateProject struct {
+	Id   string `json:"id"`
+	Name string `json:"name"`
+	// URL-friendly identifier used in API calls (e.g. 'default', 'my-project').
+	Slug string `json:"slug"`
+}
+
+// GetId returns CreateProjectProjectCreateProject.Id, and is useful for accessing the field via an interface.
+func (v *CreateProjectProjectCreateProject) GetId() string { return v.Id }
+
+// GetName returns CreateProjectProjectCreateProject.Name, and is useful for accessing the field via an interface.
+func (v *CreateProjectProjectCreateProject) GetName() string { return v.Name }
+
+// GetSlug returns CreateProjectProjectCreateProject.Slug, and is useful for accessing the field via an interface.
+func (v *CreateProjectProjectCreateProject) GetSlug() string { return v.Slug }
+
+// CreateProjectResponse is returned by CreateProject on success.
+type CreateProjectResponse struct {
+	// Create a new project in a workspace.
+	ProjectCreate CreateProjectProjectCreateProject `json:"projectCreate"`
+}
+
+// GetProjectCreate returns CreateProjectResponse.ProjectCreate, and is useful for accessing the field via an interface.
+func (v *CreateProjectResponse) GetProjectCreate() CreateProjectProjectCreateProject {
+	return v.ProjectCreate
+}
+
 // CreateRepoRepoCreateRepoCreateResult includes the requested fields of the GraphQL type RepoCreateResult.
 type CreateRepoRepoCreateRepoCreateResult struct {
 	// The repo name to pass to serviceCreate(repo: ...). Same as the name you provided.
@@ -251,8 +291,12 @@ func (v *CreateResourceResponse) GetResourceCreate() CreateResourceResourceCreat
 type CreateServiceInput struct {
 	// Service name — becomes the subdomain at {name}.ml.ink.
 	Name string `json:"name"`
-	// Repository reference as returned by repoCreate (e.g. 'my-app' for internal, 'user/repo' for GitHub). Not a URL.
-	Repo string `json:"repo"`
+	// Deployment source: 'repo' (build from git) or 'image' (pre-built Docker image).
+	Source *string `json:"source"`
+	// Repository reference as returned by repoCreate (e.g. 'my-app' for internal, 'user/repo' for GitHub). Not a URL. Required when source='repo'.
+	Repo *string `json:"repo"`
+	// Docker image to deploy (e.g. 'nginx:latest', 'ghcr.io/org/app:v1'). Required when source='image'.
+	Image *string `json:"image"`
 	// Git host: 'ink' for internal git, 'github' for GitHub repos.
 	Host *string `json:"host"`
 	// Branch to deploy.
@@ -288,8 +332,14 @@ type CreateServiceInput struct {
 // GetName returns CreateServiceInput.Name, and is useful for accessing the field via an interface.
 func (v *CreateServiceInput) GetName() string { return v.Name }
 
+// GetSource returns CreateServiceInput.Source, and is useful for accessing the field via an interface.
+func (v *CreateServiceInput) GetSource() *string { return v.Source }
+
 // GetRepo returns CreateServiceInput.Repo, and is useful for accessing the field via an interface.
-func (v *CreateServiceInput) GetRepo() string { return v.Repo }
+func (v *CreateServiceInput) GetRepo() *string { return v.Repo }
+
+// GetImage returns CreateServiceInput.Image, and is useful for accessing the field via an interface.
+func (v *CreateServiceInput) GetImage() *string { return v.Image }
 
 // GetHost returns CreateServiceInput.Host, and is useful for accessing the field via an interface.
 func (v *CreateServiceInput) GetHost() *string { return v.Host }
@@ -569,8 +619,9 @@ func (v *FindServiceServiceListServiceConnection) GetNodes() []FindServiceServic
 
 // FindServiceServiceListServiceConnectionNodesService includes the requested fields of the GraphQL type Service.
 type FindServiceServiceListServiceConnectionNodesService struct {
-	Id   string  `json:"id"`
-	Name *string `json:"name"`
+	Id     string  `json:"id"`
+	Name   *string `json:"name"`
+	Source string  `json:"source"`
 	// Deployment status: queued, building, deploying, active, failed, cancelled, superseded, crashed, completed, removed.
 	Status string `json:"status"`
 	// Error details when status is 'failed' or 'crashed'.
@@ -578,9 +629,10 @@ type FindServiceServiceListServiceConnectionNodesService struct {
 	// Public URL: {name}.ml.ink. Null until first successful deploy.
 	Fqdn *string `json:"fqdn"`
 	// Cluster-internal URL for service-to-service communication within the same workspace.
-	InternalUrl string `json:"internalUrl"`
-	Repo        string `json:"repo"`
-	Branch      string `json:"branch"`
+	InternalUrl string  `json:"internalUrl"`
+	Repo        string  `json:"repo"`
+	Image       *string `json:"image"`
+	Branch      string  `json:"branch"`
 	// Git commit SHA of the current deployment.
 	CommitHash *string `json:"commitHash"`
 	// 'internal' for Ink git, 'github' for GitHub repos.
@@ -604,6 +656,9 @@ func (v *FindServiceServiceListServiceConnectionNodesService) GetId() string { r
 // GetName returns FindServiceServiceListServiceConnectionNodesService.Name, and is useful for accessing the field via an interface.
 func (v *FindServiceServiceListServiceConnectionNodesService) GetName() *string { return v.Name }
 
+// GetSource returns FindServiceServiceListServiceConnectionNodesService.Source, and is useful for accessing the field via an interface.
+func (v *FindServiceServiceListServiceConnectionNodesService) GetSource() string { return v.Source }
+
 // GetStatus returns FindServiceServiceListServiceConnectionNodesService.Status, and is useful for accessing the field via an interface.
 func (v *FindServiceServiceListServiceConnectionNodesService) GetStatus() string { return v.Status }
 
@@ -622,6 +677,9 @@ func (v *FindServiceServiceListServiceConnectionNodesService) GetInternalUrl() s
 
 // GetRepo returns FindServiceServiceListServiceConnectionNodesService.Repo, and is useful for accessing the field via an interface.
 func (v *FindServiceServiceListServiceConnectionNodesService) GetRepo() string { return v.Repo }
+
+// GetImage returns FindServiceServiceListServiceConnectionNodesService.Image, and is useful for accessing the field via an interface.
+func (v *FindServiceServiceListServiceConnectionNodesService) GetImage() *string { return v.Image }
 
 // GetBranch returns FindServiceServiceListServiceConnectionNodesService.Branch, and is useful for accessing the field via an interface.
 func (v *FindServiceServiceListServiceConnectionNodesService) GetBranch() string { return v.Branch }
@@ -1111,7 +1169,8 @@ func (v *ListServicesServiceListServiceConnection) GetTotalCount() int { return 
 
 // ListServicesServiceListServiceConnectionNodesService includes the requested fields of the GraphQL type Service.
 type ListServicesServiceListServiceConnectionNodesService struct {
-	Name *string `json:"name"`
+	Name   *string `json:"name"`
+	Source string  `json:"source"`
 	// Deployment status: queued, building, deploying, active, failed, cancelled, superseded, crashed, completed, removed.
 	Status string `json:"status"`
 	// Public URL: {name}.ml.ink. Null until first successful deploy.
@@ -1123,6 +1182,9 @@ type ListServicesServiceListServiceConnectionNodesService struct {
 
 // GetName returns ListServicesServiceListServiceConnectionNodesService.Name, and is useful for accessing the field via an interface.
 func (v *ListServicesServiceListServiceConnectionNodesService) GetName() *string { return v.Name }
+
+// GetSource returns ListServicesServiceListServiceConnectionNodesService.Source, and is useful for accessing the field via an interface.
+func (v *ListServicesServiceListServiceConnectionNodesService) GetSource() string { return v.Source }
 
 // GetStatus returns ListServicesServiceListServiceConnectionNodesService.Status, and is useful for accessing the field via an interface.
 func (v *ListServicesServiceListServiceConnectionNodesService) GetStatus() string { return v.Status }
@@ -1741,7 +1803,9 @@ type UpdateServiceInput struct {
 	Name          string  `json:"name"`
 	Project       *string `json:"project"`
 	WorkspaceSlug *string `json:"workspaceSlug"`
+	Source        *string `json:"source"`
 	Repo          *string `json:"repo"`
+	Image         *string `json:"image"`
 	Host          *string `json:"host"`
 	Branch        *string `json:"branch"`
 	Port          *int    `json:"port"`
@@ -1766,8 +1830,14 @@ func (v *UpdateServiceInput) GetProject() *string { return v.Project }
 // GetWorkspaceSlug returns UpdateServiceInput.WorkspaceSlug, and is useful for accessing the field via an interface.
 func (v *UpdateServiceInput) GetWorkspaceSlug() *string { return v.WorkspaceSlug }
 
+// GetSource returns UpdateServiceInput.Source, and is useful for accessing the field via an interface.
+func (v *UpdateServiceInput) GetSource() *string { return v.Source }
+
 // GetRepo returns UpdateServiceInput.Repo, and is useful for accessing the field via an interface.
 func (v *UpdateServiceInput) GetRepo() *string { return v.Repo }
+
+// GetImage returns UpdateServiceInput.Image, and is useful for accessing the field via an interface.
+func (v *UpdateServiceInput) GetImage() *string { return v.Image }
 
 // GetHost returns UpdateServiceInput.Host, and is useful for accessing the field via an interface.
 func (v *UpdateServiceInput) GetHost() *string { return v.Host }
@@ -2024,6 +2094,14 @@ func (v *__AddDomainInput) GetProject() *string { return v.Project }
 
 // GetWs returns __AddDomainInput.Ws, and is useful for accessing the field via an interface.
 func (v *__AddDomainInput) GetWs() *string { return v.Ws }
+
+// __CreateProjectInput is used internally by genqlient
+type __CreateProjectInput struct {
+	Input CreateProjectInput `json:"input"`
+}
+
+// GetInput returns __CreateProjectInput.Input, and is useful for accessing the field via an interface.
+func (v *__CreateProjectInput) GetInput() CreateProjectInput { return v.Input }
 
 // __CreateRepoInput is used internally by genqlient
 type __CreateRepoInput struct {
@@ -2557,6 +2635,42 @@ func AddDomain(
 	return data_, err_
 }
 
+// The mutation executed by CreateProject.
+const CreateProject_Operation = `
+mutation CreateProject ($input: CreateProjectInput!) {
+	projectCreate(input: $input) {
+		id
+		name
+		slug
+	}
+}
+`
+
+func CreateProject(
+	ctx_ context.Context,
+	client_ graphql.Client,
+	input CreateProjectInput,
+) (data_ *CreateProjectResponse, err_ error) {
+	req_ := &graphql.Request{
+		OpName: "CreateProject",
+		Query:  CreateProject_Operation,
+		Variables: &__CreateProjectInput{
+			Input: input,
+		},
+	}
+
+	data_ = &CreateProjectResponse{}
+	resp_ := &graphql.Response{Data: data_}
+
+	err_ = client_.MakeRequest(
+		ctx_,
+		req_,
+		resp_,
+	)
+
+	return data_, err_
+}
+
 // The mutation executed by CreateRepo.
 const CreateRepo_Operation = `
 mutation CreateRepo ($input: RepoCreateInput!) {
@@ -2966,11 +3080,13 @@ query FindService ($ws: String) {
 		nodes {
 			id
 			name
+			source
 			status
 			errorMessage
 			fqdn
 			internalUrl
 			repo
+			image
 			branch
 			commitHash
 			gitProvider
@@ -3370,6 +3486,7 @@ query ListServices ($ws: String, $proj: String) {
 	serviceList(workspaceSlug: $ws, projectSlug: $proj) {
 		nodes {
 			name
+			source
 			status
 			fqdn
 			memory

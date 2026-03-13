@@ -14,12 +14,14 @@ import (
 func init() {
 	f := deployCmd.Flags()
 	f.StringP("repo", "r", "", "Repository name (default: same as service name)")
+	f.String("image", "", "Docker image to deploy (e.g. nginx:latest)")
 	f.IntP("port", "p", 0, "Application port (default: auto-detected)")
 	f.String("host", "ink", "Git host: ink, github")
 	f.String("branch", "main", "Git branch to deploy")
 	f.String("region", "eu-central-1", "Deploy region")
 	addServiceFlags(deployCmd)
 
+	redeployCmd.Flags().String("image", "", "Docker image to deploy (e.g. nginx:latest)")
 	addServiceFlags(redeployCmd)
 
 }
@@ -62,9 +64,9 @@ func addServiceFlags(cmd *cobra.Command) {
 var deployCmd = &cobra.Command{
 	Use:     "deploy <name> [flags]",
 	Short:   "Deploy a service for the first time",
-	Long: `Creates a new service from a git repo. The repo must exist first — create one
-with 'ink repo create' (Ink-managed) or use a GitHub repo with the GitHub App
-installed. The service will be live at {name}.ml.ink.
+	Long: `Creates a new service from a git repo or Docker image. For git repos, the repo
+must exist first — create one with 'ink repo create' (Ink-managed) or use a GitHub
+repo with the GitHub App installed. The service will be live at {name}.ml.ink.
 
 To update or redeploy an existing service, use 'ink redeploy'.`,
 	Example: `# Ink-managed repo
@@ -75,6 +77,9 @@ ink deploy myapi --repo myrepo
 
 # GitHub repo (requires GitHub App installed)
 ink deploy myapi --host github --repo myorg/myrepo
+
+# Docker image (skips build)
+ink deploy mynginx --image nginx:latest --port 80
 
 # With options
 ink deploy myapi --repo myrepo --memory 512Mi --vcpu 0.5 --env-file .env
@@ -126,23 +131,32 @@ ink redeploy myapi --buildpack dockerfile --dockerfile Dockerfile.prod`,
 }
 
 func runCreate(cmd *cobra.Command, client graphql.Client, name string) {
-	repo, _ := cmd.Flags().GetString("repo")
-	if repo == "" {
-		repo = name
-	}
+	image, _ := cmd.Flags().GetString("image")
+	isImage := image != ""
 
 	input := gql.CreateServiceInput{
 		Name:          name,
-		Repo:          repo,
 		WorkspaceSlug: wsPtr(),
 		Project:       projPtr(),
 	}
 
-	if cmd.Flags().Changed("host") {
+	if isImage {
+		input.Source = ptr("image")
+		input.Image = ptr(image)
+	} else {
+		repo, _ := cmd.Flags().GetString("repo")
+		if repo == "" {
+			repo = name
+		}
+		input.Source = ptr("repo")
+		input.Repo = ptr(repo)
+	}
+
+	if cmd.Flags().Changed("host") && !isImage {
 		v, _ := cmd.Flags().GetString("host")
 		input.Host = ptr(v)
 	}
-	if cmd.Flags().Changed("branch") {
+	if cmd.Flags().Changed("branch") && !isImage {
 		v, _ := cmd.Flags().GetString("branch")
 		input.Branch = ptr(v)
 	}
@@ -214,8 +228,14 @@ func runUpdate(cmd *cobra.Command, client graphql.Client, name string) {
 		Project:       projPtr(),
 	}
 
+	if cmd.Flags().Changed("image") {
+		v, _ := cmd.Flags().GetString("image")
+		input.Source = ptr("image")
+		input.Image = ptr(v)
+	}
 	if cmd.Flags().Changed("repo") {
 		v, _ := cmd.Flags().GetString("repo")
+		input.Source = ptr("repo")
 		input.Repo = ptr(v)
 	}
 	if cmd.Flags().Changed("host") {

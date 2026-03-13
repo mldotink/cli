@@ -441,7 +441,15 @@ extend type Query {
   projectGet(id: ID!, workspaceSlug: String): Project
 }
 
+input CreateProjectInput {
+  """Display name for the project. A URL-friendly slug is auto-generated from this."""
+  name: String!
+  workspaceSlug: String
+}
+
 extend type Mutation {
+  """Create a new project in a workspace."""
+  projectCreate(input: CreateProjectInput!): Project!
   """Delete a project and all its services. Requires owner or admin role. Cannot delete the 'default' project."""
   projectDelete(slug: String!, workspaceSlug: String): Boolean!
 }
@@ -640,8 +648,12 @@ type SetSecretsResult {
 input CreateServiceInput {
   """Service name — becomes the subdomain at {name}.ml.ink."""
   name: String!
-  """Repository reference as returned by repoCreate (e.g. 'my-app' for internal, 'user/repo' for GitHub). Not a URL."""
-  repo: String!
+  """Deployment source: 'repo' (build from git) or 'image' (pre-built Docker image)."""
+  source: String = "repo"
+  """Repository reference as returned by repoCreate (e.g. 'my-app' for internal, 'user/repo' for GitHub). Not a URL. Required when source='repo'."""
+  repo: String
+  """Docker image to deploy (e.g. 'nginx:latest', 'ghcr.io/org/app:v1'). Required when source='image'."""
+  image: String
   """Git host: 'ink' for internal git, 'github' for GitHub repos."""
   host: String = "ink"
   """Branch to deploy."""
@@ -689,7 +701,9 @@ input UpdateServiceInput {
   name: String!
   project: String
   workspaceSlug: String
+  source: String
   repo: String
+  image: String
   host: String
   branch: String
   port: Int
@@ -741,7 +755,9 @@ type Service {
   projectId: ID!
   project: Project
   name: String
+  source: String!
   repo: String!
+  image: String
   branch: String!
   """Deployment status: queued, building, deploying, active, failed, cancelled, superseded, crashed, completed, removed."""
   status: String!

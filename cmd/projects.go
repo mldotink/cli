@@ -12,6 +12,7 @@ import (
 
 func init() {
 	projectsDeleteCmd.Flags().BoolP("yes", "y", false, "Skip confirmation")
+	projectsCmd.AddCommand(projectsCreateCmd)
 	projectsCmd.AddCommand(projectsDeleteCmd)
 }
 
@@ -49,6 +50,34 @@ ink project delete my-project`,
 		}
 
 		printSubcommands(cmd)
+	},
+}
+
+var projectsCreateCmd = &cobra.Command{
+	Use:   "create <name>",
+	Short: "Create a new project",
+	Args:  exactArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		name := args[0]
+		client := newClient()
+
+		input := gql.CreateProjectInput{
+			Name:          name,
+			WorkspaceSlug: wsPtr(),
+		}
+
+		result, err := gql.CreateProject(ctx(), client, input)
+		if err != nil {
+			fatal(err.Error())
+		}
+
+		p := result.ProjectCreate
+		if jsonOutput {
+			printJSON(p)
+			return
+		}
+
+		success(fmt.Sprintf("Project created: %s (%s)", bold.Render(p.Name), p.Slug))
 	},
 }
 

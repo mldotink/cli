@@ -4,6 +4,7 @@ query ListServices($ws: String, $proj: String) {
   serviceList(workspaceSlug: $ws, projectSlug: $proj) {
     nodes {
       name
+      source
       status
       fqdn
       memory
@@ -25,11 +26,13 @@ query FindService($ws: String) {
     nodes {
       id
       name
+      source
       status
       errorMessage
       fqdn
       internalUrl
       repo
+      image
       branch
       commitHash
       gitProvider
@@ -266,6 +269,14 @@ query ListProjects($ws: String) {
       slug
     }
     totalCount
+  }
+}
+
+mutation CreateProject($input: CreateProjectInput!) {
+  projectCreate(input: $input) {
+    id
+    name
+    slug
   }
 }
 
