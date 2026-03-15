@@ -613,7 +613,7 @@ extend type Mutation {
   """Create a service and trigger its first deployment. The service name becomes {name}.ml.ink. Returns immediately while build runs async — poll serviceGet to track status."""
   serviceCreate(input: CreateServiceInput!): CreateServiceResult!
   """Permanently delete a service and tear down its container, DNS, and custom domain."""
-  serviceDelete(name: String!, project: String, workspaceSlug: String): DeleteServiceResult!
+  serviceDelete(name: String!, project: String, projectId: ID, workspaceSlug: String): DeleteServiceResult!
   """Update service configuration and trigger a redeployment. Only specified fields change. Can also redeploy without changes to pull latest code."""
   serviceUpdate(input: UpdateServiceInput!): UpdateServiceResult!
   """Set env vars on a service. Merges with existing — new values override, unmentioned vars are preserved unless replace=true."""
@@ -621,12 +621,13 @@ extend type Mutation {
   """Remove specific env var keys from a service. Triggers a redeploy."""
   serviceDeleteSecrets(input: DeleteSecretsInput!): SetSecretsResult!
   """Remove a single env var from a service. Triggers a redeploy."""
-  serviceUnsetSecret(name: String!, key: String!, project: String, workspaceSlug: String): SetSecretsResult!
+  serviceUnsetSecret(name: String!, key: String!, project: String, projectId: ID, workspaceSlug: String): SetSecretsResult!
 }
 
 input SetSecretsInput {
   name: String!
   project: String
+  projectId: ID
   workspaceSlug: String
   envVars: [EnvVarInput!]!
   replace: Boolean = false
@@ -635,6 +636,7 @@ input SetSecretsInput {
 input DeleteSecretsInput {
   name: String!
   project: String
+  projectId: ID
   workspaceSlug: String
   keys: [String!]!
 }
@@ -700,6 +702,8 @@ input UpdateServiceInput {
   """Name of the service to update (required). Identifies the service within the project."""
   name: String!
   project: String
+  """Immutable project ID. Preferred over project slug."""
+  projectId: ID
   workspaceSlug: String
   source: String
   repo: String

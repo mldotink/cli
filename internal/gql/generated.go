@@ -506,6 +506,7 @@ func (v *DeleteResourceResponse) GetResourceDelete() DeleteResourceResourceDelet
 type DeleteSecretsInput struct {
 	Name          string   `json:"name"`
 	Project       *string  `json:"project"`
+	ProjectId     *string  `json:"projectId"`
 	WorkspaceSlug *string  `json:"workspaceSlug"`
 	Keys          []string `json:"keys"`
 }
@@ -515,6 +516,9 @@ func (v *DeleteSecretsInput) GetName() string { return v.Name }
 
 // GetProject returns DeleteSecretsInput.Project, and is useful for accessing the field via an interface.
 func (v *DeleteSecretsInput) GetProject() *string { return v.Project }
+
+// GetProjectId returns DeleteSecretsInput.ProjectId, and is useful for accessing the field via an interface.
+func (v *DeleteSecretsInput) GetProjectId() *string { return v.ProjectId }
 
 // GetWorkspaceSlug returns DeleteSecretsInput.WorkspaceSlug, and is useful for accessing the field via an interface.
 func (v *DeleteSecretsInput) GetWorkspaceSlug() *string { return v.WorkspaceSlug }
@@ -645,6 +649,7 @@ type FindServiceServiceListServiceConnectionNodesService struct {
 	// Custom domain TLS/DNS status: 'active', 'pending', 'error'.
 	CustomDomainStatus *string                                                            `json:"customDomainStatus"`
 	EnvVars            []FindServiceServiceListServiceConnectionNodesServiceEnvVarsEnvVar `json:"envVars"`
+	ProjectId          string                                                             `json:"projectId"`
 	Project            *FindServiceServiceListServiceConnectionNodesServiceProject        `json:"project"`
 	CreatedAt          string                                                             `json:"createdAt"`
 	UpdatedAt          string                                                             `json:"updatedAt"`
@@ -716,6 +721,11 @@ func (v *FindServiceServiceListServiceConnectionNodesService) GetCustomDomainSta
 // GetEnvVars returns FindServiceServiceListServiceConnectionNodesService.EnvVars, and is useful for accessing the field via an interface.
 func (v *FindServiceServiceListServiceConnectionNodesService) GetEnvVars() []FindServiceServiceListServiceConnectionNodesServiceEnvVarsEnvVar {
 	return v.EnvVars
+}
+
+// GetProjectId returns FindServiceServiceListServiceConnectionNodesService.ProjectId, and is useful for accessing the field via an interface.
+func (v *FindServiceServiceListServiceConnectionNodesService) GetProjectId() string {
+	return v.ProjectId
 }
 
 // GetProject returns FindServiceServiceListServiceConnectionNodesService.Project, and is useful for accessing the field via an interface.
@@ -1724,6 +1734,7 @@ func (v *ServiceMetricsServiceMetricsNetworkTransmitBytesPerSecMetricSeriesDataP
 type SetSecretsInput struct {
 	Name          string        `json:"name"`
 	Project       *string       `json:"project"`
+	ProjectId     *string       `json:"projectId"`
 	WorkspaceSlug *string       `json:"workspaceSlug"`
 	EnvVars       []EnvVarInput `json:"envVars"`
 	Replace       *bool         `json:"replace"`
@@ -1734,6 +1745,9 @@ func (v *SetSecretsInput) GetName() string { return v.Name }
 
 // GetProject returns SetSecretsInput.Project, and is useful for accessing the field via an interface.
 func (v *SetSecretsInput) GetProject() *string { return v.Project }
+
+// GetProjectId returns SetSecretsInput.ProjectId, and is useful for accessing the field via an interface.
+func (v *SetSecretsInput) GetProjectId() *string { return v.ProjectId }
 
 // GetWorkspaceSlug returns SetSecretsInput.WorkspaceSlug, and is useful for accessing the field via an interface.
 func (v *SetSecretsInput) GetWorkspaceSlug() *string { return v.WorkspaceSlug }
@@ -1800,8 +1814,10 @@ func (v *UnsetSecretServiceUnsetSecretSetSecretsResult) GetStatus() string { ret
 
 type UpdateServiceInput struct {
 	// Name of the service to update (required). Identifies the service within the project.
-	Name          string  `json:"name"`
-	Project       *string `json:"project"`
+	Name    string  `json:"name"`
+	Project *string `json:"project"`
+	// Immutable project ID. Preferred over project slug.
+	ProjectId     *string `json:"projectId"`
 	WorkspaceSlug *string `json:"workspaceSlug"`
 	Source        *string `json:"source"`
 	Repo          *string `json:"repo"`
@@ -1826,6 +1842,9 @@ func (v *UpdateServiceInput) GetName() string { return v.Name }
 
 // GetProject returns UpdateServiceInput.Project, and is useful for accessing the field via an interface.
 func (v *UpdateServiceInput) GetProject() *string { return v.Project }
+
+// GetProjectId returns UpdateServiceInput.ProjectId, and is useful for accessing the field via an interface.
+func (v *UpdateServiceInput) GetProjectId() *string { return v.ProjectId }
 
 // GetWorkspaceSlug returns UpdateServiceInput.WorkspaceSlug, and is useful for accessing the field via an interface.
 func (v *UpdateServiceInput) GetWorkspaceSlug() *string { return v.WorkspaceSlug }
@@ -2201,9 +2220,10 @@ func (v *__DeleteSecretsInput) GetInput() DeleteSecretsInput { return v.Input }
 
 // __DeleteServiceInput is used internally by genqlient
 type __DeleteServiceInput struct {
-	Name    string  `json:"name"`
-	Project *string `json:"project"`
-	Ws      *string `json:"ws"`
+	Name      string  `json:"name"`
+	Project   *string `json:"project"`
+	ProjectId *string `json:"projectId"`
+	Ws        *string `json:"ws"`
 }
 
 // GetName returns __DeleteServiceInput.Name, and is useful for accessing the field via an interface.
@@ -2211,6 +2231,9 @@ func (v *__DeleteServiceInput) GetName() string { return v.Name }
 
 // GetProject returns __DeleteServiceInput.Project, and is useful for accessing the field via an interface.
 func (v *__DeleteServiceInput) GetProject() *string { return v.Project }
+
+// GetProjectId returns __DeleteServiceInput.ProjectId, and is useful for accessing the field via an interface.
+func (v *__DeleteServiceInput) GetProjectId() *string { return v.ProjectId }
 
 // GetWs returns __DeleteServiceInput.Ws, and is useful for accessing the field via an interface.
 func (v *__DeleteServiceInput) GetWs() *string { return v.Ws }
@@ -2441,10 +2464,11 @@ func (v *__SetSecretsInput) GetInput() SetSecretsInput { return v.Input }
 
 // __UnsetSecretInput is used internally by genqlient
 type __UnsetSecretInput struct {
-	Name    string  `json:"name"`
-	Key     string  `json:"key"`
-	Project *string `json:"project"`
-	Ws      *string `json:"ws"`
+	Name      string  `json:"name"`
+	Key       string  `json:"key"`
+	Project   *string `json:"project"`
+	ProjectId *string `json:"projectId"`
+	Ws        *string `json:"ws"`
 }
 
 // GetName returns __UnsetSecretInput.Name, and is useful for accessing the field via an interface.
@@ -2455,6 +2479,9 @@ func (v *__UnsetSecretInput) GetKey() string { return v.Key }
 
 // GetProject returns __UnsetSecretInput.Project, and is useful for accessing the field via an interface.
 func (v *__UnsetSecretInput) GetProject() *string { return v.Project }
+
+// GetProjectId returns __UnsetSecretInput.ProjectId, and is useful for accessing the field via an interface.
+func (v *__UnsetSecretInput) GetProjectId() *string { return v.ProjectId }
 
 // GetWs returns __UnsetSecretInput.Ws, and is useful for accessing the field via an interface.
 func (v *__UnsetSecretInput) GetWs() *string { return v.Ws }
@@ -3003,8 +3030,8 @@ func DeleteSecrets(
 
 // The mutation executed by DeleteService.
 const DeleteService_Operation = `
-mutation DeleteService ($name: String!, $project: String, $ws: String) {
-	serviceDelete(name: $name, project: $project, workspaceSlug: $ws) {
+mutation DeleteService ($name: String!, $project: String, $projectId: ID, $ws: String) {
+	serviceDelete(name: $name, project: $project, projectId: $projectId, workspaceSlug: $ws) {
 		serviceId
 		name
 		message
@@ -3017,15 +3044,17 @@ func DeleteService(
 	client_ graphql.Client,
 	name string,
 	project *string,
+	projectId *string,
 	ws *string,
 ) (data_ *DeleteServiceResponse, err_ error) {
 	req_ := &graphql.Request{
 		OpName: "DeleteService",
 		Query:  DeleteService_Operation,
 		Variables: &__DeleteServiceInput{
-			Name:    name,
-			Project: project,
-			Ws:      ws,
+			Name:      name,
+			Project:   project,
+			ProjectId: projectId,
+			Ws:        ws,
 		},
 	}
 
@@ -3099,6 +3128,7 @@ query FindService ($ws: String) {
 				key
 				value
 			}
+			projectId
 			project {
 				slug
 			}
@@ -3971,8 +4001,8 @@ func SetSecrets(
 
 // The mutation executed by UnsetSecret.
 const UnsetSecret_Operation = `
-mutation UnsetSecret ($name: String!, $key: String!, $project: String, $ws: String) {
-	serviceUnsetSecret(name: $name, key: $key, project: $project, workspaceSlug: $ws) {
+mutation UnsetSecret ($name: String!, $key: String!, $project: String, $projectId: ID, $ws: String) {
+	serviceUnsetSecret(name: $name, key: $key, project: $project, projectId: $projectId, workspaceSlug: $ws) {
 		serviceId
 		name
 		status
@@ -3986,16 +4016,18 @@ func UnsetSecret(
 	name string,
 	key string,
 	project *string,
+	projectId *string,
 	ws *string,
 ) (data_ *UnsetSecretResponse, err_ error) {
 	req_ := &graphql.Request{
 		OpName: "UnsetSecret",
 		Query:  UnsetSecret_Operation,
 		Variables: &__UnsetSecretInput{
-			Name:    name,
-			Key:     key,
-			Project: project,
-			Ws:      ws,
+			Name:      name,
+			Key:       key,
+			Project:   project,
+			ProjectId: projectId,
+			Ws:        ws,
 		},
 	}
 

@@ -38,7 +38,7 @@ ink delete myapi -y`,
 
 		client := newClient()
 
-		result, err := gql.DeleteService(ctx(), client, name, projPtr(), wsPtr())
+		result, err := gql.DeleteService(ctx(), client, name, projPtr(), nil, wsPtr())
 		if err != nil {
 			fatal(err.Error())
 		}

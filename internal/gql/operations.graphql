@@ -42,6 +42,7 @@ query FindService($ws: String) {
       customDomain
       customDomainStatus
       envVars { key value }
+      projectId
       project { slug }
       createdAt
       updatedAt
@@ -66,8 +67,8 @@ mutation UpdateService($input: UpdateServiceInput!) {
   }
 }
 
-mutation DeleteService($name: String!, $project: String, $ws: String) {
-  serviceDelete(name: $name, project: $project, workspaceSlug: $ws) {
+mutation DeleteService($name: String!, $project: String, $projectId: ID, $ws: String) {
+  serviceDelete(name: $name, project: $project, projectId: $projectId, workspaceSlug: $ws) {
     serviceId
     name
     message
@@ -92,8 +93,8 @@ mutation DeleteSecrets($input: DeleteSecretsInput!) {
   }
 }
 
-mutation UnsetSecret($name: String!, $key: String!, $project: String, $ws: String) {
-  serviceUnsetSecret(name: $name, key: $key, project: $project, workspaceSlug: $ws) {
+mutation UnsetSecret($name: String!, $key: String!, $project: String, $projectId: ID, $ws: String) {
+  serviceUnsetSecret(name: $name, key: $key, project: $project, projectId: $projectId, workspaceSlug: $ws) {
     serviceId
     name
     status

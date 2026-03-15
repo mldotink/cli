@@ -209,7 +209,7 @@ var secretsUnsetCmd = &cobra.Command{
 		key := args[1]
 		client := newClient()
 
-		result, err := gql.UnsetSecret(ctx(), client, name, key, projPtr(), wsPtr())
+		result, err := gql.UnsetSecret(ctx(), client, name, key, projPtr(), nil, wsPtr())
 		if err != nil {
 			fatal(err.Error())
 		}
