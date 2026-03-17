@@ -232,12 +232,54 @@ func deref(s *string, fallback string) string {
 // ── Output helpers ─────────────────────────────────
 
 func fatal(msg string) {
+	upgradeHint := upgradeHintLines(msg)
 	if jsonOutput {
-		json.NewEncoder(os.Stderr).Encode(map[string]string{"error": msg})
+		payload := map[string]any{"error": msg}
+		if len(upgradeHint) > 0 {
+			payload["update_hint"] = upgradeHint
+		}
+		json.NewEncoder(os.Stderr).Encode(payload)
 	} else {
 		fmt.Fprintln(os.Stderr, red.Render("  ✕ ")+msg)
+		for _, line := range upgradeHint {
+			fmt.Fprintln(os.Stderr, line)
+		}
 	}
 	os.Exit(1)
+}
+
+func upgradeHintLines(msg string) []string {
+	if !looksLikeSchemaMismatch(msg) {
+		return nil
+	}
+
+	lines := []string{
+		"",
+		yellow.Render("  Hint:") + " your CLI may be older than the API schema.",
+	}
+	for _, line := range updateInstructionLines(detectInstallMethod(), "latest") {
+		lines = append(lines, line)
+	}
+	return lines
+}
+
+func looksLikeSchemaMismatch(msg string) bool {
+	lower := strings.ToLower(msg)
+	patterns := []string{
+		"graphql_validation_failed",
+		"cannot query field",
+		"unknown argument",
+		"unknown type",
+		"unknown input field",
+		"did you mean",
+		"returned error 422",
+	}
+	for _, pattern := range patterns {
+		if strings.Contains(lower, pattern) {
+			return true
+		}
+	}
+	return false
 }
 
 func success(msg string) {
