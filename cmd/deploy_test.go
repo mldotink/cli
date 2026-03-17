@@ -47,6 +47,7 @@ type captureGraphQLClient struct {
 	t         *testing.T
 	opName    string
 	workspace *string
+	ports     []gql.ServicePortInput
 }
 
 func (c *captureGraphQLClient) MakeRequest(_ context.Context, req *graphql.Request, resp *graphql.Response) error {
@@ -54,8 +55,9 @@ func (c *captureGraphQLClient) MakeRequest(_ context.Context, req *graphql.Reque
 
 	var payload struct {
 		Input struct {
-			Name          string  `json:"name"`
-			WorkspaceSlug *string `json:"workspaceSlug"`
+			Name          string                 `json:"name"`
+			WorkspaceSlug *string                `json:"workspaceSlug"`
+			Ports         []gql.ServicePortInput `json:"ports"`
 		} `json:"input"`
 	}
 	raw, err := json.Marshal(req.Variables)
@@ -66,6 +68,7 @@ func (c *captureGraphQLClient) MakeRequest(_ context.Context, req *graphql.Reque
 		c.t.Fatalf("unmarshal variables: %v", err)
 	}
 	c.workspace = payload.Input.WorkspaceSlug
+	c.ports = payload.Input.Ports
 
 	switch req.OpName {
 	case "CreateService":
@@ -74,10 +77,10 @@ func (c *captureGraphQLClient) MakeRequest(_ context.Context, req *graphql.Reque
 			c.t.Fatalf("unexpected create response type %T", resp.Data)
 		}
 		data.ServiceCreate = gql.CreateServiceServiceCreateCreateServiceResult{
-			ServiceId:   "svc_123",
-			Name:        payload.Input.Name,
-			Status:      "queued",
-			InternalUrl: "http://internal",
+			ServiceId: "svc_123",
+			Name:      payload.Input.Name,
+			Status:    "queued",
+			Repo:      "my-app",
 		}
 	case "UpdateService":
 		data, ok := resp.Data.(*gql.UpdateServiceResponse)
@@ -94,6 +97,26 @@ func (c *captureGraphQLClient) MakeRequest(_ context.Context, req *graphql.Reque
 	}
 
 	return nil
+}
+
+func TestRunCreateMapsPortFlagToPublicHTTPPort(t *testing.T) {
+	restoreConfig(t, &config.Resolved{Workspace: "team-local"})
+
+	cmd := newDeployCommandForTests()
+	if err := cmd.Flags().Set("port", "8080"); err != nil {
+		t.Fatalf("set port flag: %v", err)
+	}
+	client := &captureGraphQLClient{t: t}
+
+	runCreate(cmd, client, "my-app")
+
+	if len(client.ports) != 1 {
+		t.Fatalf("ports len = %d, want 1", len(client.ports))
+	}
+	port := client.ports[0]
+	if port.Name != "http" || port.Port != 8080 || port.Protocol != "http" || port.Visibility != "public" {
+		t.Fatalf("port = %#v, want public http 8080", port)
+	}
 }
 
 func newDeployCommandForTests() *cobra.Command {

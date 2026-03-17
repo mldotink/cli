@@ -291,11 +291,13 @@ func (v *CreateResourceResponse) GetResourceCreate() CreateResourceResourceCreat
 type CreateServiceInput struct {
 	// Service name — becomes the subdomain at {name}.ml.ink.
 	Name string `json:"name"`
+	// Custom subdomain for {subdomain}.ml.ink. Defaults to the service name. Must be globally unique.
+	Subdomain *string `json:"subdomain"`
 	// Deployment source: 'repo' (build from git) or 'image' (pre-built Docker image).
 	Source *string `json:"source"`
 	// Repository reference as returned by repoCreate (e.g. 'my-app' for internal, 'user/repo' for GitHub). Not a URL. Required when source='repo'.
 	Repo *string `json:"repo"`
-	// Docker image to deploy (e.g. 'nginx:latest', 'ghcr.io/org/app:v1'). Required when source='image'.
+	// Docker image to deploy (e.g. 'nginx:latest'). Required when source='image'.
 	Image *string `json:"image"`
 	// Git host: 'ink' for internal git, 'github' for GitHub repos.
 	Host *string `json:"host"`
@@ -307,13 +309,13 @@ type CreateServiceInput struct {
 	WorkspaceSlug *string `json:"workspaceSlug"`
 	// Build strategy: 'railpack' (auto-detect), 'dockerfile', 'static' (no build, serve as-is), 'dockercompose'.
 	BuildPack *string `json:"buildPack"`
-	// Port the application listens on inside the container.
-	Port *int `json:"port"`
+	// Named ports the service exposes. Omit for standard web services to default to one public HTTP port on 3000. Pass [] for worker services with no listening ports.
+	Ports []ServicePortInput `json:"ports"`
 	// Environment variables injected into the container at runtime.
 	EnvVars []EnvVarInput `json:"envVars"`
 	// Memory limit: 128Mi, 256Mi, 512Mi, 1024Mi, 2048Mi, 4096Mi.
 	Memory *string `json:"memory"`
-	// CPU allocation: 0.1, 0.2, 0.25, 0.3, 0.4, 0.5, 1, 2, 3, 4 vCPUs.
+	// CPU allocation: 0.25, 0.5, 1, 2, 4 vCPUs.
 	Vcpus *string `json:"vcpus"`
 	// Custom build command (overrides auto-detected). Only with railpack.
 	BuildCommand *string `json:"buildCommand"`
@@ -327,10 +329,15 @@ type CreateServiceInput struct {
 	DockerfilePath *string `json:"dockerfilePath"`
 	// Deployment region.
 	Regions []string `json:"regions"`
+	// Persistent volumes to attach.
+	Volumes []VolumeInput `json:"volumes"`
 }
 
 // GetName returns CreateServiceInput.Name, and is useful for accessing the field via an interface.
 func (v *CreateServiceInput) GetName() string { return v.Name }
+
+// GetSubdomain returns CreateServiceInput.Subdomain, and is useful for accessing the field via an interface.
+func (v *CreateServiceInput) GetSubdomain() *string { return v.Subdomain }
 
 // GetSource returns CreateServiceInput.Source, and is useful for accessing the field via an interface.
 func (v *CreateServiceInput) GetSource() *string { return v.Source }
@@ -356,8 +363,8 @@ func (v *CreateServiceInput) GetWorkspaceSlug() *string { return v.WorkspaceSlug
 // GetBuildPack returns CreateServiceInput.BuildPack, and is useful for accessing the field via an interface.
 func (v *CreateServiceInput) GetBuildPack() *string { return v.BuildPack }
 
-// GetPort returns CreateServiceInput.Port, and is useful for accessing the field via an interface.
-func (v *CreateServiceInput) GetPort() *int { return v.Port }
+// GetPorts returns CreateServiceInput.Ports, and is useful for accessing the field via an interface.
+func (v *CreateServiceInput) GetPorts() []ServicePortInput { return v.Ports }
 
 // GetEnvVars returns CreateServiceInput.EnvVars, and is useful for accessing the field via an interface.
 func (v *CreateServiceInput) GetEnvVars() []EnvVarInput { return v.EnvVars }
@@ -386,6 +393,9 @@ func (v *CreateServiceInput) GetDockerfilePath() *string { return v.DockerfilePa
 // GetRegions returns CreateServiceInput.Regions, and is useful for accessing the field via an interface.
 func (v *CreateServiceInput) GetRegions() []string { return v.Regions }
 
+// GetVolumes returns CreateServiceInput.Volumes, and is useful for accessing the field via an interface.
+func (v *CreateServiceInput) GetVolumes() []VolumeInput { return v.Volumes }
+
 // CreateServiceResponse is returned by CreateService on success.
 type CreateServiceResponse struct {
 	// Create a service and trigger its first deployment. The service name becomes {name}.ml.ink. Returns immediately while build runs async — poll serviceGet to track status.
@@ -402,9 +412,9 @@ type CreateServiceServiceCreateCreateServiceResult struct {
 	ServiceId string `json:"serviceId"`
 	Name      string `json:"name"`
 	// Initial status, typically 'queued'. Poll serviceGet to track progress.
-	Status string `json:"status"`
-	// Cluster-internal URL for service-to-service calls (e.g. http://svc.ns.svc.cluster.local:port).
-	InternalUrl string `json:"internalUrl"`
+	Status string                                                          `json:"status"`
+	Repo   string                                                          `json:"repo"`
+	Ports  []CreateServiceServiceCreateCreateServiceResultPortsServicePort `json:"ports"`
 }
 
 // GetServiceId returns CreateServiceServiceCreateCreateServiceResult.ServiceId, and is useful for accessing the field via an interface.
@@ -416,8 +426,53 @@ func (v *CreateServiceServiceCreateCreateServiceResult) GetName() string { retur
 // GetStatus returns CreateServiceServiceCreateCreateServiceResult.Status, and is useful for accessing the field via an interface.
 func (v *CreateServiceServiceCreateCreateServiceResult) GetStatus() string { return v.Status }
 
-// GetInternalUrl returns CreateServiceServiceCreateCreateServiceResult.InternalUrl, and is useful for accessing the field via an interface.
-func (v *CreateServiceServiceCreateCreateServiceResult) GetInternalUrl() string { return v.InternalUrl }
+// GetRepo returns CreateServiceServiceCreateCreateServiceResult.Repo, and is useful for accessing the field via an interface.
+func (v *CreateServiceServiceCreateCreateServiceResult) GetRepo() string { return v.Repo }
+
+// GetPorts returns CreateServiceServiceCreateCreateServiceResult.Ports, and is useful for accessing the field via an interface.
+func (v *CreateServiceServiceCreateCreateServiceResult) GetPorts() []CreateServiceServiceCreateCreateServiceResultPortsServicePort {
+	return v.Ports
+}
+
+// CreateServiceServiceCreateCreateServiceResultPortsServicePort includes the requested fields of the GraphQL type ServicePort.
+type CreateServiceServiceCreateCreateServiceResultPortsServicePort struct {
+	Name             string  `json:"name"`
+	Port             string  `json:"port"`
+	Protocol         string  `json:"protocol"`
+	Visibility       string  `json:"visibility"`
+	InternalEndpoint string  `json:"internalEndpoint"`
+	PublicEndpoint   *string `json:"publicEndpoint"`
+}
+
+// GetName returns CreateServiceServiceCreateCreateServiceResultPortsServicePort.Name, and is useful for accessing the field via an interface.
+func (v *CreateServiceServiceCreateCreateServiceResultPortsServicePort) GetName() string {
+	return v.Name
+}
+
+// GetPort returns CreateServiceServiceCreateCreateServiceResultPortsServicePort.Port, and is useful for accessing the field via an interface.
+func (v *CreateServiceServiceCreateCreateServiceResultPortsServicePort) GetPort() string {
+	return v.Port
+}
+
+// GetProtocol returns CreateServiceServiceCreateCreateServiceResultPortsServicePort.Protocol, and is useful for accessing the field via an interface.
+func (v *CreateServiceServiceCreateCreateServiceResultPortsServicePort) GetProtocol() string {
+	return v.Protocol
+}
+
+// GetVisibility returns CreateServiceServiceCreateCreateServiceResultPortsServicePort.Visibility, and is useful for accessing the field via an interface.
+func (v *CreateServiceServiceCreateCreateServiceResultPortsServicePort) GetVisibility() string {
+	return v.Visibility
+}
+
+// GetInternalEndpoint returns CreateServiceServiceCreateCreateServiceResultPortsServicePort.InternalEndpoint, and is useful for accessing the field via an interface.
+func (v *CreateServiceServiceCreateCreateServiceResultPortsServicePort) GetInternalEndpoint() string {
+	return v.InternalEndpoint
+}
+
+// GetPublicEndpoint returns CreateServiceServiceCreateCreateServiceResultPortsServicePort.PublicEndpoint, and is useful for accessing the field via an interface.
+func (v *CreateServiceServiceCreateCreateServiceResultPortsServicePort) GetPublicEndpoint() *string {
+	return v.PublicEndpoint
+}
 
 // CreateWorkspaceResponse is returned by CreateWorkspace on success.
 type CreateWorkspaceResponse struct {
@@ -504,11 +559,12 @@ func (v *DeleteResourceResponse) GetResourceDelete() DeleteResourceResourceDelet
 }
 
 type DeleteSecretsInput struct {
-	Name          string   `json:"name"`
-	Project       *string  `json:"project"`
-	ProjectId     *string  `json:"projectId"`
-	WorkspaceSlug *string  `json:"workspaceSlug"`
-	Keys          []string `json:"keys"`
+	Name          string  `json:"name"`
+	Project       *string `json:"project"`
+	ProjectId     *string `json:"projectId"`
+	WorkspaceSlug *string `json:"workspaceSlug"`
+	// Keys to remove.
+	Keys []string `json:"keys"`
 }
 
 // GetName returns DeleteSecretsInput.Name, and is useful for accessing the field via an interface.
@@ -541,7 +597,8 @@ func (v *DeleteSecretsResponse) GetServiceDeleteSecrets() DeleteSecretsServiceDe
 type DeleteSecretsServiceDeleteSecretsSetSecretsResult struct {
 	ServiceId string `json:"serviceId"`
 	Name      string `json:"name"`
-	Status    string `json:"status"`
+	// Status after update, typically 'queued' as redeployment starts.
+	Status string `json:"status"`
 }
 
 // GetServiceId returns DeleteSecretsServiceDeleteSecretsSetSecretsResult.ServiceId, and is useful for accessing the field via an interface.
@@ -623,36 +680,36 @@ func (v *FindServiceServiceListServiceConnection) GetNodes() []FindServiceServic
 
 // FindServiceServiceListServiceConnectionNodesService includes the requested fields of the GraphQL type Service.
 type FindServiceServiceListServiceConnectionNodesService struct {
-	Id     string  `json:"id"`
-	Name   *string `json:"name"`
-	Source string  `json:"source"`
+	Id   string  `json:"id"`
+	Name *string `json:"name"`
+	// Subdomain label for the public URL ({subdomain}.ml.ink). Always populated.
+	Subdomain string `json:"subdomain"`
+	// Deployment source: 'repo' or 'image'.
+	Source string `json:"source"`
 	// Deployment status: queued, building, deploying, active, failed, cancelled, superseded, crashed, completed, removed.
 	Status string `json:"status"`
 	// Error details when status is 'failed' or 'crashed'.
 	ErrorMessage *string `json:"errorMessage"`
-	// Public URL: {name}.ml.ink. Null until first successful deploy.
-	Fqdn *string `json:"fqdn"`
-	// Cluster-internal URL for service-to-service communication within the same workspace.
-	InternalUrl string  `json:"internalUrl"`
-	Repo        string  `json:"repo"`
-	Image       *string `json:"image"`
-	Branch      string  `json:"branch"`
+	Repo         string  `json:"repo"`
+	// Docker image reference when source='image'.
+	Image  *string `json:"image"`
+	Branch string  `json:"branch"`
 	// Git commit SHA of the current deployment.
 	CommitHash *string `json:"commitHash"`
 	// 'internal' for Ink git, 'github' for GitHub repos.
 	GitProvider string `json:"gitProvider"`
 	Memory      string `json:"memory"`
 	Vcpus       string `json:"vcpus"`
-	Port        string `json:"port"`
 	// Custom domain attached to this service, if any.
 	CustomDomain *string `json:"customDomain"`
 	// Custom domain TLS/DNS status: 'active', 'pending', 'error'.
-	CustomDomainStatus *string                                                            `json:"customDomainStatus"`
-	EnvVars            []FindServiceServiceListServiceConnectionNodesServiceEnvVarsEnvVar `json:"envVars"`
-	ProjectId          string                                                             `json:"projectId"`
-	Project            *FindServiceServiceListServiceConnectionNodesServiceProject        `json:"project"`
-	CreatedAt          string                                                             `json:"createdAt"`
-	UpdatedAt          string                                                             `json:"updatedAt"`
+	CustomDomainStatus *string                                                               `json:"customDomainStatus"`
+	Ports              []FindServiceServiceListServiceConnectionNodesServicePortsServicePort `json:"ports"`
+	EnvVars            []FindServiceServiceListServiceConnectionNodesServiceEnvVarsEnvVar    `json:"envVars"`
+	ProjectId          string                                                                `json:"projectId"`
+	Project            FindServiceServiceListServiceConnectionNodesServiceProject            `json:"project"`
+	CreatedAt          string                                                                `json:"createdAt"`
+	UpdatedAt          string                                                                `json:"updatedAt"`
 }
 
 // GetId returns FindServiceServiceListServiceConnectionNodesService.Id, and is useful for accessing the field via an interface.
@@ -660,6 +717,11 @@ func (v *FindServiceServiceListServiceConnectionNodesService) GetId() string { r
 
 // GetName returns FindServiceServiceListServiceConnectionNodesService.Name, and is useful for accessing the field via an interface.
 func (v *FindServiceServiceListServiceConnectionNodesService) GetName() *string { return v.Name }
+
+// GetSubdomain returns FindServiceServiceListServiceConnectionNodesService.Subdomain, and is useful for accessing the field via an interface.
+func (v *FindServiceServiceListServiceConnectionNodesService) GetSubdomain() string {
+	return v.Subdomain
+}
 
 // GetSource returns FindServiceServiceListServiceConnectionNodesService.Source, and is useful for accessing the field via an interface.
 func (v *FindServiceServiceListServiceConnectionNodesService) GetSource() string { return v.Source }
@@ -670,14 +732,6 @@ func (v *FindServiceServiceListServiceConnectionNodesService) GetStatus() string
 // GetErrorMessage returns FindServiceServiceListServiceConnectionNodesService.ErrorMessage, and is useful for accessing the field via an interface.
 func (v *FindServiceServiceListServiceConnectionNodesService) GetErrorMessage() *string {
 	return v.ErrorMessage
-}
-
-// GetFqdn returns FindServiceServiceListServiceConnectionNodesService.Fqdn, and is useful for accessing the field via an interface.
-func (v *FindServiceServiceListServiceConnectionNodesService) GetFqdn() *string { return v.Fqdn }
-
-// GetInternalUrl returns FindServiceServiceListServiceConnectionNodesService.InternalUrl, and is useful for accessing the field via an interface.
-func (v *FindServiceServiceListServiceConnectionNodesService) GetInternalUrl() string {
-	return v.InternalUrl
 }
 
 // GetRepo returns FindServiceServiceListServiceConnectionNodesService.Repo, and is useful for accessing the field via an interface.
@@ -705,9 +759,6 @@ func (v *FindServiceServiceListServiceConnectionNodesService) GetMemory() string
 // GetVcpus returns FindServiceServiceListServiceConnectionNodesService.Vcpus, and is useful for accessing the field via an interface.
 func (v *FindServiceServiceListServiceConnectionNodesService) GetVcpus() string { return v.Vcpus }
 
-// GetPort returns FindServiceServiceListServiceConnectionNodesService.Port, and is useful for accessing the field via an interface.
-func (v *FindServiceServiceListServiceConnectionNodesService) GetPort() string { return v.Port }
-
 // GetCustomDomain returns FindServiceServiceListServiceConnectionNodesService.CustomDomain, and is useful for accessing the field via an interface.
 func (v *FindServiceServiceListServiceConnectionNodesService) GetCustomDomain() *string {
 	return v.CustomDomain
@@ -716,6 +767,11 @@ func (v *FindServiceServiceListServiceConnectionNodesService) GetCustomDomain() 
 // GetCustomDomainStatus returns FindServiceServiceListServiceConnectionNodesService.CustomDomainStatus, and is useful for accessing the field via an interface.
 func (v *FindServiceServiceListServiceConnectionNodesService) GetCustomDomainStatus() *string {
 	return v.CustomDomainStatus
+}
+
+// GetPorts returns FindServiceServiceListServiceConnectionNodesService.Ports, and is useful for accessing the field via an interface.
+func (v *FindServiceServiceListServiceConnectionNodesService) GetPorts() []FindServiceServiceListServiceConnectionNodesServicePortsServicePort {
+	return v.Ports
 }
 
 // GetEnvVars returns FindServiceServiceListServiceConnectionNodesService.EnvVars, and is useful for accessing the field via an interface.
@@ -729,7 +785,7 @@ func (v *FindServiceServiceListServiceConnectionNodesService) GetProjectId() str
 }
 
 // GetProject returns FindServiceServiceListServiceConnectionNodesService.Project, and is useful for accessing the field via an interface.
-func (v *FindServiceServiceListServiceConnectionNodesService) GetProject() *FindServiceServiceListServiceConnectionNodesServiceProject {
+func (v *FindServiceServiceListServiceConnectionNodesService) GetProject() FindServiceServiceListServiceConnectionNodesServiceProject {
 	return v.Project
 }
 
@@ -757,6 +813,46 @@ func (v *FindServiceServiceListServiceConnectionNodesServiceEnvVarsEnvVar) GetKe
 // GetValue returns FindServiceServiceListServiceConnectionNodesServiceEnvVarsEnvVar.Value, and is useful for accessing the field via an interface.
 func (v *FindServiceServiceListServiceConnectionNodesServiceEnvVarsEnvVar) GetValue() string {
 	return v.Value
+}
+
+// FindServiceServiceListServiceConnectionNodesServicePortsServicePort includes the requested fields of the GraphQL type ServicePort.
+type FindServiceServiceListServiceConnectionNodesServicePortsServicePort struct {
+	Name             string  `json:"name"`
+	Port             string  `json:"port"`
+	Protocol         string  `json:"protocol"`
+	Visibility       string  `json:"visibility"`
+	InternalEndpoint string  `json:"internalEndpoint"`
+	PublicEndpoint   *string `json:"publicEndpoint"`
+}
+
+// GetName returns FindServiceServiceListServiceConnectionNodesServicePortsServicePort.Name, and is useful for accessing the field via an interface.
+func (v *FindServiceServiceListServiceConnectionNodesServicePortsServicePort) GetName() string {
+	return v.Name
+}
+
+// GetPort returns FindServiceServiceListServiceConnectionNodesServicePortsServicePort.Port, and is useful for accessing the field via an interface.
+func (v *FindServiceServiceListServiceConnectionNodesServicePortsServicePort) GetPort() string {
+	return v.Port
+}
+
+// GetProtocol returns FindServiceServiceListServiceConnectionNodesServicePortsServicePort.Protocol, and is useful for accessing the field via an interface.
+func (v *FindServiceServiceListServiceConnectionNodesServicePortsServicePort) GetProtocol() string {
+	return v.Protocol
+}
+
+// GetVisibility returns FindServiceServiceListServiceConnectionNodesServicePortsServicePort.Visibility, and is useful for accessing the field via an interface.
+func (v *FindServiceServiceListServiceConnectionNodesServicePortsServicePort) GetVisibility() string {
+	return v.Visibility
+}
+
+// GetInternalEndpoint returns FindServiceServiceListServiceConnectionNodesServicePortsServicePort.InternalEndpoint, and is useful for accessing the field via an interface.
+func (v *FindServiceServiceListServiceConnectionNodesServicePortsServicePort) GetInternalEndpoint() string {
+	return v.InternalEndpoint
+}
+
+// GetPublicEndpoint returns FindServiceServiceListServiceConnectionNodesServicePortsServicePort.PublicEndpoint, and is useful for accessing the field via an interface.
+func (v *FindServiceServiceListServiceConnectionNodesServicePortsServicePort) GetPublicEndpoint() *string {
+	return v.PublicEndpoint
 }
 
 // FindServiceServiceListServiceConnectionNodesServiceProject includes the requested fields of the GraphQL type Project.
@@ -1179,19 +1275,28 @@ func (v *ListServicesServiceListServiceConnection) GetTotalCount() int { return 
 
 // ListServicesServiceListServiceConnectionNodesService includes the requested fields of the GraphQL type Service.
 type ListServicesServiceListServiceConnectionNodesService struct {
-	Name   *string `json:"name"`
-	Source string  `json:"source"`
+	Name *string `json:"name"`
+	// Subdomain label for the public URL ({subdomain}.ml.ink). Always populated.
+	Subdomain string `json:"subdomain"`
+	// Deployment source: 'repo' or 'image'.
+	Source string `json:"source"`
 	// Deployment status: queued, building, deploying, active, failed, cancelled, superseded, crashed, completed, removed.
 	Status string `json:"status"`
-	// Public URL: {name}.ml.ink. Null until first successful deploy.
-	Fqdn      *string `json:"fqdn"`
-	Memory    string  `json:"memory"`
-	Vcpus     string  `json:"vcpus"`
-	ProjectId string  `json:"projectId"`
+	// Custom domain attached to this service, if any.
+	CustomDomain *string                                                                `json:"customDomain"`
+	Ports        []ListServicesServiceListServiceConnectionNodesServicePortsServicePort `json:"ports"`
+	Memory       string                                                                 `json:"memory"`
+	Vcpus        string                                                                 `json:"vcpus"`
+	ProjectId    string                                                                 `json:"projectId"`
 }
 
 // GetName returns ListServicesServiceListServiceConnectionNodesService.Name, and is useful for accessing the field via an interface.
 func (v *ListServicesServiceListServiceConnectionNodesService) GetName() *string { return v.Name }
+
+// GetSubdomain returns ListServicesServiceListServiceConnectionNodesService.Subdomain, and is useful for accessing the field via an interface.
+func (v *ListServicesServiceListServiceConnectionNodesService) GetSubdomain() string {
+	return v.Subdomain
+}
 
 // GetSource returns ListServicesServiceListServiceConnectionNodesService.Source, and is useful for accessing the field via an interface.
 func (v *ListServicesServiceListServiceConnectionNodesService) GetSource() string { return v.Source }
@@ -1199,8 +1304,15 @@ func (v *ListServicesServiceListServiceConnectionNodesService) GetSource() strin
 // GetStatus returns ListServicesServiceListServiceConnectionNodesService.Status, and is useful for accessing the field via an interface.
 func (v *ListServicesServiceListServiceConnectionNodesService) GetStatus() string { return v.Status }
 
-// GetFqdn returns ListServicesServiceListServiceConnectionNodesService.Fqdn, and is useful for accessing the field via an interface.
-func (v *ListServicesServiceListServiceConnectionNodesService) GetFqdn() *string { return v.Fqdn }
+// GetCustomDomain returns ListServicesServiceListServiceConnectionNodesService.CustomDomain, and is useful for accessing the field via an interface.
+func (v *ListServicesServiceListServiceConnectionNodesService) GetCustomDomain() *string {
+	return v.CustomDomain
+}
+
+// GetPorts returns ListServicesServiceListServiceConnectionNodesService.Ports, and is useful for accessing the field via an interface.
+func (v *ListServicesServiceListServiceConnectionNodesService) GetPorts() []ListServicesServiceListServiceConnectionNodesServicePortsServicePort {
+	return v.Ports
+}
 
 // GetMemory returns ListServicesServiceListServiceConnectionNodesService.Memory, and is useful for accessing the field via an interface.
 func (v *ListServicesServiceListServiceConnectionNodesService) GetMemory() string { return v.Memory }
@@ -1211,6 +1323,46 @@ func (v *ListServicesServiceListServiceConnectionNodesService) GetVcpus() string
 // GetProjectId returns ListServicesServiceListServiceConnectionNodesService.ProjectId, and is useful for accessing the field via an interface.
 func (v *ListServicesServiceListServiceConnectionNodesService) GetProjectId() string {
 	return v.ProjectId
+}
+
+// ListServicesServiceListServiceConnectionNodesServicePortsServicePort includes the requested fields of the GraphQL type ServicePort.
+type ListServicesServiceListServiceConnectionNodesServicePortsServicePort struct {
+	Name             string  `json:"name"`
+	Port             string  `json:"port"`
+	Protocol         string  `json:"protocol"`
+	Visibility       string  `json:"visibility"`
+	InternalEndpoint string  `json:"internalEndpoint"`
+	PublicEndpoint   *string `json:"publicEndpoint"`
+}
+
+// GetName returns ListServicesServiceListServiceConnectionNodesServicePortsServicePort.Name, and is useful for accessing the field via an interface.
+func (v *ListServicesServiceListServiceConnectionNodesServicePortsServicePort) GetName() string {
+	return v.Name
+}
+
+// GetPort returns ListServicesServiceListServiceConnectionNodesServicePortsServicePort.Port, and is useful for accessing the field via an interface.
+func (v *ListServicesServiceListServiceConnectionNodesServicePortsServicePort) GetPort() string {
+	return v.Port
+}
+
+// GetProtocol returns ListServicesServiceListServiceConnectionNodesServicePortsServicePort.Protocol, and is useful for accessing the field via an interface.
+func (v *ListServicesServiceListServiceConnectionNodesServicePortsServicePort) GetProtocol() string {
+	return v.Protocol
+}
+
+// GetVisibility returns ListServicesServiceListServiceConnectionNodesServicePortsServicePort.Visibility, and is useful for accessing the field via an interface.
+func (v *ListServicesServiceListServiceConnectionNodesServicePortsServicePort) GetVisibility() string {
+	return v.Visibility
+}
+
+// GetInternalEndpoint returns ListServicesServiceListServiceConnectionNodesServicePortsServicePort.InternalEndpoint, and is useful for accessing the field via an interface.
+func (v *ListServicesServiceListServiceConnectionNodesServicePortsServicePort) GetInternalEndpoint() string {
+	return v.InternalEndpoint
+}
+
+// GetPublicEndpoint returns ListServicesServiceListServiceConnectionNodesServicePortsServicePort.PublicEndpoint, and is useful for accessing the field via an interface.
+func (v *ListServicesServiceListServiceConnectionNodesServicePortsServicePort) GetPublicEndpoint() *string {
+	return v.PublicEndpoint
 }
 
 // ListWorkspaceInvitesResponse is returned by ListWorkspaceInvites on success.
@@ -1731,13 +1883,34 @@ func (v *ServiceMetricsServiceMetricsNetworkTransmitBytesPerSecMetricSeriesDataP
 	return v.Value
 }
 
+type ServicePortInput struct {
+	Name       string `json:"name"`
+	Port       int    `json:"port"`
+	Protocol   string `json:"protocol"`
+	Visibility string `json:"visibility"`
+}
+
+// GetName returns ServicePortInput.Name, and is useful for accessing the field via an interface.
+func (v *ServicePortInput) GetName() string { return v.Name }
+
+// GetPort returns ServicePortInput.Port, and is useful for accessing the field via an interface.
+func (v *ServicePortInput) GetPort() int { return v.Port }
+
+// GetProtocol returns ServicePortInput.Protocol, and is useful for accessing the field via an interface.
+func (v *ServicePortInput) GetProtocol() string { return v.Protocol }
+
+// GetVisibility returns ServicePortInput.Visibility, and is useful for accessing the field via an interface.
+func (v *ServicePortInput) GetVisibility() string { return v.Visibility }
+
 type SetSecretsInput struct {
-	Name          string        `json:"name"`
-	Project       *string       `json:"project"`
-	ProjectId     *string       `json:"projectId"`
-	WorkspaceSlug *string       `json:"workspaceSlug"`
-	EnvVars       []EnvVarInput `json:"envVars"`
-	Replace       *bool         `json:"replace"`
+	Name          string  `json:"name"`
+	Project       *string `json:"project"`
+	ProjectId     *string `json:"projectId"`
+	WorkspaceSlug *string `json:"workspaceSlug"`
+	// Env vars to set. Existing vars with the same key are overwritten; other vars are preserved unless replace=true.
+	EnvVars []EnvVarInput `json:"envVars"`
+	// If true, replaces all env vars (unspecified vars are removed). Default: false (merge).
+	Replace *bool `json:"replace"`
 }
 
 // GetName returns SetSecretsInput.Name, and is useful for accessing the field via an interface.
@@ -1760,7 +1933,7 @@ func (v *SetSecretsInput) GetReplace() *bool { return v.Replace }
 
 // SetSecretsResponse is returned by SetSecrets on success.
 type SetSecretsResponse struct {
-	// Set env vars on a service. Merges with existing — new values override, unmentioned vars are preserved unless replace=true.
+	// Set env vars on a service. Merges with existing — new values override, unmentioned vars are preserved. Triggers a redeploy.
 	ServiceSetSecrets SetSecretsServiceSetSecretsSetSecretsResult `json:"serviceSetSecrets"`
 }
 
@@ -1773,7 +1946,8 @@ func (v *SetSecretsResponse) GetServiceSetSecrets() SetSecretsServiceSetSecretsS
 type SetSecretsServiceSetSecretsSetSecretsResult struct {
 	ServiceId string `json:"serviceId"`
 	Name      string `json:"name"`
-	Status    string `json:"status"`
+	// Status after update, typically 'queued' as redeployment starts.
+	Status string `json:"status"`
 }
 
 // GetServiceId returns SetSecretsServiceSetSecretsSetSecretsResult.ServiceId, and is useful for accessing the field via an interface.
@@ -1800,7 +1974,8 @@ func (v *UnsetSecretResponse) GetServiceUnsetSecret() UnsetSecretServiceUnsetSec
 type UnsetSecretServiceUnsetSecretSetSecretsResult struct {
 	ServiceId string `json:"serviceId"`
 	Name      string `json:"name"`
-	Status    string `json:"status"`
+	// Status after update, typically 'queued' as redeployment starts.
+	Status string `json:"status"`
 }
 
 // GetServiceId returns UnsetSecretServiceUnsetSecretSetSecretsResult.ServiceId, and is useful for accessing the field via an interface.
@@ -1817,14 +1992,14 @@ type UpdateServiceInput struct {
 	Name    string  `json:"name"`
 	Project *string `json:"project"`
 	// Immutable project ID. Preferred over project slug.
-	ProjectId     *string `json:"projectId"`
-	WorkspaceSlug *string `json:"workspaceSlug"`
-	Source        *string `json:"source"`
-	Repo          *string `json:"repo"`
-	Image         *string `json:"image"`
-	Host          *string `json:"host"`
-	Branch        *string `json:"branch"`
-	Port          *int    `json:"port"`
+	ProjectId     *string            `json:"projectId"`
+	WorkspaceSlug *string            `json:"workspaceSlug"`
+	Source        *string            `json:"source"`
+	Image         *string            `json:"image"`
+	Repo          *string            `json:"repo"`
+	Host          *string            `json:"host"`
+	Branch        *string            `json:"branch"`
+	Ports         []ServicePortInput `json:"ports"`
 	// Replaces all existing env vars. Omit to keep current values.
 	EnvVars          []EnvVarInput `json:"envVars"`
 	BuildPack        *string       `json:"buildPack"`
@@ -1835,6 +2010,8 @@ type UpdateServiceInput struct {
 	PublishDirectory *string       `json:"publishDirectory"`
 	RootDirectory    *string       `json:"rootDirectory"`
 	DockerfilePath   *string       `json:"dockerfilePath"`
+	// Persistent volumes to add.
+	Volumes []VolumeInput `json:"volumes"`
 }
 
 // GetName returns UpdateServiceInput.Name, and is useful for accessing the field via an interface.
@@ -1852,11 +2029,11 @@ func (v *UpdateServiceInput) GetWorkspaceSlug() *string { return v.WorkspaceSlug
 // GetSource returns UpdateServiceInput.Source, and is useful for accessing the field via an interface.
 func (v *UpdateServiceInput) GetSource() *string { return v.Source }
 
-// GetRepo returns UpdateServiceInput.Repo, and is useful for accessing the field via an interface.
-func (v *UpdateServiceInput) GetRepo() *string { return v.Repo }
-
 // GetImage returns UpdateServiceInput.Image, and is useful for accessing the field via an interface.
 func (v *UpdateServiceInput) GetImage() *string { return v.Image }
+
+// GetRepo returns UpdateServiceInput.Repo, and is useful for accessing the field via an interface.
+func (v *UpdateServiceInput) GetRepo() *string { return v.Repo }
 
 // GetHost returns UpdateServiceInput.Host, and is useful for accessing the field via an interface.
 func (v *UpdateServiceInput) GetHost() *string { return v.Host }
@@ -1864,8 +2041,8 @@ func (v *UpdateServiceInput) GetHost() *string { return v.Host }
 // GetBranch returns UpdateServiceInput.Branch, and is useful for accessing the field via an interface.
 func (v *UpdateServiceInput) GetBranch() *string { return v.Branch }
 
-// GetPort returns UpdateServiceInput.Port, and is useful for accessing the field via an interface.
-func (v *UpdateServiceInput) GetPort() *int { return v.Port }
+// GetPorts returns UpdateServiceInput.Ports, and is useful for accessing the field via an interface.
+func (v *UpdateServiceInput) GetPorts() []ServicePortInput { return v.Ports }
 
 // GetEnvVars returns UpdateServiceInput.EnvVars, and is useful for accessing the field via an interface.
 func (v *UpdateServiceInput) GetEnvVars() []EnvVarInput { return v.EnvVars }
@@ -1893,6 +2070,9 @@ func (v *UpdateServiceInput) GetRootDirectory() *string { return v.RootDirectory
 
 // GetDockerfilePath returns UpdateServiceInput.DockerfilePath, and is useful for accessing the field via an interface.
 func (v *UpdateServiceInput) GetDockerfilePath() *string { return v.DockerfilePath }
+
+// GetVolumes returns UpdateServiceInput.Volumes, and is useful for accessing the field via an interface.
+func (v *UpdateServiceInput) GetVolumes() []VolumeInput { return v.Volumes }
 
 // UpdateServiceResponse is returned by UpdateService on success.
 type UpdateServiceResponse struct {
@@ -2057,6 +2237,24 @@ func (v *UsageBillBreakdownUsageBillBreakdownMemoryUsageLineItem) GetUnit() stri
 func (v *UsageBillBreakdownUsageBillBreakdownMemoryUsageLineItem) GetTotalCents() int {
 	return v.TotalCents
 }
+
+type VolumeInput struct {
+	// Volume name (2-50 chars, lowercase alphanumeric/hyphens).
+	Name string `json:"name"`
+	// Absolute mount path inside the container (e.g. /data).
+	MountPath string `json:"mountPath"`
+	// Size in GiB (default: 1).
+	SizeGi *int `json:"sizeGi"`
+}
+
+// GetName returns VolumeInput.Name, and is useful for accessing the field via an interface.
+func (v *VolumeInput) GetName() string { return v.Name }
+
+// GetMountPath returns VolumeInput.MountPath, and is useful for accessing the field via an interface.
+func (v *VolumeInput) GetMountPath() string { return v.MountPath }
+
+// GetSizeGi returns VolumeInput.SizeGi, and is useful for accessing the field via an interface.
+func (v *VolumeInput) GetSizeGi() *int { return v.SizeGi }
 
 // __AcceptInviteInput is used internally by genqlient
 type __AcceptInviteInput struct {
@@ -2782,7 +2980,15 @@ mutation CreateService ($input: CreateServiceInput!) {
 		serviceId
 		name
 		status
-		internalUrl
+		repo
+		ports {
+			name
+			port
+			protocol
+			visibility
+			internalEndpoint
+			publicEndpoint
+		}
 	}
 }
 `
@@ -3109,11 +3315,10 @@ query FindService ($ws: String) {
 		nodes {
 			id
 			name
+			subdomain
 			source
 			status
 			errorMessage
-			fqdn
-			internalUrl
 			repo
 			image
 			branch
@@ -3121,9 +3326,16 @@ query FindService ($ws: String) {
 			gitProvider
 			memory
 			vcpus
-			port
 			customDomain
 			customDomainStatus
+			ports {
+				name
+				port
+				protocol
+				visibility
+				internalEndpoint
+				publicEndpoint
+			}
 			envVars {
 				key
 				value
@@ -3516,9 +3728,18 @@ query ListServices ($ws: String, $proj: String) {
 	serviceList(workspaceSlug: $ws, projectSlug: $proj) {
 		nodes {
 			name
+			subdomain
 			source
 			status
-			fqdn
+			customDomain
+			ports {
+				name
+				port
+				protocol
+				visibility
+				internalEndpoint
+				publicEndpoint
+			}
 			memory
 			vcpus
 			projectId

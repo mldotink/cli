@@ -4,9 +4,18 @@ query ListServices($ws: String, $proj: String) {
   serviceList(workspaceSlug: $ws, projectSlug: $proj) {
     nodes {
       name
+      subdomain
       source
       status
-      fqdn
+      customDomain
+      ports {
+        name
+        port
+        protocol
+        visibility
+        internalEndpoint
+        publicEndpoint
+      }
       memory
       vcpus
       projectId
@@ -26,11 +35,10 @@ query FindService($ws: String) {
     nodes {
       id
       name
+      subdomain
       source
       status
       errorMessage
-      fqdn
-      internalUrl
       repo
       image
       branch
@@ -38,9 +46,16 @@ query FindService($ws: String) {
       gitProvider
       memory
       vcpus
-      port
       customDomain
       customDomainStatus
+      ports {
+        name
+        port
+        protocol
+        visibility
+        internalEndpoint
+        publicEndpoint
+      }
       envVars { key value }
       projectId
       project { slug }
@@ -55,7 +70,15 @@ mutation CreateService($input: CreateServiceInput!) {
     serviceId
     name
     status
-    internalUrl
+    repo
+    ports {
+      name
+      port
+      protocol
+      visibility
+      internalEndpoint
+      publicEndpoint
+    }
   }
 }
 

@@ -62,8 +62,8 @@ func addServiceFlags(cmd *cobra.Command) {
 }
 
 var deployCmd = &cobra.Command{
-	Use:     "deploy <name> [flags]",
-	Short:   "Deploy a service for the first time",
+	Use:   "deploy <name> [flags]",
+	Short: "Deploy a service for the first time",
 	Long: `Creates a new service from a git repo or Docker image. For git repos, the repo
 must exist first — create one with 'ink repo create' (Ink-managed) or use a GitHub
 repo with the GitHub App installed. The service will be live at {name}.ml.ink.
@@ -100,8 +100,8 @@ ink deploy docs --repo myrepo --buildpack static --publish-dir dist`,
 }
 
 var redeployCmd = &cobra.Command{
-	Use:     "redeploy <name>",
-	Short:   "Rebuild and redeploy a service, optionally updating its config",
+	Use:   "redeploy <name>",
+	Short: "Rebuild and redeploy a service, optionally updating its config",
 	Long: `Pulls the latest code from the repo, rebuilds, and redeploys. Use this to pick
 up new commits or to change configuration (memory, CPU, env vars, buildpack).`,
 	Example: `# Redeploy with latest code
@@ -194,7 +194,7 @@ func runCreate(cmd *cobra.Command, client graphql.Client, name string) {
 	}
 	if cmd.Flags().Changed("port") {
 		v, _ := cmd.Flags().GetInt("port")
-		input.Port = &v
+		input.Ports = singlePublicHTTPPort(v)
 	}
 	if cmd.Flags().Changed("region") {
 		region, _ := cmd.Flags().GetString("region")
@@ -217,7 +217,9 @@ func runCreate(cmd *cobra.Command, client graphql.Client, name string) {
 	fmt.Println()
 	success(fmt.Sprintf("Service created: %s", bold.Render(s.Name)))
 	kv("Status", renderStatus(s.Status))
-	kv("URL", accent.Render(fmt.Sprintf("https://%s.ml.ink", s.Name)))
+	if endpoint := preferredServiceEndpoint(createResultPorts(s.Ports), nil); endpoint != "" {
+		kv("Endpoint", accent.Render(endpoint))
+	}
 	fmt.Println()
 }
 
@@ -280,7 +282,7 @@ func runUpdate(cmd *cobra.Command, client graphql.Client, name string) {
 	}
 	if cmd.Flags().Changed("port") {
 		v, _ := cmd.Flags().GetInt("port")
-		input.Port = &v
+		input.Ports = singlePublicHTTPPort(v)
 	}
 
 	input.EnvVars = collectEnvVars(cmd)

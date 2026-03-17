@@ -100,8 +100,8 @@ func listAllServices(client graphql.Client) {
 		}
 		for _, s := range result.ServiceList.Nodes {
 			url := dim.Render("—")
-			if s.Fqdn != nil {
-				url = *s.Fqdn
+			if endpoint := preferredServiceEndpoint(listServicePorts(s.Ports), s.CustomDomain); endpoint != "" {
+				url = endpoint
 			}
 			allRows = append(allRows, svcRow{
 				name:      deref(s.Name, ""),
@@ -161,8 +161,8 @@ func listServicesForWorkspace(client graphql.Client, ws string, proj *string) {
 	var rows [][]string
 	for _, s := range nodes {
 		url := dim.Render("—")
-		if s.Fqdn != nil {
-			url = *s.Fqdn
+		if endpoint := preferredServiceEndpoint(listServicePorts(s.Ports), s.CustomDomain); endpoint != "" {
+			url = endpoint
 		}
 		rows = append(rows, []string{deref(s.Name, ""), projMap[s.ProjectId], renderStatus(s.Status), url, s.Memory, s.Vcpus})
 	}

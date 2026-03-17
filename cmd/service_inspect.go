@@ -166,8 +166,9 @@ func renderServiceDetail(svc *gql.FindServiceServiceListServiceConnectionNodesSe
 	if svc.ErrorMessage != nil {
 		d.kv("Error", red.Render(*svc.ErrorMessage))
 	}
-	if svc.Fqdn != nil {
-		d.kv("URL", accent.Render(*svc.Fqdn))
+	ports := findServicePorts(svc.Ports)
+	if endpoint := preferredServiceEndpoint(ports, svc.CustomDomain); endpoint != "" {
+		d.kv("Endpoint", accent.Render(endpoint))
 	}
 	if svc.Source == "image" {
 		if svc.Image != nil {
@@ -187,16 +188,22 @@ func renderServiceDetail(svc *gql.FindServiceServiceListServiceConnectionNodesSe
 	}
 	d.kv("Memory", svc.Memory)
 	d.kv("vCPU", svc.Vcpus)
-	d.kv("Port", svc.Port)
 	if svc.CustomDomain != nil {
 		status := ""
 		if svc.CustomDomainStatus != nil {
 			status = " " + renderStatus(*svc.CustomDomainStatus)
 		}
-		d.kv("Domain", *svc.CustomDomain+status)
+		d.kv("Domain", accent.Render("https://"+*svc.CustomDomain)+status)
 	}
-	d.kv("Internal URL", svc.InternalUrl)
-	if svc.Project != nil && svc.Project.Slug != "" {
+	if len(ports) == 0 {
+		d.kv("Ports", dim.Render("worker (no listening ports)"))
+	} else {
+		d.section("Ports")
+		for _, port := range ports {
+			d.line(renderPortSummary(port))
+		}
+	}
+	if svc.Project.Slug != "" {
 		d.kv("Project", svc.Project.Slug)
 	}
 	if svc.CreatedAt != "" {

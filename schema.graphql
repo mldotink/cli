@@ -359,6 +359,21 @@ type RepoGetTokenResult {
   gitRemote: String!
   expiresAt: String!
 }
+extend type Query {
+  """Search GitHub repositories accessible via the user's GitHub App installations. Returns up to 50 results."""
+  githubRepositories(search: String): [GitHubRepository!]!
+  """List branches for a GitHub repository accessible via the user's GitHub App installation."""
+  githubBranches(owner: String!, repo: String!): [String!]!
+}
+
+type GitHubRepository {
+  fullName: String!
+  name: String!
+  owner: String!
+  private: Boolean!
+  defaultBranch: String!
+  updatedAt: Time!
+}
 type ResourceUsage {
   services: Int!
   memoryMi: Int!
@@ -441,17 +456,19 @@ extend type Query {
   projectGet(id: ID!, workspaceSlug: String): Project
 }
 
+extend type Mutation {
+  """Create a new project in a workspace."""
+  projectCreate(input: CreateProjectInput!): Project!
+  """Rename a project (updates both name and slug). Cannot rename the 'default' project."""
+  projectRename(slug: String!, name: String!, workspaceSlug: String): Project!
+  """Delete a project and all its services. Requires owner or admin role. Cannot delete the 'default' project."""
+  projectDelete(slug: String!, workspaceSlug: String): Boolean!
+}
+
 input CreateProjectInput {
   """Display name for the project. A URL-friendly slug is auto-generated from this."""
   name: String!
   workspaceSlug: String
-}
-
-extend type Mutation {
-  """Create a new project in a workspace."""
-  projectCreate(input: CreateProjectInput!): Project!
-  """Delete a project and all its services. Requires owner or admin role. Cannot delete the 'default' project."""
-  projectDelete(slug: String!, workspaceSlug: String): Boolean!
 }
 
 type ProjectConnection {
@@ -607,6 +624,10 @@ extend type Query {
   serviceList(first: Int, after: String, workspaceSlug: String, projectSlug: String): ServiceConnection!
   """Full details for a single service including config, env vars, custom domain, and deployment status."""
   serviceGet(id: ID!): Service
+  """List recent deployments for a service. Returns up to 20 most recent deployments ordered by creation time descending."""
+  deploymentList(serviceId: ID!): [Deployment!]!
+  """List all volumes in a workspace, optionally filtered by project."""
+  volumeList(workspaceSlug: String, projectSlug: String): [VolumeInfo!]!
 }
 
 extend type Mutation {
@@ -616,12 +637,16 @@ extend type Mutation {
   serviceDelete(name: String!, project: String, projectId: ID, workspaceSlug: String): DeleteServiceResult!
   """Update service configuration and trigger a redeployment. Only specified fields change. Can also redeploy without changes to pull latest code."""
   serviceUpdate(input: UpdateServiceInput!): UpdateServiceResult!
-  """Set env vars on a service. Merges with existing — new values override, unmentioned vars are preserved unless replace=true."""
+  """Set env vars on a service. Merges with existing — new values override, unmentioned vars are preserved. Triggers a redeploy."""
   serviceSetSecrets(input: SetSecretsInput!): SetSecretsResult!
   """Remove specific env var keys from a service. Triggers a redeploy."""
   serviceDeleteSecrets(input: DeleteSecretsInput!): SetSecretsResult!
   """Remove a single env var from a service. Triggers a redeploy."""
   serviceUnsetSecret(name: String!, key: String!, project: String, projectId: ID, workspaceSlug: String): SetSecretsResult!
+  """Permanently delete a detached volume."""
+  volumeDelete(name: String!, projectSlug: String, workspaceSlug: String): Boolean!
+  """Expand a volume (grow only)."""
+  volumeResize(name: String!, sizeGi: Int!, projectSlug: String, workspaceSlug: String): VolumeInfo!
 }
 
 input SetSecretsInput {
@@ -629,7 +654,9 @@ input SetSecretsInput {
   project: String
   projectId: ID
   workspaceSlug: String
+  """Env vars to set. Existing vars with the same key are overwritten; other vars are preserved unless replace=true."""
   envVars: [EnvVarInput!]!
+  """If true, replaces all env vars (unspecified vars are removed). Default: false (merge)."""
   replace: Boolean = false
 }
 
@@ -638,23 +665,44 @@ input DeleteSecretsInput {
   project: String
   projectId: ID
   workspaceSlug: String
+  """Keys to remove."""
   keys: [String!]!
 }
 
 type SetSecretsResult {
   serviceId: ID!
   name: String!
+  """Status after update, typically 'queued' as redeployment starts."""
   status: String!
+}
+
+input VolumeInput {
+  """Volume name (2-50 chars, lowercase alphanumeric/hyphens)."""
+  name: String!
+  """Absolute mount path inside the container (e.g. /data)."""
+  mountPath: String!
+  """Size in GiB (default: 1)."""
+  sizeGi: Int = 1
+}
+
+type VolumeInfo {
+  name: String!
+  mountPath: String!
+  sizeGi: Int!
+  status: String!
+  deleteAfter: Time
 }
 
 input CreateServiceInput {
   """Service name — becomes the subdomain at {name}.ml.ink."""
   name: String!
+  """Custom subdomain for {subdomain}.ml.ink. Defaults to the service name. Must be globally unique."""
+  subdomain: String
   """Deployment source: 'repo' (build from git) or 'image' (pre-built Docker image)."""
   source: String = "repo"
   """Repository reference as returned by repoCreate (e.g. 'my-app' for internal, 'user/repo' for GitHub). Not a URL. Required when source='repo'."""
   repo: String
-  """Docker image to deploy (e.g. 'nginx:latest', 'ghcr.io/org/app:v1'). Required when source='image'."""
+  """Docker image to deploy (e.g. 'nginx:latest'). Required when source='image'."""
   image: String
   """Git host: 'ink' for internal git, 'github' for GitHub repos."""
   host: String = "ink"
@@ -666,13 +714,13 @@ input CreateServiceInput {
   workspaceSlug: String
   """Build strategy: 'railpack' (auto-detect), 'dockerfile', 'static' (no build, serve as-is), 'dockercompose'."""
   buildPack: String = "railpack"
-  """Port the application listens on inside the container."""
-  port: Int
+  """Named ports the service exposes. Omit for standard web services to default to one public HTTP port on 3000. Pass [] for worker services with no listening ports."""
+  ports: [ServicePortInput!]
   """Environment variables injected into the container at runtime."""
   envVars: [EnvVarInput!]
   """Memory limit: 128Mi, 256Mi, 512Mi, 1024Mi, 2048Mi, 4096Mi."""
   memory: String = "256Mi"
-  """CPU allocation: 0.1, 0.2, 0.25, 0.3, 0.4, 0.5, 1, 2, 3, 4 vCPUs."""
+  """CPU allocation: 0.25, 0.5, 1, 2, 4 vCPUs."""
   vcpus: String = "0.25"
   """Custom build command (overrides auto-detected). Only with railpack."""
   buildCommand: String
@@ -686,6 +734,8 @@ input CreateServiceInput {
   dockerfilePath: String
   """Deployment region."""
   regions: [String!] = ["eu-central-1"]
+  """Persistent volumes to attach."""
+  volumes: [VolumeInput!]
 }
 
 type CreateServiceResult {
@@ -694,8 +744,7 @@ type CreateServiceResult {
   """Initial status, typically 'queued'. Poll serviceGet to track progress."""
   status: String!
   repo: String!
-  """Cluster-internal URL for service-to-service calls (e.g. http://svc.ns.svc.cluster.local:port)."""
-  internalUrl: String!
+  ports: [ServicePort!]!
 }
 
 input UpdateServiceInput {
@@ -706,11 +755,11 @@ input UpdateServiceInput {
   projectId: ID
   workspaceSlug: String
   source: String
-  repo: String
   image: String
+  repo: String
   host: String
   branch: String
-  port: Int
+  ports: [ServicePortInput!]
   """Replaces all existing env vars. Omit to keep current values."""
   envVars: [EnvVarInput!]
   buildPack: String
@@ -721,11 +770,20 @@ input UpdateServiceInput {
   publishDirectory: String
   rootDirectory: String
   dockerfilePath: String
+  """Persistent volumes to add."""
+  volumes: [VolumeInput!]
 }
 
 input EnvVarInput {
   key: String!
   value: String!
+}
+
+input ServicePortInput {
+  name: String!
+  port: Int!
+  protocol: String!
+  visibility: String!
 }
 
 type UpdateServiceResult {
@@ -757,10 +815,14 @@ type PageInfo {
 type Service {
   id: ID!
   projectId: ID!
-  project: Project
+  project: Project!
   name: String
+  """Subdomain label for the public URL ({subdomain}.ml.ink). Always populated."""
+  subdomain: String!
+  """Deployment source: 'repo' or 'image'."""
   source: String!
   repo: String!
+  """Docker image reference when source='image'."""
   image: String
   branch: String!
   """Deployment status: queued, building, deploying, active, failed, cancelled, superseded, crashed, completed, removed."""
@@ -768,11 +830,7 @@ type Service {
   """Error details when status is 'failed' or 'crashed'."""
   errorMessage: String
   envVars: [EnvVar!]!
-  """Public URL: {name}.ml.ink. Null until first successful deploy."""
-  fqdn: String
-  """Cluster-internal URL for service-to-service communication within the same workspace."""
-  internalUrl: String!
-  port: String!
+  ports: [ServicePort!]!
   """'internal' for Ink git, 'github' for GitHub repos."""
   gitProvider: String!
   """Git commit SHA of the current deployment."""
@@ -783,12 +841,178 @@ type Service {
   customDomain: String
   """Custom domain TLS/DNS status: 'active', 'pending', 'error'."""
   customDomainStatus: String
+  buildPack: String!
+  buildCommand: String
+  startCommand: String
+  publishDirectory: String
+  rootDirectory: String
+  dockerfilePath: String
+  """Persistent volumes attached to this service."""
+  volumes: [VolumeInfo!]!
   createdAt: Time!
   updatedAt: Time!
 }
 
 type EnvVar {
   key: String!
+  value: String!
+}
+
+type ServicePort {
+  name: String!
+  port: String!
+  protocol: String!
+  visibility: String!
+  internalEndpoint: String!
+  publicEndpoint: String
+}
+
+type Deployment {
+  id: ID!
+  serviceId: ID!
+  """Deployment status: queued, building, deploying, active, failed, cancelled, superseded, crashed, completed, removed."""
+  status: String!
+  """Git commit SHA deployed in this deployment."""
+  commitHash: String
+  """What triggered this deployment: manual, git_push."""
+  trigger: String!
+  """Reference for the trigger (e.g. commit SHA for git_push)."""
+  triggerRef: String
+  """Error details when status is 'failed' or 'crashed'."""
+  errorMessage: String
+  """Build strategy used: railpack, dockerfile, static."""
+  buildPack: String!
+  memory: String!
+  vcpus: String!
+  createdAt: Time!
+  startedAt: Time
+  finishedAt: Time
+}
+extend type Query {
+  """List available service templates. Optionally filter by tag."""
+  templateList(tag: String): [ServiceTemplate!]!
+  """Get a template by slug."""
+  templateGet(slug: String!): ServiceTemplate
+  """Get a deployed template instance including current service status and persisted outputs."""
+  templateInstanceGet(id: ID!): TemplateInstance!
+  """List deployed template instances for a project. Sensitive outputs are masked in list responses."""
+  templateInstanceList(project: String, projectId: ID, workspaceSlug: String): [TemplateInstance!]!
+}
+
+extend type Mutation {
+  """Deploy a template and return curated outputs plus the service graph."""
+  templateDeploy(input: TemplateDeployInput!): TemplateDeployResult!
+}
+
+type ServiceTemplate {
+  slug: String!
+  name: String!
+  description: String!
+  tags: [String!]!
+  icon: String!
+  coverImage: String!
+  readme: String!
+  repoUrl: String!
+  docsUrl: String!
+  variables: [TemplateVariableDef!]!
+  services: [TemplateServiceDef!]!
+  outputs: [TemplateOutputDef!]!
+}
+
+type TemplateVariableDef {
+  key: String!
+  type: String!
+  name: String!
+  description: String!
+  required: Boolean!
+  sensitive: Boolean!
+  defaultValue: String
+  options: [String!]!
+}
+
+type TemplateServiceDef {
+  key: String!
+  name: String!
+  source: String!
+  image: String!
+  repo: String!
+  command: String
+  memory: String!
+  vcpus: String!
+  dependsOn: [String!]!
+  ports: [TemplateServicePortDef!]!
+}
+
+type TemplateServicePortDef {
+  name: String!
+  port: String!
+  protocol: String!
+  visibility: String!
+}
+
+type TemplateOutputDef {
+  key: String!
+  label: String!
+  description: String!
+  kind: String!
+  sensitive: Boolean!
+}
+
+input TemplateVariableValueInput {
+  key: String!
+  value: String!
+}
+
+input TemplateDeployInput {
+  template: String!
+  name: String!
+  project: String
+  workspaceSlug: String
+  variables: [TemplateVariableValueInput!] = []
+}
+
+type TemplateDeployResult {
+  templateInstanceId: ID!
+  projectId: ID!
+  services: [TemplateDeployedService!]!
+  outputs: [TemplateDeployedOutput!]!
+}
+
+type TemplateInstance {
+  id: ID!
+  templateSlug: String!
+  projectId: ID!
+  name: String!
+  status: String!
+  services: [TemplateDeployedService!]!
+  outputs: [TemplateDeployedOutput!]!
+  createdAt: Time!
+  updatedAt: Time!
+}
+
+type TemplateDeployedService {
+  serviceId: ID!
+  key: String!
+  name: String!
+  status: String!
+  endpoints: [TemplateServiceEndpoint!]!
+}
+
+type TemplateServiceEndpoint {
+  name: String!
+  port: String!
+  protocol: String!
+  visibility: String!
+  internalEndpoint: String!
+  publicEndpoint: String
+}
+
+type TemplateDeployedOutput {
+  key: String!
+  label: String!
+  description: String!
+  kind: String!
+  sensitive: Boolean!
   value: String!
 }
 extend type Query {
@@ -855,3 +1079,4 @@ type WorkspaceInvite {
   status: String!
   createdAt: Time!
 }
+
