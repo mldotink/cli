@@ -11,24 +11,24 @@ import (
 var templateCmd = &cobra.Command{
 	Use:     "template [search]",
 	Aliases: []string{"templates"},
-	Short:   "Search and list available templates",
-	Long: `Lists available service templates (e.g. PostgreSQL, Redis, MySQL).
-Pass an optional search term to filter by tag.`,
+	Short:   "Deploy pre-configured stacks with a single command",
+	Long:    `Deploy pre-configured stacks with a single command.`,
 	Example: `# List all templates
 ink template
 
-# Search by tag
-ink template Database`,
+# Search templates
+ink template postgres
+ink template database`,
 	Args: maxArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		client := newClient()
 
-		var tag *string
+		var search *string
 		if len(args) == 1 {
-			tag = &args[0]
+			search = &args[0]
 		}
 
-		result, err := gql.TemplateList(ctx(), client, tag)
+		result, err := gql.TemplateList(ctx(), client, search)
 		if err != nil {
 			fatal(err.Error())
 		}
@@ -56,10 +56,13 @@ ink template Database`,
 		}
 
 		fmt.Println()
+		fmt.Println(dim.Render("  Deploy pre-configured stacks with a single command."))
+		fmt.Println()
 		fmt.Println(styledTable([]string{"SLUG", "NAME", "DESCRIPTION", "TAGS"}, rows))
 		tableFooter(len(templates), "template")
 		fmt.Println()
-		fmt.Println(dim.Render("  ink template deploy <slug> --name <name>    Deploy a template"))
+		fmt.Println(dim.Render("  ink template info <slug>        View template details and variables"))
+		fmt.Println(dim.Render("  ink template deploy <slug>      Deploy a template"))
 		fmt.Println()
 	},
 }

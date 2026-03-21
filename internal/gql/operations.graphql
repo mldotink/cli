@@ -409,8 +409,8 @@ query ReadChat($ws: String!, $channel: String, $cursor: Int, $limit: Int) {
 
 # ── Templates ─────────────────────────────────────
 
-query TemplateList($tag: String) {
-  templateList(tag: $tag) {
+query TemplateList($search: String) {
+  templateList(search: $search) {
     slug
     name
     description

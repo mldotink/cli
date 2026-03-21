@@ -889,8 +889,8 @@ type Deployment {
   finishedAt: Time
 }
 extend type Query {
-  """List available service templates. Optionally filter by tag."""
-  templateList(tag: String): [ServiceTemplate!]!
+  """List available service templates. Optionally search by name, slug, tag, or description."""
+  templateList(search: String): [ServiceTemplate!]!
   """Get a template by slug."""
   templateGet(slug: String!): ServiceTemplate
   """Get a deployed template instance including current service status and persisted outputs."""

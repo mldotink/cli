@@ -2256,7 +2256,7 @@ func (v *TemplateInstanceListTemplateInstanceListTemplateInstanceServicesTemplat
 
 // TemplateListResponse is returned by TemplateList on success.
 type TemplateListResponse struct {
-	// List available service templates. Optionally filter by tag.
+	// List available service templates. Optionally search by name, slug, tag, or description.
 	TemplateList []TemplateListTemplateListServiceTemplate `json:"templateList"`
 }
 
@@ -3171,11 +3171,11 @@ func (v *__TemplateInstanceListInput) GetWs() *string { return v.Ws }
 
 // __TemplateListInput is used internally by genqlient
 type __TemplateListInput struct {
-	Tag *string `json:"tag"`
+	Search *string `json:"search"`
 }
 
-// GetTag returns __TemplateListInput.Tag, and is useful for accessing the field via an interface.
-func (v *__TemplateListInput) GetTag() *string { return v.Tag }
+// GetSearch returns __TemplateListInput.Search, and is useful for accessing the field via an interface.
+func (v *__TemplateListInput) GetSearch() *string { return v.Search }
 
 // __UnsetSecretInput is used internally by genqlient
 type __UnsetSecretInput struct {
@@ -4852,8 +4852,8 @@ func TemplateInstanceList(
 
 // The query executed by TemplateList.
 const TemplateList_Operation = `
-query TemplateList ($tag: String) {
-	templateList(tag: $tag) {
+query TemplateList ($search: String) {
+	templateList(search: $search) {
 		slug
 		name
 		description
@@ -4891,13 +4891,13 @@ query TemplateList ($tag: String) {
 func TemplateList(
 	ctx_ context.Context,
 	client_ graphql.Client,
-	tag *string,
+	search *string,
 ) (data_ *TemplateListResponse, err_ error) {
 	req_ := &graphql.Request{
 		OpName: "TemplateList",
 		Query:  TemplateList_Operation,
 		Variables: &__TemplateListInput{
-			Tag: tag,
+			Search: search,
 		},
 	}
 
