@@ -407,6 +407,42 @@ query ReadChat($ws: String!, $channel: String, $cursor: Int, $limit: Int) {
   }
 }
 
+# ── Templates ─────────────────────────────────────
+
+query TemplateList($tag: String) {
+  templateList(tag: $tag) {
+    slug
+    name
+    description
+    tags
+    icon
+    variables { key type name description required sensitive defaultValue options }
+    services { key name source image memory vcpus }
+    outputs { key label description kind sensitive }
+  }
+}
+
+mutation TemplateDeploy($input: TemplateDeployInput!) {
+  templateDeploy(input: $input) {
+    templateInstanceId
+    projectId
+    services { serviceId key name status endpoints { name port protocol visibility internalEndpoint publicEndpoint } }
+    outputs { key label description kind sensitive value }
+  }
+}
+
+query TemplateInstanceList($project: String, $projectId: ID, $ws: String) {
+  templateInstanceList(project: $project, projectId: $projectId, workspaceSlug: $ws) {
+    id
+    templateSlug
+    name
+    status
+    services { serviceId key name status }
+    outputs { key label description kind sensitive value }
+    createdAt
+  }
+}
+
 # ── Account ────────────────────────────────────────
 
 query AccountStatus {

@@ -1959,6 +1959,491 @@ func (v *SetSecretsServiceSetSecretsSetSecretsResult) GetName() string { return 
 // GetStatus returns SetSecretsServiceSetSecretsSetSecretsResult.Status, and is useful for accessing the field via an interface.
 func (v *SetSecretsServiceSetSecretsSetSecretsResult) GetStatus() string { return v.Status }
 
+type TemplateDeployInput struct {
+	Template      string                       `json:"template"`
+	Name          string                       `json:"name"`
+	Project       *string                      `json:"project"`
+	WorkspaceSlug *string                      `json:"workspaceSlug"`
+	Variables     []TemplateVariableValueInput `json:"variables"`
+}
+
+// GetTemplate returns TemplateDeployInput.Template, and is useful for accessing the field via an interface.
+func (v *TemplateDeployInput) GetTemplate() string { return v.Template }
+
+// GetName returns TemplateDeployInput.Name, and is useful for accessing the field via an interface.
+func (v *TemplateDeployInput) GetName() string { return v.Name }
+
+// GetProject returns TemplateDeployInput.Project, and is useful for accessing the field via an interface.
+func (v *TemplateDeployInput) GetProject() *string { return v.Project }
+
+// GetWorkspaceSlug returns TemplateDeployInput.WorkspaceSlug, and is useful for accessing the field via an interface.
+func (v *TemplateDeployInput) GetWorkspaceSlug() *string { return v.WorkspaceSlug }
+
+// GetVariables returns TemplateDeployInput.Variables, and is useful for accessing the field via an interface.
+func (v *TemplateDeployInput) GetVariables() []TemplateVariableValueInput { return v.Variables }
+
+// TemplateDeployResponse is returned by TemplateDeploy on success.
+type TemplateDeployResponse struct {
+	// Deploy a template and return curated outputs plus the service graph.
+	TemplateDeploy TemplateDeployTemplateDeployTemplateDeployResult `json:"templateDeploy"`
+}
+
+// GetTemplateDeploy returns TemplateDeployResponse.TemplateDeploy, and is useful for accessing the field via an interface.
+func (v *TemplateDeployResponse) GetTemplateDeploy() TemplateDeployTemplateDeployTemplateDeployResult {
+	return v.TemplateDeploy
+}
+
+// TemplateDeployTemplateDeployTemplateDeployResult includes the requested fields of the GraphQL type TemplateDeployResult.
+type TemplateDeployTemplateDeployTemplateDeployResult struct {
+	TemplateInstanceId string                                                                            `json:"templateInstanceId"`
+	ProjectId          string                                                                            `json:"projectId"`
+	Services           []TemplateDeployTemplateDeployTemplateDeployResultServicesTemplateDeployedService `json:"services"`
+	Outputs            []TemplateDeployTemplateDeployTemplateDeployResultOutputsTemplateDeployedOutput   `json:"outputs"`
+}
+
+// GetTemplateInstanceId returns TemplateDeployTemplateDeployTemplateDeployResult.TemplateInstanceId, and is useful for accessing the field via an interface.
+func (v *TemplateDeployTemplateDeployTemplateDeployResult) GetTemplateInstanceId() string {
+	return v.TemplateInstanceId
+}
+
+// GetProjectId returns TemplateDeployTemplateDeployTemplateDeployResult.ProjectId, and is useful for accessing the field via an interface.
+func (v *TemplateDeployTemplateDeployTemplateDeployResult) GetProjectId() string { return v.ProjectId }
+
+// GetServices returns TemplateDeployTemplateDeployTemplateDeployResult.Services, and is useful for accessing the field via an interface.
+func (v *TemplateDeployTemplateDeployTemplateDeployResult) GetServices() []TemplateDeployTemplateDeployTemplateDeployResultServicesTemplateDeployedService {
+	return v.Services
+}
+
+// GetOutputs returns TemplateDeployTemplateDeployTemplateDeployResult.Outputs, and is useful for accessing the field via an interface.
+func (v *TemplateDeployTemplateDeployTemplateDeployResult) GetOutputs() []TemplateDeployTemplateDeployTemplateDeployResultOutputsTemplateDeployedOutput {
+	return v.Outputs
+}
+
+// TemplateDeployTemplateDeployTemplateDeployResultOutputsTemplateDeployedOutput includes the requested fields of the GraphQL type TemplateDeployedOutput.
+type TemplateDeployTemplateDeployTemplateDeployResultOutputsTemplateDeployedOutput struct {
+	Key         string `json:"key"`
+	Label       string `json:"label"`
+	Description string `json:"description"`
+	Kind        string `json:"kind"`
+	Sensitive   bool   `json:"sensitive"`
+	Value       string `json:"value"`
+}
+
+// GetKey returns TemplateDeployTemplateDeployTemplateDeployResultOutputsTemplateDeployedOutput.Key, and is useful for accessing the field via an interface.
+func (v *TemplateDeployTemplateDeployTemplateDeployResultOutputsTemplateDeployedOutput) GetKey() string {
+	return v.Key
+}
+
+// GetLabel returns TemplateDeployTemplateDeployTemplateDeployResultOutputsTemplateDeployedOutput.Label, and is useful for accessing the field via an interface.
+func (v *TemplateDeployTemplateDeployTemplateDeployResultOutputsTemplateDeployedOutput) GetLabel() string {
+	return v.Label
+}
+
+// GetDescription returns TemplateDeployTemplateDeployTemplateDeployResultOutputsTemplateDeployedOutput.Description, and is useful for accessing the field via an interface.
+func (v *TemplateDeployTemplateDeployTemplateDeployResultOutputsTemplateDeployedOutput) GetDescription() string {
+	return v.Description
+}
+
+// GetKind returns TemplateDeployTemplateDeployTemplateDeployResultOutputsTemplateDeployedOutput.Kind, and is useful for accessing the field via an interface.
+func (v *TemplateDeployTemplateDeployTemplateDeployResultOutputsTemplateDeployedOutput) GetKind() string {
+	return v.Kind
+}
+
+// GetSensitive returns TemplateDeployTemplateDeployTemplateDeployResultOutputsTemplateDeployedOutput.Sensitive, and is useful for accessing the field via an interface.
+func (v *TemplateDeployTemplateDeployTemplateDeployResultOutputsTemplateDeployedOutput) GetSensitive() bool {
+	return v.Sensitive
+}
+
+// GetValue returns TemplateDeployTemplateDeployTemplateDeployResultOutputsTemplateDeployedOutput.Value, and is useful for accessing the field via an interface.
+func (v *TemplateDeployTemplateDeployTemplateDeployResultOutputsTemplateDeployedOutput) GetValue() string {
+	return v.Value
+}
+
+// TemplateDeployTemplateDeployTemplateDeployResultServicesTemplateDeployedService includes the requested fields of the GraphQL type TemplateDeployedService.
+type TemplateDeployTemplateDeployTemplateDeployResultServicesTemplateDeployedService struct {
+	ServiceId string                                                                                                            `json:"serviceId"`
+	Key       string                                                                                                            `json:"key"`
+	Name      string                                                                                                            `json:"name"`
+	Status    string                                                                                                            `json:"status"`
+	Endpoints []TemplateDeployTemplateDeployTemplateDeployResultServicesTemplateDeployedServiceEndpointsTemplateServiceEndpoint `json:"endpoints"`
+}
+
+// GetServiceId returns TemplateDeployTemplateDeployTemplateDeployResultServicesTemplateDeployedService.ServiceId, and is useful for accessing the field via an interface.
+func (v *TemplateDeployTemplateDeployTemplateDeployResultServicesTemplateDeployedService) GetServiceId() string {
+	return v.ServiceId
+}
+
+// GetKey returns TemplateDeployTemplateDeployTemplateDeployResultServicesTemplateDeployedService.Key, and is useful for accessing the field via an interface.
+func (v *TemplateDeployTemplateDeployTemplateDeployResultServicesTemplateDeployedService) GetKey() string {
+	return v.Key
+}
+
+// GetName returns TemplateDeployTemplateDeployTemplateDeployResultServicesTemplateDeployedService.Name, and is useful for accessing the field via an interface.
+func (v *TemplateDeployTemplateDeployTemplateDeployResultServicesTemplateDeployedService) GetName() string {
+	return v.Name
+}
+
+// GetStatus returns TemplateDeployTemplateDeployTemplateDeployResultServicesTemplateDeployedService.Status, and is useful for accessing the field via an interface.
+func (v *TemplateDeployTemplateDeployTemplateDeployResultServicesTemplateDeployedService) GetStatus() string {
+	return v.Status
+}
+
+// GetEndpoints returns TemplateDeployTemplateDeployTemplateDeployResultServicesTemplateDeployedService.Endpoints, and is useful for accessing the field via an interface.
+func (v *TemplateDeployTemplateDeployTemplateDeployResultServicesTemplateDeployedService) GetEndpoints() []TemplateDeployTemplateDeployTemplateDeployResultServicesTemplateDeployedServiceEndpointsTemplateServiceEndpoint {
+	return v.Endpoints
+}
+
+// TemplateDeployTemplateDeployTemplateDeployResultServicesTemplateDeployedServiceEndpointsTemplateServiceEndpoint includes the requested fields of the GraphQL type TemplateServiceEndpoint.
+type TemplateDeployTemplateDeployTemplateDeployResultServicesTemplateDeployedServiceEndpointsTemplateServiceEndpoint struct {
+	Name             string  `json:"name"`
+	Port             string  `json:"port"`
+	Protocol         string  `json:"protocol"`
+	Visibility       string  `json:"visibility"`
+	InternalEndpoint string  `json:"internalEndpoint"`
+	PublicEndpoint   *string `json:"publicEndpoint"`
+}
+
+// GetName returns TemplateDeployTemplateDeployTemplateDeployResultServicesTemplateDeployedServiceEndpointsTemplateServiceEndpoint.Name, and is useful for accessing the field via an interface.
+func (v *TemplateDeployTemplateDeployTemplateDeployResultServicesTemplateDeployedServiceEndpointsTemplateServiceEndpoint) GetName() string {
+	return v.Name
+}
+
+// GetPort returns TemplateDeployTemplateDeployTemplateDeployResultServicesTemplateDeployedServiceEndpointsTemplateServiceEndpoint.Port, and is useful for accessing the field via an interface.
+func (v *TemplateDeployTemplateDeployTemplateDeployResultServicesTemplateDeployedServiceEndpointsTemplateServiceEndpoint) GetPort() string {
+	return v.Port
+}
+
+// GetProtocol returns TemplateDeployTemplateDeployTemplateDeployResultServicesTemplateDeployedServiceEndpointsTemplateServiceEndpoint.Protocol, and is useful for accessing the field via an interface.
+func (v *TemplateDeployTemplateDeployTemplateDeployResultServicesTemplateDeployedServiceEndpointsTemplateServiceEndpoint) GetProtocol() string {
+	return v.Protocol
+}
+
+// GetVisibility returns TemplateDeployTemplateDeployTemplateDeployResultServicesTemplateDeployedServiceEndpointsTemplateServiceEndpoint.Visibility, and is useful for accessing the field via an interface.
+func (v *TemplateDeployTemplateDeployTemplateDeployResultServicesTemplateDeployedServiceEndpointsTemplateServiceEndpoint) GetVisibility() string {
+	return v.Visibility
+}
+
+// GetInternalEndpoint returns TemplateDeployTemplateDeployTemplateDeployResultServicesTemplateDeployedServiceEndpointsTemplateServiceEndpoint.InternalEndpoint, and is useful for accessing the field via an interface.
+func (v *TemplateDeployTemplateDeployTemplateDeployResultServicesTemplateDeployedServiceEndpointsTemplateServiceEndpoint) GetInternalEndpoint() string {
+	return v.InternalEndpoint
+}
+
+// GetPublicEndpoint returns TemplateDeployTemplateDeployTemplateDeployResultServicesTemplateDeployedServiceEndpointsTemplateServiceEndpoint.PublicEndpoint, and is useful for accessing the field via an interface.
+func (v *TemplateDeployTemplateDeployTemplateDeployResultServicesTemplateDeployedServiceEndpointsTemplateServiceEndpoint) GetPublicEndpoint() *string {
+	return v.PublicEndpoint
+}
+
+// TemplateInstanceListResponse is returned by TemplateInstanceList on success.
+type TemplateInstanceListResponse struct {
+	// List deployed template instances for a project. Sensitive outputs are masked in list responses.
+	TemplateInstanceList []TemplateInstanceListTemplateInstanceListTemplateInstance `json:"templateInstanceList"`
+}
+
+// GetTemplateInstanceList returns TemplateInstanceListResponse.TemplateInstanceList, and is useful for accessing the field via an interface.
+func (v *TemplateInstanceListResponse) GetTemplateInstanceList() []TemplateInstanceListTemplateInstanceListTemplateInstance {
+	return v.TemplateInstanceList
+}
+
+// TemplateInstanceListTemplateInstanceListTemplateInstance includes the requested fields of the GraphQL type TemplateInstance.
+type TemplateInstanceListTemplateInstanceListTemplateInstance struct {
+	Id           string                                                                                    `json:"id"`
+	TemplateSlug string                                                                                    `json:"templateSlug"`
+	Name         string                                                                                    `json:"name"`
+	Status       string                                                                                    `json:"status"`
+	Services     []TemplateInstanceListTemplateInstanceListTemplateInstanceServicesTemplateDeployedService `json:"services"`
+	Outputs      []TemplateInstanceListTemplateInstanceListTemplateInstanceOutputsTemplateDeployedOutput   `json:"outputs"`
+	CreatedAt    string                                                                                    `json:"createdAt"`
+}
+
+// GetId returns TemplateInstanceListTemplateInstanceListTemplateInstance.Id, and is useful for accessing the field via an interface.
+func (v *TemplateInstanceListTemplateInstanceListTemplateInstance) GetId() string { return v.Id }
+
+// GetTemplateSlug returns TemplateInstanceListTemplateInstanceListTemplateInstance.TemplateSlug, and is useful for accessing the field via an interface.
+func (v *TemplateInstanceListTemplateInstanceListTemplateInstance) GetTemplateSlug() string {
+	return v.TemplateSlug
+}
+
+// GetName returns TemplateInstanceListTemplateInstanceListTemplateInstance.Name, and is useful for accessing the field via an interface.
+func (v *TemplateInstanceListTemplateInstanceListTemplateInstance) GetName() string { return v.Name }
+
+// GetStatus returns TemplateInstanceListTemplateInstanceListTemplateInstance.Status, and is useful for accessing the field via an interface.
+func (v *TemplateInstanceListTemplateInstanceListTemplateInstance) GetStatus() string {
+	return v.Status
+}
+
+// GetServices returns TemplateInstanceListTemplateInstanceListTemplateInstance.Services, and is useful for accessing the field via an interface.
+func (v *TemplateInstanceListTemplateInstanceListTemplateInstance) GetServices() []TemplateInstanceListTemplateInstanceListTemplateInstanceServicesTemplateDeployedService {
+	return v.Services
+}
+
+// GetOutputs returns TemplateInstanceListTemplateInstanceListTemplateInstance.Outputs, and is useful for accessing the field via an interface.
+func (v *TemplateInstanceListTemplateInstanceListTemplateInstance) GetOutputs() []TemplateInstanceListTemplateInstanceListTemplateInstanceOutputsTemplateDeployedOutput {
+	return v.Outputs
+}
+
+// GetCreatedAt returns TemplateInstanceListTemplateInstanceListTemplateInstance.CreatedAt, and is useful for accessing the field via an interface.
+func (v *TemplateInstanceListTemplateInstanceListTemplateInstance) GetCreatedAt() string {
+	return v.CreatedAt
+}
+
+// TemplateInstanceListTemplateInstanceListTemplateInstanceOutputsTemplateDeployedOutput includes the requested fields of the GraphQL type TemplateDeployedOutput.
+type TemplateInstanceListTemplateInstanceListTemplateInstanceOutputsTemplateDeployedOutput struct {
+	Key         string `json:"key"`
+	Label       string `json:"label"`
+	Description string `json:"description"`
+	Kind        string `json:"kind"`
+	Sensitive   bool   `json:"sensitive"`
+	Value       string `json:"value"`
+}
+
+// GetKey returns TemplateInstanceListTemplateInstanceListTemplateInstanceOutputsTemplateDeployedOutput.Key, and is useful for accessing the field via an interface.
+func (v *TemplateInstanceListTemplateInstanceListTemplateInstanceOutputsTemplateDeployedOutput) GetKey() string {
+	return v.Key
+}
+
+// GetLabel returns TemplateInstanceListTemplateInstanceListTemplateInstanceOutputsTemplateDeployedOutput.Label, and is useful for accessing the field via an interface.
+func (v *TemplateInstanceListTemplateInstanceListTemplateInstanceOutputsTemplateDeployedOutput) GetLabel() string {
+	return v.Label
+}
+
+// GetDescription returns TemplateInstanceListTemplateInstanceListTemplateInstanceOutputsTemplateDeployedOutput.Description, and is useful for accessing the field via an interface.
+func (v *TemplateInstanceListTemplateInstanceListTemplateInstanceOutputsTemplateDeployedOutput) GetDescription() string {
+	return v.Description
+}
+
+// GetKind returns TemplateInstanceListTemplateInstanceListTemplateInstanceOutputsTemplateDeployedOutput.Kind, and is useful for accessing the field via an interface.
+func (v *TemplateInstanceListTemplateInstanceListTemplateInstanceOutputsTemplateDeployedOutput) GetKind() string {
+	return v.Kind
+}
+
+// GetSensitive returns TemplateInstanceListTemplateInstanceListTemplateInstanceOutputsTemplateDeployedOutput.Sensitive, and is useful for accessing the field via an interface.
+func (v *TemplateInstanceListTemplateInstanceListTemplateInstanceOutputsTemplateDeployedOutput) GetSensitive() bool {
+	return v.Sensitive
+}
+
+// GetValue returns TemplateInstanceListTemplateInstanceListTemplateInstanceOutputsTemplateDeployedOutput.Value, and is useful for accessing the field via an interface.
+func (v *TemplateInstanceListTemplateInstanceListTemplateInstanceOutputsTemplateDeployedOutput) GetValue() string {
+	return v.Value
+}
+
+// TemplateInstanceListTemplateInstanceListTemplateInstanceServicesTemplateDeployedService includes the requested fields of the GraphQL type TemplateDeployedService.
+type TemplateInstanceListTemplateInstanceListTemplateInstanceServicesTemplateDeployedService struct {
+	ServiceId string `json:"serviceId"`
+	Key       string `json:"key"`
+	Name      string `json:"name"`
+	Status    string `json:"status"`
+}
+
+// GetServiceId returns TemplateInstanceListTemplateInstanceListTemplateInstanceServicesTemplateDeployedService.ServiceId, and is useful for accessing the field via an interface.
+func (v *TemplateInstanceListTemplateInstanceListTemplateInstanceServicesTemplateDeployedService) GetServiceId() string {
+	return v.ServiceId
+}
+
+// GetKey returns TemplateInstanceListTemplateInstanceListTemplateInstanceServicesTemplateDeployedService.Key, and is useful for accessing the field via an interface.
+func (v *TemplateInstanceListTemplateInstanceListTemplateInstanceServicesTemplateDeployedService) GetKey() string {
+	return v.Key
+}
+
+// GetName returns TemplateInstanceListTemplateInstanceListTemplateInstanceServicesTemplateDeployedService.Name, and is useful for accessing the field via an interface.
+func (v *TemplateInstanceListTemplateInstanceListTemplateInstanceServicesTemplateDeployedService) GetName() string {
+	return v.Name
+}
+
+// GetStatus returns TemplateInstanceListTemplateInstanceListTemplateInstanceServicesTemplateDeployedService.Status, and is useful for accessing the field via an interface.
+func (v *TemplateInstanceListTemplateInstanceListTemplateInstanceServicesTemplateDeployedService) GetStatus() string {
+	return v.Status
+}
+
+// TemplateListResponse is returned by TemplateList on success.
+type TemplateListResponse struct {
+	// List available service templates. Optionally filter by tag.
+	TemplateList []TemplateListTemplateListServiceTemplate `json:"templateList"`
+}
+
+// GetTemplateList returns TemplateListResponse.TemplateList, and is useful for accessing the field via an interface.
+func (v *TemplateListResponse) GetTemplateList() []TemplateListTemplateListServiceTemplate {
+	return v.TemplateList
+}
+
+// TemplateListTemplateListServiceTemplate includes the requested fields of the GraphQL type ServiceTemplate.
+type TemplateListTemplateListServiceTemplate struct {
+	Slug        string                                                                `json:"slug"`
+	Name        string                                                                `json:"name"`
+	Description string                                                                `json:"description"`
+	Tags        []string                                                              `json:"tags"`
+	Icon        string                                                                `json:"icon"`
+	Variables   []TemplateListTemplateListServiceTemplateVariablesTemplateVariableDef `json:"variables"`
+	Services    []TemplateListTemplateListServiceTemplateServicesTemplateServiceDef   `json:"services"`
+	Outputs     []TemplateListTemplateListServiceTemplateOutputsTemplateOutputDef     `json:"outputs"`
+}
+
+// GetSlug returns TemplateListTemplateListServiceTemplate.Slug, and is useful for accessing the field via an interface.
+func (v *TemplateListTemplateListServiceTemplate) GetSlug() string { return v.Slug }
+
+// GetName returns TemplateListTemplateListServiceTemplate.Name, and is useful for accessing the field via an interface.
+func (v *TemplateListTemplateListServiceTemplate) GetName() string { return v.Name }
+
+// GetDescription returns TemplateListTemplateListServiceTemplate.Description, and is useful for accessing the field via an interface.
+func (v *TemplateListTemplateListServiceTemplate) GetDescription() string { return v.Description }
+
+// GetTags returns TemplateListTemplateListServiceTemplate.Tags, and is useful for accessing the field via an interface.
+func (v *TemplateListTemplateListServiceTemplate) GetTags() []string { return v.Tags }
+
+// GetIcon returns TemplateListTemplateListServiceTemplate.Icon, and is useful for accessing the field via an interface.
+func (v *TemplateListTemplateListServiceTemplate) GetIcon() string { return v.Icon }
+
+// GetVariables returns TemplateListTemplateListServiceTemplate.Variables, and is useful for accessing the field via an interface.
+func (v *TemplateListTemplateListServiceTemplate) GetVariables() []TemplateListTemplateListServiceTemplateVariablesTemplateVariableDef {
+	return v.Variables
+}
+
+// GetServices returns TemplateListTemplateListServiceTemplate.Services, and is useful for accessing the field via an interface.
+func (v *TemplateListTemplateListServiceTemplate) GetServices() []TemplateListTemplateListServiceTemplateServicesTemplateServiceDef {
+	return v.Services
+}
+
+// GetOutputs returns TemplateListTemplateListServiceTemplate.Outputs, and is useful for accessing the field via an interface.
+func (v *TemplateListTemplateListServiceTemplate) GetOutputs() []TemplateListTemplateListServiceTemplateOutputsTemplateOutputDef {
+	return v.Outputs
+}
+
+// TemplateListTemplateListServiceTemplateOutputsTemplateOutputDef includes the requested fields of the GraphQL type TemplateOutputDef.
+type TemplateListTemplateListServiceTemplateOutputsTemplateOutputDef struct {
+	Key         string `json:"key"`
+	Label       string `json:"label"`
+	Description string `json:"description"`
+	Kind        string `json:"kind"`
+	Sensitive   bool   `json:"sensitive"`
+}
+
+// GetKey returns TemplateListTemplateListServiceTemplateOutputsTemplateOutputDef.Key, and is useful for accessing the field via an interface.
+func (v *TemplateListTemplateListServiceTemplateOutputsTemplateOutputDef) GetKey() string {
+	return v.Key
+}
+
+// GetLabel returns TemplateListTemplateListServiceTemplateOutputsTemplateOutputDef.Label, and is useful for accessing the field via an interface.
+func (v *TemplateListTemplateListServiceTemplateOutputsTemplateOutputDef) GetLabel() string {
+	return v.Label
+}
+
+// GetDescription returns TemplateListTemplateListServiceTemplateOutputsTemplateOutputDef.Description, and is useful for accessing the field via an interface.
+func (v *TemplateListTemplateListServiceTemplateOutputsTemplateOutputDef) GetDescription() string {
+	return v.Description
+}
+
+// GetKind returns TemplateListTemplateListServiceTemplateOutputsTemplateOutputDef.Kind, and is useful for accessing the field via an interface.
+func (v *TemplateListTemplateListServiceTemplateOutputsTemplateOutputDef) GetKind() string {
+	return v.Kind
+}
+
+// GetSensitive returns TemplateListTemplateListServiceTemplateOutputsTemplateOutputDef.Sensitive, and is useful for accessing the field via an interface.
+func (v *TemplateListTemplateListServiceTemplateOutputsTemplateOutputDef) GetSensitive() bool {
+	return v.Sensitive
+}
+
+// TemplateListTemplateListServiceTemplateServicesTemplateServiceDef includes the requested fields of the GraphQL type TemplateServiceDef.
+type TemplateListTemplateListServiceTemplateServicesTemplateServiceDef struct {
+	Key    string `json:"key"`
+	Name   string `json:"name"`
+	Source string `json:"source"`
+	Image  string `json:"image"`
+	Memory string `json:"memory"`
+	Vcpus  string `json:"vcpus"`
+}
+
+// GetKey returns TemplateListTemplateListServiceTemplateServicesTemplateServiceDef.Key, and is useful for accessing the field via an interface.
+func (v *TemplateListTemplateListServiceTemplateServicesTemplateServiceDef) GetKey() string {
+	return v.Key
+}
+
+// GetName returns TemplateListTemplateListServiceTemplateServicesTemplateServiceDef.Name, and is useful for accessing the field via an interface.
+func (v *TemplateListTemplateListServiceTemplateServicesTemplateServiceDef) GetName() string {
+	return v.Name
+}
+
+// GetSource returns TemplateListTemplateListServiceTemplateServicesTemplateServiceDef.Source, and is useful for accessing the field via an interface.
+func (v *TemplateListTemplateListServiceTemplateServicesTemplateServiceDef) GetSource() string {
+	return v.Source
+}
+
+// GetImage returns TemplateListTemplateListServiceTemplateServicesTemplateServiceDef.Image, and is useful for accessing the field via an interface.
+func (v *TemplateListTemplateListServiceTemplateServicesTemplateServiceDef) GetImage() string {
+	return v.Image
+}
+
+// GetMemory returns TemplateListTemplateListServiceTemplateServicesTemplateServiceDef.Memory, and is useful for accessing the field via an interface.
+func (v *TemplateListTemplateListServiceTemplateServicesTemplateServiceDef) GetMemory() string {
+	return v.Memory
+}
+
+// GetVcpus returns TemplateListTemplateListServiceTemplateServicesTemplateServiceDef.Vcpus, and is useful for accessing the field via an interface.
+func (v *TemplateListTemplateListServiceTemplateServicesTemplateServiceDef) GetVcpus() string {
+	return v.Vcpus
+}
+
+// TemplateListTemplateListServiceTemplateVariablesTemplateVariableDef includes the requested fields of the GraphQL type TemplateVariableDef.
+type TemplateListTemplateListServiceTemplateVariablesTemplateVariableDef struct {
+	Key          string   `json:"key"`
+	Type         string   `json:"type"`
+	Name         string   `json:"name"`
+	Description  string   `json:"description"`
+	Required     bool     `json:"required"`
+	Sensitive    bool     `json:"sensitive"`
+	DefaultValue *string  `json:"defaultValue"`
+	Options      []string `json:"options"`
+}
+
+// GetKey returns TemplateListTemplateListServiceTemplateVariablesTemplateVariableDef.Key, and is useful for accessing the field via an interface.
+func (v *TemplateListTemplateListServiceTemplateVariablesTemplateVariableDef) GetKey() string {
+	return v.Key
+}
+
+// GetType returns TemplateListTemplateListServiceTemplateVariablesTemplateVariableDef.Type, and is useful for accessing the field via an interface.
+func (v *TemplateListTemplateListServiceTemplateVariablesTemplateVariableDef) GetType() string {
+	return v.Type
+}
+
+// GetName returns TemplateListTemplateListServiceTemplateVariablesTemplateVariableDef.Name, and is useful for accessing the field via an interface.
+func (v *TemplateListTemplateListServiceTemplateVariablesTemplateVariableDef) GetName() string {
+	return v.Name
+}
+
+// GetDescription returns TemplateListTemplateListServiceTemplateVariablesTemplateVariableDef.Description, and is useful for accessing the field via an interface.
+func (v *TemplateListTemplateListServiceTemplateVariablesTemplateVariableDef) GetDescription() string {
+	return v.Description
+}
+
+// GetRequired returns TemplateListTemplateListServiceTemplateVariablesTemplateVariableDef.Required, and is useful for accessing the field via an interface.
+func (v *TemplateListTemplateListServiceTemplateVariablesTemplateVariableDef) GetRequired() bool {
+	return v.Required
+}
+
+// GetSensitive returns TemplateListTemplateListServiceTemplateVariablesTemplateVariableDef.Sensitive, and is useful for accessing the field via an interface.
+func (v *TemplateListTemplateListServiceTemplateVariablesTemplateVariableDef) GetSensitive() bool {
+	return v.Sensitive
+}
+
+// GetDefaultValue returns TemplateListTemplateListServiceTemplateVariablesTemplateVariableDef.DefaultValue, and is useful for accessing the field via an interface.
+func (v *TemplateListTemplateListServiceTemplateVariablesTemplateVariableDef) GetDefaultValue() *string {
+	return v.DefaultValue
+}
+
+// GetOptions returns TemplateListTemplateListServiceTemplateVariablesTemplateVariableDef.Options, and is useful for accessing the field via an interface.
+func (v *TemplateListTemplateListServiceTemplateVariablesTemplateVariableDef) GetOptions() []string {
+	return v.Options
+}
+
+type TemplateVariableValueInput struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
+}
+
+// GetKey returns TemplateVariableValueInput.Key, and is useful for accessing the field via an interface.
+func (v *TemplateVariableValueInput) GetKey() string { return v.Key }
+
+// GetValue returns TemplateVariableValueInput.Value, and is useful for accessing the field via an interface.
+func (v *TemplateVariableValueInput) GetValue() string { return v.Value }
+
 // UnsetSecretResponse is returned by UnsetSecret on success.
 type UnsetSecretResponse struct {
 	// Remove a single env var from a service. Triggers a redeploy.
@@ -2659,6 +3144,38 @@ type __SetSecretsInput struct {
 
 // GetInput returns __SetSecretsInput.Input, and is useful for accessing the field via an interface.
 func (v *__SetSecretsInput) GetInput() SetSecretsInput { return v.Input }
+
+// __TemplateDeployInput is used internally by genqlient
+type __TemplateDeployInput struct {
+	Input TemplateDeployInput `json:"input"`
+}
+
+// GetInput returns __TemplateDeployInput.Input, and is useful for accessing the field via an interface.
+func (v *__TemplateDeployInput) GetInput() TemplateDeployInput { return v.Input }
+
+// __TemplateInstanceListInput is used internally by genqlient
+type __TemplateInstanceListInput struct {
+	Project   *string `json:"project"`
+	ProjectId *string `json:"projectId"`
+	Ws        *string `json:"ws"`
+}
+
+// GetProject returns __TemplateInstanceListInput.Project, and is useful for accessing the field via an interface.
+func (v *__TemplateInstanceListInput) GetProject() *string { return v.Project }
+
+// GetProjectId returns __TemplateInstanceListInput.ProjectId, and is useful for accessing the field via an interface.
+func (v *__TemplateInstanceListInput) GetProjectId() *string { return v.ProjectId }
+
+// GetWs returns __TemplateInstanceListInput.Ws, and is useful for accessing the field via an interface.
+func (v *__TemplateInstanceListInput) GetWs() *string { return v.Ws }
+
+// __TemplateListInput is used internally by genqlient
+type __TemplateListInput struct {
+	Tag *string `json:"tag"`
+}
+
+// GetTag returns __TemplateListInput.Tag, and is useful for accessing the field via an interface.
+func (v *__TemplateListInput) GetTag() *string { return v.Tag }
 
 // __UnsetSecretInput is used internally by genqlient
 type __UnsetSecretInput struct {
@@ -4209,6 +4726,182 @@ func SetSecrets(
 	}
 
 	data_ = &SetSecretsResponse{}
+	resp_ := &graphql.Response{Data: data_}
+
+	err_ = client_.MakeRequest(
+		ctx_,
+		req_,
+		resp_,
+	)
+
+	return data_, err_
+}
+
+// The mutation executed by TemplateDeploy.
+const TemplateDeploy_Operation = `
+mutation TemplateDeploy ($input: TemplateDeployInput!) {
+	templateDeploy(input: $input) {
+		templateInstanceId
+		projectId
+		services {
+			serviceId
+			key
+			name
+			status
+			endpoints {
+				name
+				port
+				protocol
+				visibility
+				internalEndpoint
+				publicEndpoint
+			}
+		}
+		outputs {
+			key
+			label
+			description
+			kind
+			sensitive
+			value
+		}
+	}
+}
+`
+
+func TemplateDeploy(
+	ctx_ context.Context,
+	client_ graphql.Client,
+	input TemplateDeployInput,
+) (data_ *TemplateDeployResponse, err_ error) {
+	req_ := &graphql.Request{
+		OpName: "TemplateDeploy",
+		Query:  TemplateDeploy_Operation,
+		Variables: &__TemplateDeployInput{
+			Input: input,
+		},
+	}
+
+	data_ = &TemplateDeployResponse{}
+	resp_ := &graphql.Response{Data: data_}
+
+	err_ = client_.MakeRequest(
+		ctx_,
+		req_,
+		resp_,
+	)
+
+	return data_, err_
+}
+
+// The query executed by TemplateInstanceList.
+const TemplateInstanceList_Operation = `
+query TemplateInstanceList ($project: String, $projectId: ID, $ws: String) {
+	templateInstanceList(project: $project, projectId: $projectId, workspaceSlug: $ws) {
+		id
+		templateSlug
+		name
+		status
+		services {
+			serviceId
+			key
+			name
+			status
+		}
+		outputs {
+			key
+			label
+			description
+			kind
+			sensitive
+			value
+		}
+		createdAt
+	}
+}
+`
+
+func TemplateInstanceList(
+	ctx_ context.Context,
+	client_ graphql.Client,
+	project *string,
+	projectId *string,
+	ws *string,
+) (data_ *TemplateInstanceListResponse, err_ error) {
+	req_ := &graphql.Request{
+		OpName: "TemplateInstanceList",
+		Query:  TemplateInstanceList_Operation,
+		Variables: &__TemplateInstanceListInput{
+			Project:   project,
+			ProjectId: projectId,
+			Ws:        ws,
+		},
+	}
+
+	data_ = &TemplateInstanceListResponse{}
+	resp_ := &graphql.Response{Data: data_}
+
+	err_ = client_.MakeRequest(
+		ctx_,
+		req_,
+		resp_,
+	)
+
+	return data_, err_
+}
+
+// The query executed by TemplateList.
+const TemplateList_Operation = `
+query TemplateList ($tag: String) {
+	templateList(tag: $tag) {
+		slug
+		name
+		description
+		tags
+		icon
+		variables {
+			key
+			type
+			name
+			description
+			required
+			sensitive
+			defaultValue
+			options
+		}
+		services {
+			key
+			name
+			source
+			image
+			memory
+			vcpus
+		}
+		outputs {
+			key
+			label
+			description
+			kind
+			sensitive
+		}
+	}
+}
+`
+
+func TemplateList(
+	ctx_ context.Context,
+	client_ graphql.Client,
+	tag *string,
+) (data_ *TemplateListResponse, err_ error) {
+	req_ := &graphql.Request{
+		OpName: "TemplateList",
+		Query:  TemplateList_Operation,
+		Variables: &__TemplateListInput{
+			Tag: tag,
+		},
+	}
+
+	data_ = &TemplateListResponse{}
 	resp_ := &graphql.Response{Data: data_}
 
 	err_ = client_.MakeRequest(

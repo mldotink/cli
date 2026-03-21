@@ -11,6 +11,7 @@ import (
 func init() {
 	listCmd.Flags().Bool("all", false, "List services across all workspaces and projects")
 	listCmd.Flags().BoolP("env", "e", false, "Show environment variables when inspecting one service")
+	listCmd.Flags().BoolP("template", "t", false, "Show template outputs (credentials, connection info) if deployed from a template")
 	listCmd.Flags().Int("deploy-logs", 0, "Include N deploy log lines when inspecting one service (max 500)")
 	listCmd.Flags().Int("runtime-logs", 0, "Include N runtime log lines when inspecting one service (max 500)")
 	listCmd.Flags().String("metrics", "", "Include CPU/memory/network metrics when inspecting one service: 1h, 6h, 24h, 7d, 30d")

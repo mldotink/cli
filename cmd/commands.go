@@ -22,6 +22,7 @@ func registerCommands() {
 	rootCmd.AddCommand(domainsCmd)
 	rootCmd.AddCommand(dnsCmd)
 	rootCmd.AddCommand(projectsCmd)
+	rootCmd.AddCommand(templateCmd)
 	rootCmd.AddCommand(configCmd)
 	rootCmd.AddCommand(updateCmd)
 	rootCmd.AddCommand(chatCmd)

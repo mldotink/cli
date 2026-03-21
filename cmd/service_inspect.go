@@ -22,11 +22,12 @@ func (f logFilterOptions) used() bool {
 }
 
 type serviceInspectOptions struct {
-	includeEnv   bool
-	deployLines  int
-	runtimeLines int
-	metricsRange string
-	logFilters   logFilterOptions
+	includeEnv      bool
+	includeTemplate bool
+	deployLines     int
+	runtimeLines    int
+	metricsRange    string
+	logFilters      logFilterOptions
 }
 
 const defaultMetricsMaxDataPoints = 50
@@ -38,6 +39,7 @@ type metricSample struct {
 
 func inspectOptionsFromCommand(cmd *cobra.Command) (serviceInspectOptions, error) {
 	includeEnv, _ := cmd.Flags().GetBool("env")
+	includeTemplate, _ := cmd.Flags().GetBool("template")
 	deployLines, _ := cmd.Flags().GetInt("deploy-logs")
 	runtimeLines, _ := cmd.Flags().GetInt("runtime-logs")
 	metricsRange, _ := cmd.Flags().GetString("metrics")
@@ -47,11 +49,12 @@ func inspectOptionsFromCommand(cmd *cobra.Command) (serviceInspectOptions, error
 	}
 
 	return serviceInspectOptions{
-		includeEnv:   includeEnv,
-		deployLines:  clampLogLines(deployLines),
-		runtimeLines: clampLogLines(runtimeLines),
-		metricsRange: strings.TrimSpace(metricsRange),
-		logFilters:   logFilters,
+		includeEnv:      includeEnv,
+		includeTemplate: includeTemplate,
+		deployLines:     clampLogLines(deployLines),
+		runtimeLines:    clampLogLines(runtimeLines),
+		metricsRange:    strings.TrimSpace(metricsRange),
+		logFilters:      logFilters,
 	}, nil
 }
 
@@ -110,7 +113,7 @@ func validateInspectOptions(opts serviceInspectOptions) error {
 }
 
 func hasInspectFlags(opts serviceInspectOptions) bool {
-	return opts.includeEnv || opts.deployLines > 0 || opts.runtimeLines > 0 || opts.metricsRange != "" || opts.logFilters.used()
+	return opts.includeEnv || opts.includeTemplate || opts.deployLines > 0 || opts.runtimeLines > 0 || opts.metricsRange != "" || opts.logFilters.used()
 }
 
 func clampLogLines(lines int) int {
@@ -152,12 +155,53 @@ func inspectService(name string, opts serviceInspectOptions, printTip bool) {
 		fetchAndPrintMetrics(client, svc.Id, opts.metricsRange)
 	}
 
+	if opts.includeTemplate {
+		fetchAndPrintTemplateInfo(client, svc.Id, svc.Project.Slug)
+	}
+
 	if printTip && !hasInspectFlags(opts) {
 		fmt.Println()
 		fmt.Println(dim.Render(fmt.Sprintf("  Tip: ink service %s --deploy-logs 20 --runtime-logs 50 --metrics 1h", name)))
 	}
 
 	fmt.Println()
+}
+
+func fetchAndPrintTemplateInfo(client graphql.Client, serviceID, projectSlug string) {
+	var proj *string
+	if projectSlug != "" {
+		proj = &projectSlug
+	}
+
+	result, err := gql.TemplateInstanceList(ctx(), client, proj, nil, wsPtr())
+	if err != nil {
+		fmt.Printf("  %s %s\n", red.Render("!"), dim.Render("template info: "+err.Error()))
+		return
+	}
+
+	for _, inst := range result.TemplateInstanceList {
+		for _, svc := range inst.Services {
+			if svc.ServiceId == serviceID {
+				fmt.Println()
+				fmt.Println(bold.Render("  Template"))
+				kv("Template", inst.TemplateSlug)
+				kv("Instance", inst.Name)
+				kv("Status", renderStatus(inst.Status))
+
+				if len(inst.Outputs) > 0 {
+					fmt.Println()
+					fmt.Println(bold.Render("  Outputs"))
+					for _, o := range inst.Outputs {
+						fmt.Printf("  %-20s %s\n", dim.Render(o.Label), o.Value)
+					}
+				}
+				return
+			}
+		}
+	}
+
+	fmt.Println()
+	fmt.Println(dim.Render("  Not deployed from a template"))
 }
 
 func renderServiceDetail(svc *gql.FindServiceServiceListServiceConnectionNodesService, includeEnv bool) string {
