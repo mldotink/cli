@@ -149,6 +149,14 @@ ink template deploy postgresql --name mydb --var db_name=myapp --var storage_gi=
 			}
 		}
 
+		// Next-step hint
+		if len(deploy.Services) > 0 {
+			svcName := deploy.Services[0].Name
+			fmt.Println()
+			fmt.Println(dim.Render(fmt.Sprintf("  ink service %s                     Check status and endpoints", svcName)))
+			fmt.Println(dim.Render(fmt.Sprintf("  ink service %s --runtime-logs 20   View logs", svcName)))
+		}
+
 		fmt.Println()
 	},
 }
