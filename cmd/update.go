@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
@@ -60,15 +61,34 @@ var updateCmd = &cobra.Command{
 
 		if Version == "dev" {
 			fmt.Println(yellow.Render("  ⚠ ") + "Running a dev build. Latest release is " + bold.Render("v"+latest))
-		} else {
-			fmt.Printf("  Update available: %s → %s\n", dim.Render("v"+current), bold.Render("v"+latest))
+			fmt.Println()
+			for _, line := range updateInstructionLines(method, latest) {
+				fmt.Println(line)
+			}
+			fmt.Println()
+			return
 		}
 
-		fmt.Println()
-		for _, line := range updateInstructionLines(method, latest) {
-			fmt.Println(line)
+		fmt.Printf("  Update available: %s → %s\n", dim.Render("v"+current), bold.Render("v"+latest))
+
+		updateCmd, updateArgs := updateCommand(method, latest)
+		if updateCmd == "" {
+			fmt.Println()
+			for _, line := range updateInstructionLines(method, latest) {
+				fmt.Println(line)
+			}
+			fmt.Println()
+			return
 		}
-		fmt.Println()
+
+		fmt.Printf("  Running: %s %s\n", updateCmd, strings.Join(updateArgs, " "))
+		c := exec.Command(updateCmd, updateArgs...)
+		c.Stdout = os.Stdout
+		c.Stderr = os.Stderr
+		if err := c.Run(); err != nil {
+			fatal("Update failed: " + err.Error())
+		}
+		success(fmt.Sprintf("Updated to v%s", latest))
 	},
 }
 
@@ -113,6 +133,17 @@ func detectInstallMethod() string {
 	return detectInstallMethodFromPaths(exe, resolved)
 }
 
+func updateCommand(method, latest string) (string, []string) {
+	switch method {
+	case "homebrew":
+		return "brew", []string{"upgrade", homebrewFormula}
+	case "npm":
+		return "npm", []string{"install", "-g", fmt.Sprintf("%s@%s", npmPackage, latest)}
+	default:
+		return "", nil
+	}
+}
+
 func updateInstructionLines(method, latest string) []string {
 	switch method {
 	case "homebrew":
@@ -121,7 +152,7 @@ func updateInstructionLines(method, latest string) []string {
 		}
 	case "npm":
 		return []string{
-			"  Run: " + bold.Render("npm update -g "+npmPackage),
+			"  Run: " + bold.Render(fmt.Sprintf("npm install -g %s@%s", npmPackage, latest)),
 		}
 	default:
 		return []string{

@@ -67,7 +67,7 @@ func TestUpdateInstructionLines(t *testing.T) {
 			method: "npm",
 			latest: "0.1.32",
 			contains: []string{
-				"npm update -g @mldotink/cli",
+				"npm install -g @mldotink/cli@0.1.32",
 			},
 		},
 		{
