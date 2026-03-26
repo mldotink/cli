@@ -29,7 +29,7 @@ const serviceGetQuery = `query($id: ID!) {
     ports { name port protocol visibility internalEndpoint publicEndpoint }
     gitProvider commitHash memory vcpus customDomain customDomainStatus
     buildPack buildCommand startCommand publishDirectory rootDirectory dockerfilePath
-    createdAt updatedAt
+    timeoutDestroySeconds createdAt updatedAt
   }
 }`
 
@@ -41,7 +41,7 @@ const serviceListQuery = `query($ws: String, $proj: String) {
       ports { name port protocol visibility internalEndpoint publicEndpoint }
       gitProvider commitHash memory vcpus customDomain customDomainStatus
       buildPack buildCommand startCommand publishDirectory rootDirectory dockerfilePath
-      createdAt updatedAt
+      timeoutDestroySeconds createdAt updatedAt
     }
   }
 }`

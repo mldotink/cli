@@ -25,9 +25,10 @@ type Service struct {
 	StartCommand       string        `json:"startCommand"`
 	PublishDirectory   string        `json:"publishDirectory"`
 	RootDirectory      string        `json:"rootDirectory"`
-	DockerfilePath     string        `json:"dockerfilePath"`
-	CreatedAt          string        `json:"createdAt"`
-	UpdatedAt          string        `json:"updatedAt"`
+	DockerfilePath        string        `json:"dockerfilePath"`
+	TimeoutDestroySeconds int           `json:"timeoutDestroySeconds"`
+	CreatedAt             string        `json:"createdAt"`
+	UpdatedAt             string        `json:"updatedAt"`
 }
 
 // EnvVar is a key-value environment variable.
@@ -81,8 +82,9 @@ type CreateServiceInput struct {
 	StartCommand     string             `json:"startCommand,omitempty"`
 	PublishDirectory string             `json:"publishDirectory,omitempty"`
 	RootDirectory    string             `json:"rootDirectory,omitempty"`
-	DockerfilePath   string             `json:"dockerfilePath,omitempty"`
-	Volumes          []VolumeSpec       `json:"volumes,omitempty"`
+	DockerfilePath        string             `json:"dockerfilePath,omitempty"`
+	Volumes               []VolumeSpec       `json:"volumes,omitempty"`
+	TimeoutDestroySeconds int                `json:"timeoutDestroySeconds,omitempty"`
 }
 
 // CreateServiceResult is the result of creating a service.
@@ -132,8 +134,9 @@ type UpdateServiceInput struct {
 	StartCommand     *string            `json:"startCommand,omitempty"`
 	PublishDirectory *string            `json:"publishDirectory,omitempty"`
 	RootDirectory    *string            `json:"rootDirectory,omitempty"`
-	DockerfilePath   *string            `json:"dockerfilePath,omitempty"`
-	Volumes          []VolumeSpec       `json:"volumes,omitempty"`
+	DockerfilePath        *string            `json:"dockerfilePath,omitempty"`
+	Volumes               []VolumeSpec       `json:"volumes,omitempty"`
+	TimeoutDestroySeconds *int               `json:"timeoutDestroySeconds,omitempty"`
 }
 
 // UpdateServiceResult is the result of updating a service.

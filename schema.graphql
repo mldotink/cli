@@ -736,6 +736,8 @@ input CreateServiceInput {
   regions: [String!] = ["eu-central-1"]
   """Persistent volumes to attach."""
   volumes: [VolumeInput!]
+  """Auto-destroy service after N seconds from deployment completion. 0 or omit for persistent service. Max 86400 (24h)."""
+  timeoutDestroySeconds: Int
 }
 
 type CreateServiceResult {
@@ -772,6 +774,8 @@ input UpdateServiceInput {
   dockerfilePath: String
   """Persistent volumes to add."""
   volumes: [VolumeInput!]
+  """Auto-destroy service after N seconds from deployment completion. 0 for persistent service. Max 86400 (24h)."""
+  timeoutDestroySeconds: Int
 }
 
 input EnvVarInput {
@@ -849,6 +853,8 @@ type Service {
   dockerfilePath: String
   """Persistent volumes attached to this service."""
   volumes: [VolumeInfo!]!
+  """Auto-destroy timeout in seconds. 0 means persistent (no auto-destroy)."""
+  timeoutDestroySeconds: Int!
   createdAt: Time!
   updatedAt: Time!
 }

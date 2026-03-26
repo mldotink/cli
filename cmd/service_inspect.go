@@ -232,6 +232,9 @@ func renderServiceDetail(svc *gql.FindServiceServiceListServiceConnectionNodesSe
 	}
 	d.kv("Memory", svc.Memory)
 	d.kv("vCPU", svc.Vcpus)
+	if svc.TimeoutDestroySeconds > 0 {
+		d.kv("Auto-destroy", fmt.Sprintf("%ds after deploy", svc.TimeoutDestroySeconds))
+	}
 	if svc.CustomDomain != nil {
 		status := ""
 		if svc.CustomDomainStatus != nil {

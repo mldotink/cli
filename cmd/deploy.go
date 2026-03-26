@@ -59,6 +59,9 @@ func addServiceFlags(cmd *cobra.Command) {
 	if f.Lookup("buildpack") == nil {
 		f.String("buildpack", "railpack", "Build strategy: railpack, dockerfile, static")
 	}
+	if f.Lookup("timeout") == nil {
+		f.Int("timeout", 0, "Auto-destroy after N seconds from deploy completion (0=persistent, max 86400)")
+	}
 }
 
 var deployCmd = &cobra.Command{
@@ -200,6 +203,10 @@ func runCreate(cmd *cobra.Command, client graphql.Client, name string) {
 		region, _ := cmd.Flags().GetString("region")
 		input.Regions = []string{region}
 	}
+	if cmd.Flags().Changed("timeout") {
+		v, _ := cmd.Flags().GetInt("timeout")
+		input.TimeoutDestroySeconds = &v
+	}
 
 	input.EnvVars = collectEnvVars(cmd)
 
@@ -283,6 +290,10 @@ func runUpdate(cmd *cobra.Command, client graphql.Client, name string) {
 	if cmd.Flags().Changed("port") {
 		v, _ := cmd.Flags().GetInt("port")
 		input.Ports = singlePublicHTTPPort(v)
+	}
+	if cmd.Flags().Changed("timeout") {
+		v, _ := cmd.Flags().GetInt("timeout")
+		input.TimeoutDestroySeconds = &v
 	}
 
 	input.EnvVars = collectEnvVars(cmd)
