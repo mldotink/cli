@@ -56,7 +56,7 @@ query FindService($ws: String) {
         internalEndpoint
         publicEndpoint
       }
-      timeoutDestroySeconds
+      destroyTimeoutSeconds
       envVars { key value }
       projectId
       project { slug }

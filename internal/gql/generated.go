@@ -332,7 +332,7 @@ type CreateServiceInput struct {
 	// Persistent volumes to attach.
 	Volumes []VolumeInput `json:"volumes"`
 	// Auto-destroy service after N seconds from deployment completion. 0 or omit for persistent service. Max 86400 (24h).
-	TimeoutDestroySeconds *int `json:"timeoutDestroySeconds"`
+	DestroyTimeoutSeconds *int `json:"destroyTimeoutSeconds"`
 }
 
 // GetName returns CreateServiceInput.Name, and is useful for accessing the field via an interface.
@@ -398,8 +398,8 @@ func (v *CreateServiceInput) GetRegions() []string { return v.Regions }
 // GetVolumes returns CreateServiceInput.Volumes, and is useful for accessing the field via an interface.
 func (v *CreateServiceInput) GetVolumes() []VolumeInput { return v.Volumes }
 
-// GetTimeoutDestroySeconds returns CreateServiceInput.TimeoutDestroySeconds, and is useful for accessing the field via an interface.
-func (v *CreateServiceInput) GetTimeoutDestroySeconds() *int { return v.TimeoutDestroySeconds }
+// GetDestroyTimeoutSeconds returns CreateServiceInput.DestroyTimeoutSeconds, and is useful for accessing the field via an interface.
+func (v *CreateServiceInput) GetDestroyTimeoutSeconds() *int { return v.DestroyTimeoutSeconds }
 
 // CreateServiceResponse is returned by CreateService on success.
 type CreateServiceResponse struct {
@@ -711,7 +711,7 @@ type FindServiceServiceListServiceConnectionNodesService struct {
 	CustomDomainStatus *string                                                               `json:"customDomainStatus"`
 	Ports              []FindServiceServiceListServiceConnectionNodesServicePortsServicePort `json:"ports"`
 	// Auto-destroy timeout in seconds. 0 means persistent (no auto-destroy).
-	TimeoutDestroySeconds int                                                                `json:"timeoutDestroySeconds"`
+	DestroyTimeoutSeconds int                                                                `json:"destroyTimeoutSeconds"`
 	EnvVars               []FindServiceServiceListServiceConnectionNodesServiceEnvVarsEnvVar `json:"envVars"`
 	ProjectId             string                                                             `json:"projectId"`
 	Project               FindServiceServiceListServiceConnectionNodesServiceProject         `json:"project"`
@@ -781,9 +781,9 @@ func (v *FindServiceServiceListServiceConnectionNodesService) GetPorts() []FindS
 	return v.Ports
 }
 
-// GetTimeoutDestroySeconds returns FindServiceServiceListServiceConnectionNodesService.TimeoutDestroySeconds, and is useful for accessing the field via an interface.
-func (v *FindServiceServiceListServiceConnectionNodesService) GetTimeoutDestroySeconds() int {
-	return v.TimeoutDestroySeconds
+// GetDestroyTimeoutSeconds returns FindServiceServiceListServiceConnectionNodesService.DestroyTimeoutSeconds, and is useful for accessing the field via an interface.
+func (v *FindServiceServiceListServiceConnectionNodesService) GetDestroyTimeoutSeconds() int {
+	return v.DestroyTimeoutSeconds
 }
 
 // GetEnvVars returns FindServiceServiceListServiceConnectionNodesService.EnvVars, and is useful for accessing the field via an interface.
@@ -2510,7 +2510,7 @@ type UpdateServiceInput struct {
 	// Persistent volumes to add.
 	Volumes []VolumeInput `json:"volumes"`
 	// Auto-destroy service after N seconds from deployment completion. 0 for persistent service. Max 86400 (24h).
-	TimeoutDestroySeconds *int `json:"timeoutDestroySeconds"`
+	DestroyTimeoutSeconds *int `json:"destroyTimeoutSeconds"`
 }
 
 // GetName returns UpdateServiceInput.Name, and is useful for accessing the field via an interface.
@@ -2573,8 +2573,8 @@ func (v *UpdateServiceInput) GetDockerfilePath() *string { return v.DockerfilePa
 // GetVolumes returns UpdateServiceInput.Volumes, and is useful for accessing the field via an interface.
 func (v *UpdateServiceInput) GetVolumes() []VolumeInput { return v.Volumes }
 
-// GetTimeoutDestroySeconds returns UpdateServiceInput.TimeoutDestroySeconds, and is useful for accessing the field via an interface.
-func (v *UpdateServiceInput) GetTimeoutDestroySeconds() *int { return v.TimeoutDestroySeconds }
+// GetDestroyTimeoutSeconds returns UpdateServiceInput.DestroyTimeoutSeconds, and is useful for accessing the field via an interface.
+func (v *UpdateServiceInput) GetDestroyTimeoutSeconds() *int { return v.DestroyTimeoutSeconds }
 
 // UpdateServiceResponse is returned by UpdateService on success.
 type UpdateServiceResponse struct {
@@ -3870,7 +3870,7 @@ query FindService ($ws: String) {
 				internalEndpoint
 				publicEndpoint
 			}
-			timeoutDestroySeconds
+			destroyTimeoutSeconds
 			envVars {
 				key
 				value

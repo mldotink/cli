@@ -26,7 +26,7 @@ type Service struct {
 	PublishDirectory   string        `json:"publishDirectory"`
 	RootDirectory      string        `json:"rootDirectory"`
 	DockerfilePath        string        `json:"dockerfilePath"`
-	TimeoutDestroySeconds int           `json:"timeoutDestroySeconds"`
+	DestroyTimeoutSeconds int           `json:"destroyTimeoutSeconds"`
 	CreatedAt             string        `json:"createdAt"`
 	UpdatedAt             string        `json:"updatedAt"`
 }
@@ -84,7 +84,7 @@ type CreateServiceInput struct {
 	RootDirectory    string             `json:"rootDirectory,omitempty"`
 	DockerfilePath        string             `json:"dockerfilePath,omitempty"`
 	Volumes               []VolumeSpec       `json:"volumes,omitempty"`
-	TimeoutDestroySeconds int                `json:"timeoutDestroySeconds,omitempty"`
+	DestroyTimeoutSeconds int                `json:"destroyTimeoutSeconds,omitempty"`
 }
 
 // CreateServiceResult is the result of creating a service.
@@ -136,7 +136,7 @@ type UpdateServiceInput struct {
 	RootDirectory    *string            `json:"rootDirectory,omitempty"`
 	DockerfilePath        *string            `json:"dockerfilePath,omitempty"`
 	Volumes               []VolumeSpec       `json:"volumes,omitempty"`
-	TimeoutDestroySeconds *int               `json:"timeoutDestroySeconds,omitempty"`
+	DestroyTimeoutSeconds *int               `json:"destroyTimeoutSeconds,omitempty"`
 }
 
 // UpdateServiceResult is the result of updating a service.
