@@ -853,6 +853,8 @@ type Service {
   dockerfilePath: String
   """Persistent volumes attached to this service."""
   volumes: [VolumeInfo!]!
+  """Template instance that created this service, if any."""
+  templateInstance: TemplateInstance
   """Auto-destroy timeout in seconds. 0 means persistent (no auto-destroy)."""
   destroyTimeoutSeconds: Int!
   createdAt: Time!
