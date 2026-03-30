@@ -10,42 +10,43 @@ import (
 func init() {
 	configSetCmd.Flags().Bool("global", true, "Save to global config (~/.config/ink/config)")
 	configSetCmd.Flags().Bool("local", false, "Save to local config (.ink)")
+	configSetCmd.Flags().StringP("workspace", "w", "", "Default workspace slug")
+	configSetCmd.Flags().StringP("project", "p", "", "Default project slug")
 
 	configCmd.AddCommand(configSetCmd)
 	configCmd.AddCommand(configShowCmd)
 }
 
 var configCmd = &cobra.Command{
-	Use:     "config",
+	Use:   "config",
 	Short: "Set default workspace and project so you don't need --workspace and --project on every command",
 	Example: `# Set your default workspace and project (recommended)
-ink config set workspace my-team
-ink config set project backend
+ink config set --workspace my-team --project backend
 
 # Per-repo override via local .ink file
-ink config set workspace my-team --local
+ink config set --workspace my-team --local
 
 # View current config
 ink config show`,
 }
 
 var configSetCmd = &cobra.Command{
-	Use:   "set <key> <value>",
-	Short: "Set a config value",
-	Long:  "Set workspace or project defaults. Saves to global config by default, use --local for project-scoped.",
-	Args:  exactArgs(2),
+	Use:   "set [--workspace <slug>] [--project <slug>]",
+	Short: "Set default workspace and/or project",
+	Long:  "Set workspace and/or project defaults. Saves to global config by default, use --local for project-scoped.",
+	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-		key, value := args[0], args[1]
+		ws, _ := cmd.Flags().GetString("workspace")
+		proj, _ := cmd.Flags().GetString("project")
 		local, _ := cmd.Flags().GetBool("local")
 
-		c := &config.Config{}
-		switch key {
-		case "workspace":
-			c.Workspace = value
-		case "project":
-			c.Project = value
-		default:
-			fatal(fmt.Sprintf("Unknown config key %q — use 'workspace' or 'project'", key))
+		if ws == "" && proj == "" {
+			fatal("Provide at least one of --workspace or --project")
+		}
+
+		c := &config.Config{
+			Workspace: ws,
+			Project:   proj,
 		}
 
 		var err error
@@ -62,7 +63,12 @@ var configSetCmd = &cobra.Command{
 		if local {
 			target = ".ink"
 		}
-		success(fmt.Sprintf("Set %s=%s in %s", key, bold.Render(value), target))
+		if ws != "" {
+			success(fmt.Sprintf("Set workspace=%s in %s", bold.Render(ws), target))
+		}
+		if proj != "" {
+			success(fmt.Sprintf("Set project=%s in %s", bold.Render(proj), target))
+		}
 	},
 }
 
