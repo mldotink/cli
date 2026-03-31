@@ -20,18 +20,26 @@ var templateDeployCmd = &cobra.Command{
 	Use:   "deploy <slug>",
 	Short: "Deploy a template",
 	Long: `Deploys a template (e.g. postgresql, redis) creating all services
-and returning connection credentials.`,
-	Example: `# Deploy PostgreSQL
-ink template deploy postgresql --name mydb
+and returning connection credentials.
+
+Use "ink template info <slug>" to preview required variables before deploying.`,
+	Example: `# Preview template variables
+ink template info postgres
+
+# Deploy PostgreSQL
+ink template deploy postgres --name mydb
 
 # Deploy with variables
-ink template deploy postgresql --name mydb --var db_name=myapp --var storage_gi=20`,
+ink template deploy postgres --name mydb --var db_name=myapp --var storage_gi=20`,
 	Args: exactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		slug := args[0]
 		name, _ := cmd.Flags().GetString("name")
 		if name == "" {
-			fatal("--name is required")
+			fmt.Fprintln(os.Stderr, "Error: --name is required\n")
+			fmt.Fprintln(os.Stderr, "Usage: ink template deploy", slug, "--name <instance-name> [--var KEY=VALUE ...]")
+			fmt.Fprintln(os.Stderr, "\nRun \"ink template info "+slug+"\" to see available variables.")
+			os.Exit(1)
 		}
 
 		client := newClient()
