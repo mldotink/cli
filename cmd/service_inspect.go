@@ -40,7 +40,10 @@ type metricSample struct {
 func inspectOptionsFromCommand(cmd *cobra.Command) (serviceInspectOptions, error) {
 	includeEnv, _ := cmd.Flags().GetBool("env")
 	includeTemplate, _ := cmd.Flags().GetBool("template")
-	deployLines, _ := cmd.Flags().GetInt("deploy-logs")
+	deployLines, _ := cmd.Flags().GetInt("build-logs")
+	if deployLines == 0 {
+		deployLines, _ = cmd.Flags().GetInt("deploy-logs")
+	}
 	runtimeLines, _ := cmd.Flags().GetInt("runtime-logs")
 	metricsRange, _ := cmd.Flags().GetString("metrics")
 	logFilters, err := logFiltersFromCommand(cmd, "log-query")
@@ -107,7 +110,7 @@ func parseLogTimeFlag(raw string) (string, error) {
 
 func validateInspectOptions(opts serviceInspectOptions) error {
 	if opts.logFilters.used() && opts.deployLines == 0 && opts.runtimeLines == 0 {
-		return fmt.Errorf("log filters require --deploy-logs and/or --runtime-logs")
+		return fmt.Errorf("log filters require --build-logs and/or --runtime-logs")
 	}
 	return nil
 }
@@ -144,7 +147,7 @@ func inspectService(name string, opts serviceInspectOptions, printTip bool) {
 	client := newClient()
 
 	if opts.deployLines > 0 {
-		fetchAndPrintLogs(client, svc.Id, gql.LogTypeBuild, opts.deployLines, opts.logFilters, "Deploy Logs")
+		fetchAndPrintLogs(client, svc.Id, gql.LogTypeBuild, opts.deployLines, opts.logFilters, "Build Logs")
 	}
 
 	if opts.runtimeLines > 0 {
@@ -161,7 +164,7 @@ func inspectService(name string, opts serviceInspectOptions, printTip bool) {
 
 	if printTip && !hasInspectFlags(opts) {
 		fmt.Println()
-		fmt.Println(dim.Render(fmt.Sprintf("  Tip: ink service %s --deploy-logs 20 --runtime-logs 50 --metrics 1h", name)))
+		fmt.Println(dim.Render(fmt.Sprintf("  Tip: ink service %s --build-logs 20 --runtime-logs 50 --metrics 1h", name)))
 	}
 
 	fmt.Println()

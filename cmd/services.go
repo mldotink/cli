@@ -12,7 +12,9 @@ func init() {
 	listCmd.Flags().Bool("all", false, "List services across all workspaces and projects")
 	listCmd.Flags().BoolP("env", "e", false, "Show environment variables when inspecting one service")
 	listCmd.Flags().BoolP("template", "t", false, "Show template outputs (credentials, connection info) if deployed from a template")
-	listCmd.Flags().Int("deploy-logs", 0, "Include N deploy log lines when inspecting one service (max 500)")
+	listCmd.Flags().Int("build-logs", 0, "Include N build log lines when inspecting one service (max 500)")
+	listCmd.Flags().Int("deploy-logs", 0, "Alias for --build-logs")
+	listCmd.Flags().MarkHidden("deploy-logs")
 	listCmd.Flags().Int("runtime-logs", 0, "Include N runtime log lines when inspecting one service (max 500)")
 	listCmd.Flags().String("metrics", "", "Include CPU/memory/network metrics when inspecting one service: 1h, 6h, 24h, 7d, 30d")
 	listCmd.Flags().String("log-query", "", "Filter included logs by text query when inspecting one service")
@@ -42,6 +44,9 @@ ink service myapp --runtime-logs 50 --metrics 1h
 
 # Include metrics for the last 24 hours
 ink service myapp --metrics 24h
+
+# Include build logs
+ink service myapp --build-logs 50
 
 # Filter included runtime logs
 ink service myapp --runtime-logs 100 --log-query timeout --since 1h`,
