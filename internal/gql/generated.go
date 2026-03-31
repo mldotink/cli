@@ -212,82 +212,6 @@ func (v *CreateRepoResponse) GetRepoCreate() CreateRepoRepoCreateRepoCreateResul
 	return v.RepoCreate
 }
 
-type CreateResourceInput struct {
-	// Resource name, used to identify and look up the database.
-	Name string `json:"name"`
-	// Resource type. Currently only 'sqlite' is supported.
-	Type *string `json:"type"`
-	// Size limit for the database.
-	Size *string `json:"size"`
-	// Deployment region.
-	Region        *string `json:"region"`
-	WorkspaceSlug *string `json:"workspaceSlug"`
-}
-
-// GetName returns CreateResourceInput.Name, and is useful for accessing the field via an interface.
-func (v *CreateResourceInput) GetName() string { return v.Name }
-
-// GetType returns CreateResourceInput.Type, and is useful for accessing the field via an interface.
-func (v *CreateResourceInput) GetType() *string { return v.Type }
-
-// GetSize returns CreateResourceInput.Size, and is useful for accessing the field via an interface.
-func (v *CreateResourceInput) GetSize() *string { return v.Size }
-
-// GetRegion returns CreateResourceInput.Region, and is useful for accessing the field via an interface.
-func (v *CreateResourceInput) GetRegion() *string { return v.Region }
-
-// GetWorkspaceSlug returns CreateResourceInput.WorkspaceSlug, and is useful for accessing the field via an interface.
-func (v *CreateResourceInput) GetWorkspaceSlug() *string { return v.WorkspaceSlug }
-
-// CreateResourceResourceCreateCreateResourceResult includes the requested fields of the GraphQL type CreateResourceResult.
-type CreateResourceResourceCreateCreateResourceResult struct {
-	ResourceId string `json:"resourceId"`
-	Name       string `json:"name"`
-	Type       string `json:"type"`
-	Region     string `json:"region"`
-	// libSQL connection URL (e.g. libsql://db-name-org.turso.io). Use as DATABASE_URL env var.
-	DatabaseUrl string `json:"databaseUrl"`
-	// Auth token for the database connection. Use as DATABASE_AUTH_TOKEN env var.
-	AuthToken string `json:"authToken"`
-	Status    string `json:"status"`
-}
-
-// GetResourceId returns CreateResourceResourceCreateCreateResourceResult.ResourceId, and is useful for accessing the field via an interface.
-func (v *CreateResourceResourceCreateCreateResourceResult) GetResourceId() string {
-	return v.ResourceId
-}
-
-// GetName returns CreateResourceResourceCreateCreateResourceResult.Name, and is useful for accessing the field via an interface.
-func (v *CreateResourceResourceCreateCreateResourceResult) GetName() string { return v.Name }
-
-// GetType returns CreateResourceResourceCreateCreateResourceResult.Type, and is useful for accessing the field via an interface.
-func (v *CreateResourceResourceCreateCreateResourceResult) GetType() string { return v.Type }
-
-// GetRegion returns CreateResourceResourceCreateCreateResourceResult.Region, and is useful for accessing the field via an interface.
-func (v *CreateResourceResourceCreateCreateResourceResult) GetRegion() string { return v.Region }
-
-// GetDatabaseUrl returns CreateResourceResourceCreateCreateResourceResult.DatabaseUrl, and is useful for accessing the field via an interface.
-func (v *CreateResourceResourceCreateCreateResourceResult) GetDatabaseUrl() string {
-	return v.DatabaseUrl
-}
-
-// GetAuthToken returns CreateResourceResourceCreateCreateResourceResult.AuthToken, and is useful for accessing the field via an interface.
-func (v *CreateResourceResourceCreateCreateResourceResult) GetAuthToken() string { return v.AuthToken }
-
-// GetStatus returns CreateResourceResourceCreateCreateResourceResult.Status, and is useful for accessing the field via an interface.
-func (v *CreateResourceResourceCreateCreateResourceResult) GetStatus() string { return v.Status }
-
-// CreateResourceResponse is returned by CreateResource on success.
-type CreateResourceResponse struct {
-	// Provision a managed SQLite database (via libSQL). Returns a connection URL and auth token ready to use as env vars.
-	ResourceCreate CreateResourceResourceCreateCreateResourceResult `json:"resourceCreate"`
-}
-
-// GetResourceCreate returns CreateResourceResponse.ResourceCreate, and is useful for accessing the field via an interface.
-func (v *CreateResourceResponse) GetResourceCreate() CreateResourceResourceCreateCreateResourceResult {
-	return v.ResourceCreate
-}
-
 type CreateServiceInput struct {
 	// Service name — becomes the subdomain at {name}.ml.ink.
 	Name string `json:"name"`
@@ -533,35 +457,6 @@ type DeleteProjectResponse struct {
 
 // GetProjectDelete returns DeleteProjectResponse.ProjectDelete, and is useful for accessing the field via an interface.
 func (v *DeleteProjectResponse) GetProjectDelete() bool { return v.ProjectDelete }
-
-// DeleteResourceResourceDeleteDeleteResourceResult includes the requested fields of the GraphQL type DeleteResourceResult.
-type DeleteResourceResourceDeleteDeleteResourceResult struct {
-	ResourceId string `json:"resourceId"`
-	Name       string `json:"name"`
-	Message    string `json:"message"`
-}
-
-// GetResourceId returns DeleteResourceResourceDeleteDeleteResourceResult.ResourceId, and is useful for accessing the field via an interface.
-func (v *DeleteResourceResourceDeleteDeleteResourceResult) GetResourceId() string {
-	return v.ResourceId
-}
-
-// GetName returns DeleteResourceResourceDeleteDeleteResourceResult.Name, and is useful for accessing the field via an interface.
-func (v *DeleteResourceResourceDeleteDeleteResourceResult) GetName() string { return v.Name }
-
-// GetMessage returns DeleteResourceResourceDeleteDeleteResourceResult.Message, and is useful for accessing the field via an interface.
-func (v *DeleteResourceResourceDeleteDeleteResourceResult) GetMessage() string { return v.Message }
-
-// DeleteResourceResponse is returned by DeleteResource on success.
-type DeleteResourceResponse struct {
-	// Permanently delete a resource. The underlying database is destroyed.
-	ResourceDelete DeleteResourceResourceDeleteDeleteResourceResult `json:"resourceDelete"`
-}
-
-// GetResourceDelete returns DeleteResourceResponse.ResourceDelete, and is useful for accessing the field via an interface.
-func (v *DeleteResourceResponse) GetResourceDelete() DeleteResourceResourceDeleteDeleteResourceResult {
-	return v.ResourceDelete
-}
 
 type DeleteSecretsInput struct {
 	Name          string  `json:"name"`
@@ -900,94 +795,6 @@ func (v *GetRepoTokenResponse) GetRepoGetToken() GetRepoTokenRepoGetTokenRepoGet
 	return v.RepoGetToken
 }
 
-// GetResourceIDByNameResourceListResourceConnection includes the requested fields of the GraphQL type ResourceConnection.
-type GetResourceIDByNameResourceListResourceConnection struct {
-	Nodes []GetResourceIDByNameResourceListResourceConnectionNodesResource `json:"nodes"`
-}
-
-// GetNodes returns GetResourceIDByNameResourceListResourceConnection.Nodes, and is useful for accessing the field via an interface.
-func (v *GetResourceIDByNameResourceListResourceConnection) GetNodes() []GetResourceIDByNameResourceListResourceConnectionNodesResource {
-	return v.Nodes
-}
-
-// GetResourceIDByNameResourceListResourceConnectionNodesResource includes the requested fields of the GraphQL type Resource.
-type GetResourceIDByNameResourceListResourceConnectionNodesResource struct {
-	Id   string `json:"id"`
-	Name string `json:"name"`
-}
-
-// GetId returns GetResourceIDByNameResourceListResourceConnectionNodesResource.Id, and is useful for accessing the field via an interface.
-func (v *GetResourceIDByNameResourceListResourceConnectionNodesResource) GetId() string { return v.Id }
-
-// GetName returns GetResourceIDByNameResourceListResourceConnectionNodesResource.Name, and is useful for accessing the field via an interface.
-func (v *GetResourceIDByNameResourceListResourceConnectionNodesResource) GetName() string {
-	return v.Name
-}
-
-// GetResourceIDByNameResponse is returned by GetResourceIDByName on success.
-type GetResourceIDByNameResponse struct {
-	// Paginated list of resources (databases) in a workspace.
-	ResourceList GetResourceIDByNameResourceListResourceConnection `json:"resourceList"`
-}
-
-// GetResourceList returns GetResourceIDByNameResponse.ResourceList, and is useful for accessing the field via an interface.
-func (v *GetResourceIDByNameResponse) GetResourceList() GetResourceIDByNameResourceListResourceConnection {
-	return v.ResourceList
-}
-
-// GetResourceResourceGetResource includes the requested fields of the GraphQL type Resource.
-type GetResourceResourceGetResource struct {
-	Id   string `json:"id"`
-	Name string `json:"name"`
-	// Resource type: 'sqlite'.
-	Type   string `json:"type"`
-	Region string `json:"region"`
-	// Provisioning status: 'active', 'provisioning', 'error'.
-	Status   string                                  `json:"status"`
-	Metadata *GetResourceResourceGetResourceMetadata `json:"metadata"`
-}
-
-// GetId returns GetResourceResourceGetResource.Id, and is useful for accessing the field via an interface.
-func (v *GetResourceResourceGetResource) GetId() string { return v.Id }
-
-// GetName returns GetResourceResourceGetResource.Name, and is useful for accessing the field via an interface.
-func (v *GetResourceResourceGetResource) GetName() string { return v.Name }
-
-// GetType returns GetResourceResourceGetResource.Type, and is useful for accessing the field via an interface.
-func (v *GetResourceResourceGetResource) GetType() string { return v.Type }
-
-// GetRegion returns GetResourceResourceGetResource.Region, and is useful for accessing the field via an interface.
-func (v *GetResourceResourceGetResource) GetRegion() string { return v.Region }
-
-// GetStatus returns GetResourceResourceGetResource.Status, and is useful for accessing the field via an interface.
-func (v *GetResourceResourceGetResource) GetStatus() string { return v.Status }
-
-// GetMetadata returns GetResourceResourceGetResource.Metadata, and is useful for accessing the field via an interface.
-func (v *GetResourceResourceGetResource) GetMetadata() *GetResourceResourceGetResourceMetadata {
-	return v.Metadata
-}
-
-// GetResourceResourceGetResourceMetadata includes the requested fields of the GraphQL type ResourceMetadata.
-type GetResourceResourceGetResourceMetadata struct {
-	Size     *string `json:"size"`
-	Hostname *string `json:"hostname"`
-}
-
-// GetSize returns GetResourceResourceGetResourceMetadata.Size, and is useful for accessing the field via an interface.
-func (v *GetResourceResourceGetResourceMetadata) GetSize() *string { return v.Size }
-
-// GetHostname returns GetResourceResourceGetResourceMetadata.Hostname, and is useful for accessing the field via an interface.
-func (v *GetResourceResourceGetResourceMetadata) GetHostname() *string { return v.Hostname }
-
-// GetResourceResponse is returned by GetResource on success.
-type GetResourceResponse struct {
-	// Get resource details including connection credentials (databaseUrl, authToken).
-	ResourceGet *GetResourceResourceGetResource `json:"resourceGet"`
-}
-
-// GetResourceGet returns GetResourceResponse.ResourceGet, and is useful for accessing the field via an interface.
-func (v *GetResourceResponse) GetResourceGet() *GetResourceResourceGetResource { return v.ResourceGet }
-
 // InviteToWorkspaceResponse is returned by InviteToWorkspace on success.
 type InviteToWorkspaceResponse struct {
 	// Invite a user by email or username. Invitee must accept before joining.
@@ -1173,61 +980,6 @@ type ListProjectsResponse struct {
 // GetProjectList returns ListProjectsResponse.ProjectList, and is useful for accessing the field via an interface.
 func (v *ListProjectsResponse) GetProjectList() ListProjectsProjectListProjectConnection {
 	return v.ProjectList
-}
-
-// ListResourcesResourceListResourceConnection includes the requested fields of the GraphQL type ResourceConnection.
-type ListResourcesResourceListResourceConnection struct {
-	Nodes      []ListResourcesResourceListResourceConnectionNodesResource `json:"nodes"`
-	TotalCount int                                                        `json:"totalCount"`
-}
-
-// GetNodes returns ListResourcesResourceListResourceConnection.Nodes, and is useful for accessing the field via an interface.
-func (v *ListResourcesResourceListResourceConnection) GetNodes() []ListResourcesResourceListResourceConnectionNodesResource {
-	return v.Nodes
-}
-
-// GetTotalCount returns ListResourcesResourceListResourceConnection.TotalCount, and is useful for accessing the field via an interface.
-func (v *ListResourcesResourceListResourceConnection) GetTotalCount() int { return v.TotalCount }
-
-// ListResourcesResourceListResourceConnectionNodesResource includes the requested fields of the GraphQL type Resource.
-type ListResourcesResourceListResourceConnectionNodesResource struct {
-	Id   string `json:"id"`
-	Name string `json:"name"`
-	// Resource type: 'sqlite'.
-	Type string `json:"type"`
-	// Provisioning status: 'active', 'provisioning', 'error'.
-	Status string `json:"status"`
-	Region string `json:"region"`
-}
-
-// GetId returns ListResourcesResourceListResourceConnectionNodesResource.Id, and is useful for accessing the field via an interface.
-func (v *ListResourcesResourceListResourceConnectionNodesResource) GetId() string { return v.Id }
-
-// GetName returns ListResourcesResourceListResourceConnectionNodesResource.Name, and is useful for accessing the field via an interface.
-func (v *ListResourcesResourceListResourceConnectionNodesResource) GetName() string { return v.Name }
-
-// GetType returns ListResourcesResourceListResourceConnectionNodesResource.Type, and is useful for accessing the field via an interface.
-func (v *ListResourcesResourceListResourceConnectionNodesResource) GetType() string { return v.Type }
-
-// GetStatus returns ListResourcesResourceListResourceConnectionNodesResource.Status, and is useful for accessing the field via an interface.
-func (v *ListResourcesResourceListResourceConnectionNodesResource) GetStatus() string {
-	return v.Status
-}
-
-// GetRegion returns ListResourcesResourceListResourceConnectionNodesResource.Region, and is useful for accessing the field via an interface.
-func (v *ListResourcesResourceListResourceConnectionNodesResource) GetRegion() string {
-	return v.Region
-}
-
-// ListResourcesResponse is returned by ListResources on success.
-type ListResourcesResponse struct {
-	// Paginated list of resources (databases) in a workspace.
-	ResourceList ListResourcesResourceListResourceConnection `json:"resourceList"`
-}
-
-// GetResourceList returns ListResourcesResponse.ResourceList, and is useful for accessing the field via an interface.
-func (v *ListResourcesResponse) GetResourceList() ListResourcesResourceListResourceConnection {
-	return v.ResourceList
 }
 
 // ListServicesProjectListProjectConnection includes the requested fields of the GraphQL type ProjectConnection.
@@ -2830,14 +2582,6 @@ type __CreateRepoInput struct {
 // GetInput returns __CreateRepoInput.Input, and is useful for accessing the field via an interface.
 func (v *__CreateRepoInput) GetInput() RepoCreateInput { return v.Input }
 
-// __CreateResourceInput is used internally by genqlient
-type __CreateResourceInput struct {
-	Input CreateResourceInput `json:"input"`
-}
-
-// GetInput returns __CreateResourceInput.Input, and is useful for accessing the field via an interface.
-func (v *__CreateResourceInput) GetInput() CreateResourceInput { return v.Input }
-
 // __CreateServiceInput is used internally by genqlient
 type __CreateServiceInput struct {
 	Input CreateServiceInput `json:"input"`
@@ -2898,18 +2642,6 @@ func (v *__DeleteProjectInput) GetSlug() string { return v.Slug }
 // GetWs returns __DeleteProjectInput.Ws, and is useful for accessing the field via an interface.
 func (v *__DeleteProjectInput) GetWs() *string { return v.Ws }
 
-// __DeleteResourceInput is used internally by genqlient
-type __DeleteResourceInput struct {
-	Name string  `json:"name"`
-	Ws   *string `json:"ws"`
-}
-
-// GetName returns __DeleteResourceInput.Name, and is useful for accessing the field via an interface.
-func (v *__DeleteResourceInput) GetName() string { return v.Name }
-
-// GetWs returns __DeleteResourceInput.Ws, and is useful for accessing the field via an interface.
-func (v *__DeleteResourceInput) GetWs() *string { return v.Ws }
-
 // __DeleteSecretsInput is used internally by genqlient
 type __DeleteSecretsInput struct {
 	Input DeleteSecretsInput `json:"input"`
@@ -2962,22 +2694,6 @@ type __GetRepoTokenInput struct {
 // GetInput returns __GetRepoTokenInput.Input, and is useful for accessing the field via an interface.
 func (v *__GetRepoTokenInput) GetInput() RepoGetTokenInput { return v.Input }
 
-// __GetResourceIDByNameInput is used internally by genqlient
-type __GetResourceIDByNameInput struct {
-	Ws *string `json:"ws"`
-}
-
-// GetWs returns __GetResourceIDByNameInput.Ws, and is useful for accessing the field via an interface.
-func (v *__GetResourceIDByNameInput) GetWs() *string { return v.Ws }
-
-// __GetResourceInput is used internally by genqlient
-type __GetResourceInput struct {
-	Id string `json:"id"`
-}
-
-// GetId returns __GetResourceInput.Id, and is useful for accessing the field via an interface.
-func (v *__GetResourceInput) GetId() string { return v.Id }
-
 // __InviteToWorkspaceInput is used internally by genqlient
 type __InviteToWorkspaceInput struct {
 	Id   string  `json:"id"`
@@ -3021,14 +2737,6 @@ type __ListProjectsInput struct {
 
 // GetWs returns __ListProjectsInput.Ws, and is useful for accessing the field via an interface.
 func (v *__ListProjectsInput) GetWs() *string { return v.Ws }
-
-// __ListResourcesInput is used internally by genqlient
-type __ListResourcesInput struct {
-	Ws *string `json:"ws"`
-}
-
-// GetWs returns __ListResourcesInput.Ws, and is useful for accessing the field via an interface.
-func (v *__ListResourcesInput) GetWs() *string { return v.Ws }
 
 // __ListServicesInput is used internally by genqlient
 type __ListServicesInput struct {
@@ -3467,46 +3175,6 @@ func CreateRepo(
 	return data_, err_
 }
 
-// The mutation executed by CreateResource.
-const CreateResource_Operation = `
-mutation CreateResource ($input: CreateResourceInput!) {
-	resourceCreate(input: $input) {
-		resourceId
-		name
-		type
-		region
-		databaseUrl
-		authToken
-		status
-	}
-}
-`
-
-func CreateResource(
-	ctx_ context.Context,
-	client_ graphql.Client,
-	input CreateResourceInput,
-) (data_ *CreateResourceResponse, err_ error) {
-	req_ := &graphql.Request{
-		OpName: "CreateResource",
-		Query:  CreateResource_Operation,
-		Variables: &__CreateResourceInput{
-			Input: input,
-		},
-	}
-
-	data_ = &CreateResourceResponse{}
-	resp_ := &graphql.Response{Data: data_}
-
-	err_ = client_.MakeRequest(
-		ctx_,
-		req_,
-		resp_,
-	)
-
-	return data_, err_
-}
-
 // The mutation executed by CreateService.
 const CreateService_Operation = `
 mutation CreateService ($input: CreateServiceInput!) {
@@ -3683,44 +3351,6 @@ func DeleteProject(
 	}
 
 	data_ = &DeleteProjectResponse{}
-	resp_ := &graphql.Response{Data: data_}
-
-	err_ = client_.MakeRequest(
-		ctx_,
-		req_,
-		resp_,
-	)
-
-	return data_, err_
-}
-
-// The mutation executed by DeleteResource.
-const DeleteResource_Operation = `
-mutation DeleteResource ($name: String!, $ws: String) {
-	resourceDelete(name: $name, workspaceSlug: $ws) {
-		resourceId
-		name
-		message
-	}
-}
-`
-
-func DeleteResource(
-	ctx_ context.Context,
-	client_ graphql.Client,
-	name string,
-	ws *string,
-) (data_ *DeleteResourceResponse, err_ error) {
-	req_ := &graphql.Request{
-		OpName: "DeleteResource",
-		Query:  DeleteResource_Operation,
-		Variables: &__DeleteResourceInput{
-			Name: name,
-			Ws:   ws,
-		},
-	}
-
-	data_ = &DeleteResourceResponse{}
 	resp_ := &graphql.Response{Data: data_}
 
 	err_ = client_.MakeRequest(
@@ -3946,85 +3576,6 @@ func GetRepoToken(
 	return data_, err_
 }
 
-// The query executed by GetResource.
-const GetResource_Operation = `
-query GetResource ($id: ID!) {
-	resourceGet(id: $id) {
-		id
-		name
-		type
-		region
-		status
-		metadata {
-			size
-			hostname
-		}
-	}
-}
-`
-
-func GetResource(
-	ctx_ context.Context,
-	client_ graphql.Client,
-	id string,
-) (data_ *GetResourceResponse, err_ error) {
-	req_ := &graphql.Request{
-		OpName: "GetResource",
-		Query:  GetResource_Operation,
-		Variables: &__GetResourceInput{
-			Id: id,
-		},
-	}
-
-	data_ = &GetResourceResponse{}
-	resp_ := &graphql.Response{Data: data_}
-
-	err_ = client_.MakeRequest(
-		ctx_,
-		req_,
-		resp_,
-	)
-
-	return data_, err_
-}
-
-// The query executed by GetResourceIDByName.
-const GetResourceIDByName_Operation = `
-query GetResourceIDByName ($ws: String) {
-	resourceList(workspaceSlug: $ws) {
-		nodes {
-			id
-			name
-		}
-	}
-}
-`
-
-func GetResourceIDByName(
-	ctx_ context.Context,
-	client_ graphql.Client,
-	ws *string,
-) (data_ *GetResourceIDByNameResponse, err_ error) {
-	req_ := &graphql.Request{
-		OpName: "GetResourceIDByName",
-		Query:  GetResourceIDByName_Operation,
-		Variables: &__GetResourceIDByNameInput{
-			Ws: ws,
-		},
-	}
-
-	data_ = &GetResourceIDByNameResponse{}
-	resp_ := &graphql.Response{Data: data_}
-
-	err_ = client_.MakeRequest(
-		ctx_,
-		req_,
-		resp_,
-	)
-
-	return data_, err_
-}
-
 // The mutation executed by InviteToWorkspace.
 const InviteToWorkspace_Operation = `
 mutation InviteToWorkspace ($id: ID!, $user: String!, $role: String) {
@@ -4205,47 +3756,6 @@ func ListProjects(
 	}
 
 	data_ = &ListProjectsResponse{}
-	resp_ := &graphql.Response{Data: data_}
-
-	err_ = client_.MakeRequest(
-		ctx_,
-		req_,
-		resp_,
-	)
-
-	return data_, err_
-}
-
-// The query executed by ListResources.
-const ListResources_Operation = `
-query ListResources ($ws: String) {
-	resourceList(workspaceSlug: $ws) {
-		nodes {
-			id
-			name
-			type
-			status
-			region
-		}
-		totalCount
-	}
-}
-`
-
-func ListResources(
-	ctx_ context.Context,
-	client_ graphql.Client,
-	ws *string,
-) (data_ *ListResourcesResponse, err_ error) {
-	req_ := &graphql.Request{
-		OpName: "ListResources",
-		Query:  ListResources_Operation,
-		Variables: &__ListResourcesInput{
-			Ws: ws,
-		},
-	}
-
-	data_ = &ListResourcesResponse{}
 	resp_ := &graphql.Response{Data: data_}
 
 	err_ = client_.MakeRequest(

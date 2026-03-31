@@ -157,61 +157,6 @@ query ServiceMetrics($id: ID!, $timeRange: MetricTimeRange!, $maxDataPoints: Int
   }
 }
 
-# ── Databases ──────────────────────────────────────
-
-query ListResources($ws: String) {
-  resourceList(workspaceSlug: $ws) {
-    nodes {
-      id
-      name
-      type
-      status
-      region
-    }
-    totalCount
-  }
-}
-
-mutation CreateResource($input: CreateResourceInput!) {
-  resourceCreate(input: $input) {
-    resourceId
-    name
-    type
-    region
-    databaseUrl
-    authToken
-    status
-  }
-}
-
-query GetResource($id: ID!) {
-  resourceGet(id: $id) {
-    id
-    name
-    type
-    region
-    status
-    metadata { size hostname }
-  }
-}
-
-query GetResourceIDByName($ws: String) {
-  resourceList(workspaceSlug: $ws) {
-    nodes {
-      id
-      name
-    }
-  }
-}
-
-mutation DeleteResource($name: String!, $ws: String) {
-  resourceDelete(name: $name, workspaceSlug: $ws) {
-    resourceId
-    name
-    message
-  }
-}
-
 # ── Domains ────────────────────────────────────────
 
 mutation AddDomain($name: String!, $domain: String!, $project: String, $ws: String) {

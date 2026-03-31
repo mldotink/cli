@@ -17,7 +17,6 @@ func registerCommands() {
 	// Manage
 	rootCmd.AddCommand(logsCmd)
 	rootCmd.AddCommand(secretsCmd)
-	rootCmd.AddCommand(databasesCmd)
 	rootCmd.AddCommand(deleteCmd)
 	rootCmd.AddCommand(domainsCmd)
 	rootCmd.AddCommand(dnsCmd)
