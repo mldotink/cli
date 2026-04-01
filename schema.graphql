@@ -809,6 +809,8 @@ type Deployment {
   status: String!
   """Git commit SHA deployed in this deployment."""
   commitHash: String
+  """Git commit message (subject line) for this deployment."""
+  commitMessage: String
   """What triggered this deployment: manual, git_push."""
   trigger: String!
   """Reference for the trigger (e.g. commit SHA for git_push)."""
