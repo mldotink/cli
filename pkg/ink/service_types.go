@@ -62,6 +62,15 @@ type ServicePortInput struct {
 	Visibility string `json:"visibility"`
 }
 
+// BucketMountInput configures a GCS bucket mount on a service.
+type BucketMountInput struct {
+	Name         string `json:"name"`
+	MountPath    string `json:"mountPath,omitempty"`
+	Mode         string `json:"mode,omitempty"`
+	Prefix       string `json:"prefix,omitempty"`
+	SyncInterval int    `json:"syncInterval,omitempty"`
+}
+
 // CreateServiceInput defines the parameters for creating a new service.
 type CreateServiceInput struct {
 	Name             string             `json:"name,omitempty"`
@@ -83,7 +92,9 @@ type CreateServiceInput struct {
 	PublishDirectory string             `json:"publishDirectory,omitempty"`
 	RootDirectory    string             `json:"rootDirectory,omitempty"`
 	DockerfilePath        string             `json:"dockerfilePath,omitempty"`
+	Regions               []string           `json:"regions,omitempty"`
 	Volumes               []VolumeSpec       `json:"volumes,omitempty"`
+	Bucket                *BucketMountInput  `json:"bucket,omitempty"`
 	DestroyTimeoutSeconds int                `json:"destroyTimeoutSeconds,omitempty"`
 }
 
@@ -136,6 +147,7 @@ type UpdateServiceInput struct {
 	RootDirectory    *string            `json:"rootDirectory,omitempty"`
 	DockerfilePath        *string            `json:"dockerfilePath,omitempty"`
 	Volumes               []VolumeSpec       `json:"volumes,omitempty"`
+	Bucket                *BucketMountInput  `json:"bucket,omitempty"`
 	DestroyTimeoutSeconds *int               `json:"destroyTimeoutSeconds,omitempty"`
 }
 
