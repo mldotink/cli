@@ -165,6 +165,7 @@ func inspectService(name string, opts serviceInspectOptions, printTip bool) {
 	if printTip && !hasInspectFlags(opts) {
 		fmt.Println()
 		fmt.Println(dim.Render(fmt.Sprintf("  Tip: ink service %s --build-logs 20 --runtime-logs 50 --metrics 1h", name)))
+		fmt.Println(dim.Render(fmt.Sprintf("       ink service %s --template   Show template outputs (credentials, connection info)", name)))
 	}
 
 	fmt.Println()

@@ -1459,6 +1459,31 @@ func (v *SendChatMessageResponse) GetChatSend() SendChatMessageChatSendChatSendR
 	return v.ChatSend
 }
 
+// ServiceExecResponse is returned by ServiceExec on success.
+type ServiceExecResponse struct {
+	// Run a command in a running service container. 30s timeout, 1MiB output limit.
+	ServiceExec ServiceExecServiceExecExecResult `json:"serviceExec"`
+}
+
+// GetServiceExec returns ServiceExecResponse.ServiceExec, and is useful for accessing the field via an interface.
+func (v *ServiceExecResponse) GetServiceExec() ServiceExecServiceExecExecResult { return v.ServiceExec }
+
+// ServiceExecServiceExecExecResult includes the requested fields of the GraphQL type ExecResult.
+type ServiceExecServiceExecExecResult struct {
+	ExitCode int    `json:"exitCode"`
+	Stdout   string `json:"stdout"`
+	Stderr   string `json:"stderr"`
+}
+
+// GetExitCode returns ServiceExecServiceExecExecResult.ExitCode, and is useful for accessing the field via an interface.
+func (v *ServiceExecServiceExecExecResult) GetExitCode() int { return v.ExitCode }
+
+// GetStdout returns ServiceExecServiceExecExecResult.Stdout, and is useful for accessing the field via an interface.
+func (v *ServiceExecServiceExecExecResult) GetStdout() string { return v.Stdout }
+
+// GetStderr returns ServiceExecServiceExecExecResult.Stderr, and is useful for accessing the field via an interface.
+func (v *ServiceExecServiceExecExecResult) GetStderr() string { return v.Stderr }
+
 // ServiceLogsResponse is returned by ServiceLogs on success.
 type ServiceLogsResponse struct {
 	ServiceLogs ServiceLogsServiceLogsLogsResult `json:"serviceLogs"`
@@ -2838,6 +2863,30 @@ func (v *__SendChatMessageInput) GetChannel() *string { return v.Channel }
 // GetContent returns __SendChatMessageInput.Content, and is useful for accessing the field via an interface.
 func (v *__SendChatMessageInput) GetContent() string { return v.Content }
 
+// __ServiceExecInput is used internally by genqlient
+type __ServiceExecInput struct {
+	Name      *string `json:"name"`
+	ServiceId *string `json:"serviceId"`
+	Command   string  `json:"command"`
+	Project   *string `json:"project"`
+	Ws        *string `json:"ws"`
+}
+
+// GetName returns __ServiceExecInput.Name, and is useful for accessing the field via an interface.
+func (v *__ServiceExecInput) GetName() *string { return v.Name }
+
+// GetServiceId returns __ServiceExecInput.ServiceId, and is useful for accessing the field via an interface.
+func (v *__ServiceExecInput) GetServiceId() *string { return v.ServiceId }
+
+// GetCommand returns __ServiceExecInput.Command, and is useful for accessing the field via an interface.
+func (v *__ServiceExecInput) GetCommand() string { return v.Command }
+
+// GetProject returns __ServiceExecInput.Project, and is useful for accessing the field via an interface.
+func (v *__ServiceExecInput) GetProject() *string { return v.Project }
+
+// GetWs returns __ServiceExecInput.Ws, and is useful for accessing the field via an interface.
+func (v *__ServiceExecInput) GetWs() *string { return v.Ws }
+
 // __ServiceLogsInput is used internally by genqlient
 type __ServiceLogsInput struct {
 	Input LogsInput `json:"input"`
@@ -4116,6 +4165,50 @@ func SendChatMessage(
 	}
 
 	data_ = &SendChatMessageResponse{}
+	resp_ := &graphql.Response{Data: data_}
+
+	err_ = client_.MakeRequest(
+		ctx_,
+		req_,
+		resp_,
+	)
+
+	return data_, err_
+}
+
+// The query executed by ServiceExec.
+const ServiceExec_Operation = `
+query ServiceExec ($name: String, $serviceId: ID, $command: String!, $project: String, $ws: String) {
+	serviceExec(name: $name, serviceId: $serviceId, command: $command, project: $project, workspaceSlug: $ws) {
+		exitCode
+		stdout
+		stderr
+	}
+}
+`
+
+func ServiceExec(
+	ctx_ context.Context,
+	client_ graphql.Client,
+	name *string,
+	serviceId *string,
+	command string,
+	project *string,
+	ws *string,
+) (data_ *ServiceExecResponse, err_ error) {
+	req_ := &graphql.Request{
+		OpName: "ServiceExec",
+		Query:  ServiceExec_Operation,
+		Variables: &__ServiceExecInput{
+			Name:      name,
+			ServiceId: serviceId,
+			Command:   command,
+			Project:   project,
+			Ws:        ws,
+		},
+	}
+
+	data_ = &ServiceExecResponse{}
 	resp_ := &graphql.Response{Data: data_}
 
 	err_ = client_.MakeRequest(

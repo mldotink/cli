@@ -555,6 +555,14 @@ extend type Query {
   deploymentList(serviceId: ID!): [Deployment!]!
   """List all volumes in a workspace, optionally filtered by project."""
   volumeList(workspaceSlug: String, projectSlug: String): [VolumeInfo!]!
+  """Run a command in a running service container. 30s timeout, 1MiB output limit."""
+  serviceExec(serviceId: ID, name: String, command: String!, project: String, workspaceSlug: String): ExecResult!
+}
+
+type ExecResult {
+  exitCode: Int!
+  stdout: String!
+  stderr: String!
 }
 
 extend type Mutation {

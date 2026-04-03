@@ -419,3 +419,13 @@ query UsageBillBreakdown($ws: String) {
     periodEnd
   }
 }
+
+# ── Exec ──────────────────────────────────────────
+
+query ServiceExec($name: String, $serviceId: ID, $command: String!, $project: String, $ws: String) {
+  serviceExec(name: $name, serviceId: $serviceId, command: $command, project: $project, workspaceSlug: $ws) {
+    exitCode
+    stdout
+    stderr
+  }
+}

@@ -15,6 +15,7 @@ func registerCommands() {
 	rootCmd.AddCommand(workspacesCmd)
 
 	// Manage
+	rootCmd.AddCommand(execCmd)
 	rootCmd.AddCommand(logsCmd)
 	rootCmd.AddCommand(secretsCmd)
 	rootCmd.AddCommand(deleteCmd)
