@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/mldotink/cli/internal/gql"
 	"github.com/spf13/cobra"
 )
 
@@ -32,22 +31,21 @@ var domainsAddCmd = &cobra.Command{
 		svc, domain := args[0], args[1]
 		client := newClient()
 
-		result, err := gql.AddDomain(ctx(), client, svc, domain, projPtr(), wsPtr())
+		result, err := client.AddDomain(ctx(), svc, domain, cfg.Project, cfg.Workspace)
 		if err != nil {
 			fatal(err.Error())
 		}
 
-		d := result.DomainAdd
 		if jsonOutput {
-			printJSON(d)
+			printJSON(result)
 			return
 		}
 
 		fmt.Println()
-		success(fmt.Sprintf("Domain %s added to %s", bold.Render(d.Domain), bold.Render(svc)))
-		kv("Status", renderStatus(d.Status))
-		if d.Message != "" {
-			kv("Note", d.Message)
+		success(fmt.Sprintf("Domain %s added to %s", bold.Render(result.Domain), bold.Render(svc)))
+		kv("Status", renderStatus(result.Status))
+		if result.Message != "" {
+			kv("Note", result.Message)
 		}
 		fmt.Println()
 	},
@@ -62,16 +60,16 @@ var domainsRemoveCmd = &cobra.Command{
 		svc := args[0]
 		client := newClient()
 
-		result, err := gql.RemoveDomain(ctx(), client, svc, projPtr(), wsPtr())
+		result, err := client.RemoveDomain(ctx(), svc, cfg.Project, cfg.Workspace)
 		if err != nil {
 			fatal(err.Error())
 		}
 
 		if jsonOutput {
-			printJSON(result.DomainRemove)
+			printJSON(result)
 			return
 		}
 
-		success(result.DomainRemove.Message)
+		success(result.Message)
 	},
 }

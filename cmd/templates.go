@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/mldotink/cli/internal/gql"
 	"github.com/spf13/cobra"
 )
 
@@ -23,17 +22,15 @@ ink template database`,
 	Run: func(cmd *cobra.Command, args []string) {
 		client := newClient()
 
-		var search *string
+		search := ""
 		if len(args) == 1 {
-			search = &args[0]
+			search = args[0]
 		}
 
-		result, err := gql.TemplateList(ctx(), client, search)
+		templates, err := client.ListTemplates(ctx(), search)
 		if err != nil {
 			fatal(err.Error())
 		}
-
-		templates := result.TemplateList
 
 		if jsonOutput {
 			printJSON(templates)

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/mldotink/cli/internal/gql"
+	ink "github.com/mldotink/sdk-go"
 	"github.com/spf13/cobra"
 )
 
@@ -23,15 +23,15 @@ ink template info redis`,
 		slug := args[0]
 		client := newClient()
 
-		result, err := gql.TemplateList(ctx(), client, nil)
+		templates, err := client.ListTemplates(ctx(), "")
 		if err != nil {
 			fatal(err.Error())
 		}
 
-		var tmpl *gql.TemplateListTemplateListServiceTemplate
-		for i := range result.TemplateList {
-			if result.TemplateList[i].Slug == slug {
-				tmpl = &result.TemplateList[i]
+		var tmpl *ink.Template
+		for i := range templates {
+			if templates[i].Slug == slug {
+				tmpl = &templates[i]
 				break
 			}
 		}
@@ -44,13 +44,11 @@ ink template info redis`,
 			return
 		}
 
-		// Detail card
 		d := newDetail(tmpl.Name)
 		d.kv("Slug", tmpl.Slug)
 		d.kv("Description", tmpl.Description)
 		d.kv("Tags", strings.Join(tmpl.Tags, ", "))
 
-		// Variables
 		if len(tmpl.Variables) > 0 {
 			d.section("Variables")
 			for _, v := range tmpl.Variables {
@@ -63,13 +61,12 @@ ink template info redis`,
 					meta += " — " + v.Name
 				}
 				d.line(fmt.Sprintf("  %-18s %s", accent.Render(label), dim.Render(meta)))
-				if v.DefaultValue != nil {
-					d.line(fmt.Sprintf("  %-18s default: %s", "", *v.DefaultValue))
+				if v.DefaultValue != "" {
+					d.line(fmt.Sprintf("  %-18s default: %s", "", v.DefaultValue))
 				}
 			}
 		}
 
-		// Services
 		if len(tmpl.Services) > 0 {
 			d.section("Services")
 			for _, s := range tmpl.Services {
@@ -77,7 +74,7 @@ ink template info redis`,
 					accent.Render(s.Key),
 					s.Image,
 					dim.Render(s.Memory),
-					dim.Render(s.Vcpus),
+					dim.Render(s.VCPUs),
 				))
 			}
 		}
@@ -85,16 +82,14 @@ ink template info redis`,
 		fmt.Println()
 		fmt.Println(d.String())
 
-		// Example deploy commands
 		fmt.Println()
 		fmt.Println(dim.Render(fmt.Sprintf("  ink template deploy %s --name my%s", tmpl.Slug, tmpl.Slug)))
 
-		// Show example with a variable if there are any
 		if len(tmpl.Variables) > 0 {
 			v := tmpl.Variables[0]
 			example := "value"
-			if v.DefaultValue != nil {
-				example = *v.DefaultValue
+			if v.DefaultValue != "" {
+				example = v.DefaultValue
 			}
 			fmt.Println(dim.Render(fmt.Sprintf("  ink template deploy %s --name my%s --var %s=%s", tmpl.Slug, tmpl.Slug, v.Key, example)))
 		}

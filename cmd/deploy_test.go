@@ -1,119 +1,122 @@
 package cmd
 
 import (
-	"context"
 	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
-	"github.com/Khan/genqlient/graphql"
 	"github.com/mldotink/cli/internal/config"
-	"github.com/mldotink/cli/internal/gql"
+	ink "github.com/mldotink/sdk-go"
 	"github.com/spf13/cobra"
 )
+
+type capturedRequest struct {
+	OpName    string
+	Variables map[string]json.RawMessage
+}
+
+func newTestServer(t *testing.T, captured *capturedRequest, responseBody string) *httptest.Server {
+	t.Helper()
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var req struct {
+			OperationName string                     `json:"operationName"`
+			Variables     map[string]json.RawMessage `json:"variables"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			t.Errorf("decode request: %v", err)
+		}
+		captured.OpName = req.OperationName
+		captured.Variables = req.Variables
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(responseBody))
+	}))
+}
+
+func newTestClient(t *testing.T, serverURL string) *ink.Client {
+	t.Helper()
+	return ink.NewClient(ink.Config{APIKey: "test-key", BaseURL: serverURL})
+}
 
 func TestRunCreateIncludesResolvedWorkspace(t *testing.T) {
 	restoreConfig(t, &config.Resolved{Workspace: "team-local"})
 
+	var captured capturedRequest
+	srv := newTestServer(t, &captured, `{"data":{"serviceCreate":{"serviceId":"svc_1","name":"my-app","status":"queued","repo":"my-app","ports":[]}}}`)
+	defer srv.Close()
+
 	cmd := newDeployCommandForTests()
-	client := &captureGraphQLClient{t: t}
+	runCreate(cmd, newTestClient(t, srv.URL), "my-app")
 
-	runCreate(cmd, client, "my-app")
-
-	if client.opName != "CreateService" {
-		t.Fatalf("operation = %q, want %q", client.opName, "CreateService")
+	if captured.OpName != "createService" {
+		t.Fatalf("operationName = %q, want %q", captured.OpName, "createService")
 	}
-	if client.workspace == nil || *client.workspace != "team-local" {
-		t.Fatalf("workspace = %v, want %q", client.workspace, "team-local")
+
+	var input struct {
+		WorkspaceSlug string `json:"workspaceSlug"`
+	}
+	raw, _ := json.Marshal(captured.Variables["input"])
+	json.Unmarshal(raw, &input)
+
+	if input.WorkspaceSlug != "team-local" {
+		t.Fatalf("workspaceSlug = %q, want %q", input.WorkspaceSlug, "team-local")
 	}
 }
 
 func TestRunUpdateIncludesResolvedWorkspace(t *testing.T) {
 	restoreConfig(t, &config.Resolved{Workspace: "team-local"})
 
+	var captured capturedRequest
+	srv := newTestServer(t, &captured, `{"data":{"serviceUpdate":{"serviceId":"svc_1","name":"my-app","status":"queued"}}}`)
+	defer srv.Close()
+
 	cmd := newDeployCommandForTests()
-	client := &captureGraphQLClient{t: t}
+	runUpdate(cmd, newTestClient(t, srv.URL), "my-app")
 
-	runUpdate(cmd, client, "my-app")
-
-	if client.opName != "UpdateService" {
-		t.Fatalf("operation = %q, want %q", client.opName, "UpdateService")
-	}
-	if client.workspace == nil || *client.workspace != "team-local" {
-		t.Fatalf("workspace = %v, want %q", client.workspace, "team-local")
-	}
-}
-
-type captureGraphQLClient struct {
-	t         *testing.T
-	opName    string
-	workspace *string
-	ports     []gql.ServicePortInput
-}
-
-func (c *captureGraphQLClient) MakeRequest(_ context.Context, req *graphql.Request, resp *graphql.Response) error {
-	c.opName = req.OpName
-
-	var payload struct {
-		Input struct {
-			Name          string                 `json:"name"`
-			WorkspaceSlug *string                `json:"workspaceSlug"`
-			Ports         []gql.ServicePortInput `json:"ports"`
-		} `json:"input"`
-	}
-	raw, err := json.Marshal(req.Variables)
-	if err != nil {
-		c.t.Fatalf("marshal variables: %v", err)
-	}
-	if err := json.Unmarshal(raw, &payload); err != nil {
-		c.t.Fatalf("unmarshal variables: %v", err)
-	}
-	c.workspace = payload.Input.WorkspaceSlug
-	c.ports = payload.Input.Ports
-
-	switch req.OpName {
-	case "CreateService":
-		data, ok := resp.Data.(*gql.CreateServiceResponse)
-		if !ok {
-			c.t.Fatalf("unexpected create response type %T", resp.Data)
-		}
-		data.ServiceCreate = gql.CreateServiceServiceCreateCreateServiceResult{
-			ServiceId: "svc_123",
-			Name:      payload.Input.Name,
-			Status:    "queued",
-			Repo:      "my-app",
-		}
-	case "UpdateService":
-		data, ok := resp.Data.(*gql.UpdateServiceResponse)
-		if !ok {
-			c.t.Fatalf("unexpected update response type %T", resp.Data)
-		}
-		data.ServiceUpdate = gql.UpdateServiceServiceUpdateUpdateServiceResult{
-			ServiceId: "svc_123",
-			Name:      payload.Input.Name,
-			Status:    "queued",
-		}
-	default:
-		c.t.Fatalf("unexpected operation %q", req.OpName)
+	if captured.OpName != "updateService" {
+		t.Fatalf("operationName = %q, want %q", captured.OpName, "updateService")
 	}
 
-	return nil
+	var input struct {
+		WorkspaceSlug string `json:"workspaceSlug"`
+	}
+	raw, _ := json.Marshal(captured.Variables["input"])
+	json.Unmarshal(raw, &input)
+
+	if input.WorkspaceSlug != "team-local" {
+		t.Fatalf("workspaceSlug = %q, want %q", input.WorkspaceSlug, "team-local")
+	}
 }
 
 func TestRunCreateMapsPortFlagToPublicHTTPPort(t *testing.T) {
 	restoreConfig(t, &config.Resolved{Workspace: "team-local"})
 
+	var captured capturedRequest
+	srv := newTestServer(t, &captured, `{"data":{"serviceCreate":{"serviceId":"svc_1","name":"my-app","status":"queued","repo":"my-app","ports":[]}}}`)
+	defer srv.Close()
+
 	cmd := newDeployCommandForTests()
 	if err := cmd.Flags().Set("port", "8080"); err != nil {
 		t.Fatalf("set port flag: %v", err)
 	}
-	client := &captureGraphQLClient{t: t}
 
-	runCreate(cmd, client, "my-app")
+	runCreate(cmd, newTestClient(t, srv.URL), "my-app")
 
-	if len(client.ports) != 1 {
-		t.Fatalf("ports len = %d, want 1", len(client.ports))
+	var input struct {
+		Ports []struct {
+			Name       string `json:"name"`
+			Port       int    `json:"port"`
+			Protocol   string `json:"protocol"`
+			Visibility string `json:"visibility"`
+		} `json:"ports"`
 	}
-	port := client.ports[0]
+	raw, _ := json.Marshal(captured.Variables["input"])
+	json.Unmarshal(raw, &input)
+
+	if len(input.Ports) != 1 {
+		t.Fatalf("ports len = %d, want 1", len(input.Ports))
+	}
+	port := input.Ports[0]
 	if port.Name != "http" || port.Port != 8080 || port.Protocol != "http" || port.Visibility != "public" {
 		t.Fatalf("port = %#v, want public http 8080", port)
 	}

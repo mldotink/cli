@@ -3,8 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/Khan/genqlient/graphql"
-	"github.com/mldotink/cli/internal/gql"
+	ink "github.com/mldotink/sdk-go"
 	"github.com/spf13/cobra"
 )
 
@@ -79,13 +78,13 @@ ink service myapp --runtime-logs 100 --log-query timeout --since 1h`,
 			if ws == "" {
 				ws = "default"
 			}
-			listServicesForWorkspace(client, ws, projPtr())
+			listServicesForWorkspace(client, ws, cfg.Project)
 		}
 	},
 }
 
-func listAllServices(client graphql.Client) {
-	wsResult, err := gql.ListWorkspaces(ctx(), client)
+func listAllServices(client *ink.Client) {
+	workspaces, err := client.ListWorkspaces(ctx())
 	if err != nil {
 		fatal(err.Error())
 	}
@@ -95,28 +94,29 @@ func listAllServices(client graphql.Client) {
 	}
 	var allRows []svcRow
 
-	for _, ws := range wsResult.WorkspaceList {
-		result, err := gql.ListServices(ctx(), client, &ws.Slug, nil)
+	for _, ws := range workspaces {
+		services, err := client.ListServices(ctx(), ws.Slug, "")
 		if err != nil {
 			continue
 		}
+		projects, _ := client.ListProjects(ctx(), ws.Slug)
 		projMap := make(map[string]string)
-		for _, p := range result.ProjectList.Nodes {
-			projMap[p.Id] = p.Slug
+		for _, p := range projects {
+			projMap[p.ID] = p.Slug
 		}
-		for _, s := range result.ServiceList.Nodes {
+		for _, s := range services {
 			url := dim.Render("—")
-			if endpoint := preferredServiceEndpoint(listServicePorts(s.Ports), s.CustomDomain); endpoint != "" {
+			if endpoint := preferredServiceEndpoint(inkServicePorts(s.Ports), s.CustomDomain); endpoint != "" {
 				url = endpoint
 			}
 			allRows = append(allRows, svcRow{
-				name:      deref(s.Name, ""),
+				name:      s.Name,
 				workspace: ws.Slug,
-				project:   projMap[s.ProjectId],
+				project:   projMap[s.ProjectID],
 				status:    s.Status,
 				url:       url,
 				memory:    s.Memory,
-				vcpus:     s.Vcpus,
+				vcpus:     s.VCPUs,
 			})
 		}
 	}
@@ -142,40 +142,40 @@ func listAllServices(client graphql.Client) {
 	serviceHints()
 }
 
-func listServicesForWorkspace(client graphql.Client, ws string, proj *string) {
-	result, err := gql.ListServices(ctx(), client, &ws, proj)
+func listServicesForWorkspace(client *ink.Client, ws, proj string) {
+	services, err := client.ListServices(ctx(), ws, proj)
 	if err != nil {
 		fatal(err.Error())
 	}
 
+	projects, _ := client.ListProjects(ctx(), ws)
+	projMap := make(map[string]string)
+	for _, p := range projects {
+		projMap[p.ID] = p.Slug
+	}
+
 	if jsonOutput {
-		printJSON(result.ServiceList)
+		printJSON(services)
 		return
 	}
 
-	nodes := result.ServiceList.Nodes
-	if len(nodes) == 0 {
+	if len(services) == 0 {
 		fmt.Println(dim.Render("  No services"))
 		return
 	}
 
-	projMap := make(map[string]string)
-	for _, p := range result.ProjectList.Nodes {
-		projMap[p.Id] = p.Slug
-	}
-
 	var rows [][]string
-	for _, s := range nodes {
+	for _, s := range services {
 		url := dim.Render("—")
-		if endpoint := preferredServiceEndpoint(listServicePorts(s.Ports), s.CustomDomain); endpoint != "" {
+		if endpoint := preferredServiceEndpoint(inkServicePorts(s.Ports), s.CustomDomain); endpoint != "" {
 			url = endpoint
 		}
-		rows = append(rows, []string{deref(s.Name, ""), projMap[s.ProjectId], renderStatus(s.Status), url, s.Memory, s.Vcpus})
+		rows = append(rows, []string{s.Name, projMap[s.ProjectID], renderStatus(s.Status), url, s.Memory, s.VCPUs})
 	}
 
 	fmt.Println()
 	fmt.Println(styledTable([]string{"NAME", "PROJECT", "STATUS", "URL", "MEMORY", "vCPU"}, rows))
-	tableFooter(len(nodes), "service")
+	tableFooter(len(services), "service")
 	serviceHints()
 }
 
@@ -199,16 +199,16 @@ func pluralS(n int) string {
 	return "s"
 }
 
-func findService(name string) *gql.FindServiceServiceListServiceConnectionNodesService {
+func findService(name string) *ink.Service {
 	client := newClient()
-	result, err := gql.FindService(ctx(), client, wsPtr())
+	services, err := client.ListServices(ctx(), cfg.Workspace, cfg.Project)
 	if err != nil {
 		fatal(err.Error())
 	}
 
-	for i := range result.ServiceList.Nodes {
-		if deref(result.ServiceList.Nodes[i].Name, "") == name {
-			return &result.ServiceList.Nodes[i]
+	for i := range services {
+		if services[i].Name == name {
+			return &services[i]
 		}
 	}
 	return nil

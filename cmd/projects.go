@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/mldotink/cli/internal/gql"
+	ink "github.com/mldotink/sdk-go"
 	"github.com/spf13/cobra"
 )
 
@@ -25,28 +25,27 @@ ink project delete my-project`,
 	Run: func(cmd *cobra.Command, args []string) {
 		client := newClient()
 
-		result, err := gql.ListProjects(ctx(), client, wsPtr())
+		projects, err := client.ListProjects(ctx(), cfg.Workspace)
 		if err != nil {
 			fatal(err.Error())
 		}
 
 		if jsonOutput {
-			printJSON(result.ProjectList)
+			printJSON(projects)
 			return
 		}
 
-		nodes := result.ProjectList.Nodes
-		if len(nodes) == 0 {
+		if len(projects) == 0 {
 			fmt.Println(dim.Render("  No projects"))
 		} else {
 			var rows [][]string
-			for _, p := range nodes {
+			for _, p := range projects {
 				rows = append(rows, []string{p.Name, p.Slug})
 			}
 
 			fmt.Println()
 			fmt.Println(styledTable([]string{"NAME", "SLUG"}, rows))
-			tableFooter(len(nodes), "project")
+			tableFooter(len(projects), "project")
 		}
 
 		printSubcommands(cmd)
@@ -61,17 +60,14 @@ var projectsCreateCmd = &cobra.Command{
 		name := args[0]
 		client := newClient()
 
-		input := gql.CreateProjectInput{
+		p, err := client.CreateProject(ctx(), ink.CreateProjectInput{
 			Name:          name,
-			WorkspaceSlug: wsPtr(),
-		}
-
-		result, err := gql.CreateProject(ctx(), client, input)
+			WorkspaceSlug: cfg.Workspace,
+		})
 		if err != nil {
 			fatal(err.Error())
 		}
 
-		p := result.ProjectCreate
 		if jsonOutput {
 			printJSON(p)
 			return
@@ -102,13 +98,12 @@ var projectsDeleteCmd = &cobra.Command{
 
 		client := newClient()
 
-		result, err := gql.DeleteProject(ctx(), client, slug, wsPtr())
-		if err != nil {
+		if err := client.DeleteProject(ctx(), slug, cfg.Workspace); err != nil {
 			fatal(err.Error())
 		}
 
 		if jsonOutput {
-			printJSON(map[string]any{"deleted": result.ProjectDelete, "slug": slug})
+			printJSON(map[string]any{"deleted": true, "slug": slug})
 			return
 		}
 

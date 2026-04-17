@@ -6,19 +6,18 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Khan/genqlient/graphql"
-	"github.com/mldotink/cli/internal/gql"
+	ink "github.com/mldotink/sdk-go"
 	"github.com/spf13/cobra"
 )
 
 type logFilterOptions struct {
-	query     *string
-	startTime *string
-	endTime   *string
+	query     string
+	startTime string
+	endTime   string
 }
 
 func (f logFilterOptions) used() bool {
-	return f.query != nil || f.startTime != nil || f.endTime != nil
+	return f.query != "" || f.startTime != "" || f.endTime != ""
 }
 
 type serviceInspectOptions struct {
@@ -67,7 +66,7 @@ func logFiltersFromCommand(cmd *cobra.Command, queryFlagName string) (logFilterO
 	until, _ := cmd.Flags().GetString("until")
 
 	filters := logFilterOptions{
-		query: ptr(strings.TrimSpace(query)),
+		query: strings.TrimSpace(query),
 	}
 
 	if strings.TrimSpace(since) != "" {
@@ -75,7 +74,7 @@ func logFiltersFromCommand(cmd *cobra.Command, queryFlagName string) (logFilterO
 		if err != nil {
 			return logFilterOptions{}, fmt.Errorf("invalid --since: %w", err)
 		}
-		filters.startTime = &parsed
+		filters.startTime = parsed
 	}
 
 	if strings.TrimSpace(until) != "" {
@@ -83,10 +82,10 @@ func logFiltersFromCommand(cmd *cobra.Command, queryFlagName string) (logFilterO
 		if err != nil {
 			return logFilterOptions{}, fmt.Errorf("invalid --until: %w", err)
 		}
-		filters.endTime = &parsed
+		filters.endTime = parsed
 	}
 
-	if filters.startTime != nil && filters.endTime != nil && *filters.startTime > *filters.endTime {
+	if filters.startTime != "" && filters.endTime != "" && filters.startTime > filters.endTime {
 		return logFilterOptions{}, fmt.Errorf("--since must be before --until")
 	}
 
@@ -147,19 +146,19 @@ func inspectService(name string, opts serviceInspectOptions, printTip bool) {
 	client := newClient()
 
 	if opts.deployLines > 0 {
-		fetchAndPrintLogs(client, svc.Id, gql.LogTypeBuild, opts.deployLines, opts.logFilters, "Build Logs")
+		fetchAndPrintLogs(client, svc.ID, ink.LogTypeBuild, opts.deployLines, opts.logFilters, "Build Logs")
 	}
 
 	if opts.runtimeLines > 0 {
-		fetchAndPrintLogs(client, svc.Id, gql.LogTypeRuntime, opts.runtimeLines, opts.logFilters, "Runtime Logs")
+		fetchAndPrintLogs(client, svc.ID, ink.LogTypeRuntime, opts.runtimeLines, opts.logFilters, "Runtime Logs")
 	}
 
 	if opts.metricsRange != "" {
-		fetchAndPrintMetrics(client, svc.Id, opts.metricsRange)
+		fetchAndPrintMetrics(client, svc.ID, opts.metricsRange)
 	}
 
 	if opts.includeTemplate {
-		fetchAndPrintTemplateInfo(client, svc.Id, svc.Project.Slug)
+		fetchAndPrintTemplateInfo(client, svc.ID, cfg.Project)
 	}
 
 	if printTip && !hasInspectFlags(opts) {
@@ -171,21 +170,16 @@ func inspectService(name string, opts serviceInspectOptions, printTip bool) {
 	fmt.Println()
 }
 
-func fetchAndPrintTemplateInfo(client graphql.Client, serviceID, projectSlug string) {
-	var proj *string
-	if projectSlug != "" {
-		proj = &projectSlug
-	}
-
-	result, err := gql.TemplateInstanceList(ctx(), client, proj, nil, wsPtr())
+func fetchAndPrintTemplateInfo(client *ink.Client, serviceID, projectSlug string) {
+	instances, err := client.ListTemplateInstances(ctx(), projectSlug, "", cfg.Workspace)
 	if err != nil {
 		fmt.Printf("  %s %s\n", red.Render("!"), dim.Render("template info: "+err.Error()))
 		return
 	}
 
-	for _, inst := range result.TemplateInstanceList {
+	for _, inst := range instances {
 		for _, svc := range inst.Services {
-			if svc.ServiceId == serviceID {
+			if svc.ServiceID == serviceID {
 				fmt.Println()
 				fmt.Println(bold.Render("  Template"))
 				kv("Template", inst.TemplateSlug)
@@ -208,25 +202,25 @@ func fetchAndPrintTemplateInfo(client graphql.Client, serviceID, projectSlug str
 	fmt.Println(dim.Render("  Not deployed from a template"))
 }
 
-func renderServiceDetail(svc *gql.FindServiceServiceListServiceConnectionNodesService, includeEnv bool) string {
-	d := newDetail(deref(svc.Name, ""))
+func renderServiceDetail(svc *ink.Service, includeEnv bool) string {
+	d := newDetail(svc.Name)
 	d.kv("Status", renderStatus(svc.Status))
-	if svc.ErrorMessage != nil {
-		d.kv("Error", red.Render(*svc.ErrorMessage))
+	if svc.ErrorMessage != "" {
+		d.kv("Error", red.Render(svc.ErrorMessage))
 	}
-	ports := findServicePorts(svc.Ports)
+	ports := inkServicePorts(svc.Ports)
 	if endpoint := preferredServiceEndpoint(ports, svc.CustomDomain); endpoint != "" {
 		d.kv("Endpoint", accent.Render(endpoint))
 	}
 	if svc.Source == "image" {
-		if svc.Image != nil {
-			d.kv("Image", *svc.Image)
+		if svc.Image != "" {
+			d.kv("Image", svc.Image)
 		}
 	} else {
 		d.kv("Repo", svc.Repo)
 		d.kv("Branch", svc.Branch)
-		if svc.CommitHash != nil {
-			hash := *svc.CommitHash
+		if svc.CommitHash != "" {
+			hash := svc.CommitHash
 			if len(hash) > 12 {
 				hash = hash[:12]
 			}
@@ -235,16 +229,16 @@ func renderServiceDetail(svc *gql.FindServiceServiceListServiceConnectionNodesSe
 		d.kv("Git host", svc.GitProvider)
 	}
 	d.kv("Memory", svc.Memory)
-	d.kv("vCPU", svc.Vcpus)
+	d.kv("vCPU", svc.VCPUs)
 	if svc.DestroyTimeoutSeconds > 0 {
 		d.kv("Auto-destroy", fmt.Sprintf("%ds after deploy", svc.DestroyTimeoutSeconds))
 	}
-	if svc.CustomDomain != nil {
+	if svc.CustomDomain != "" {
 		status := ""
-		if svc.CustomDomainStatus != nil {
-			status = " " + renderStatus(*svc.CustomDomainStatus)
+		if svc.CustomDomainStatus != "" {
+			status = " " + renderStatus(svc.CustomDomainStatus)
 		}
-		d.kv("Domain", accent.Render("https://"+*svc.CustomDomain)+status)
+		d.kv("Domain", accent.Render("https://"+svc.CustomDomain)+status)
 	}
 	if len(ports) == 0 {
 		d.kv("Ports", dim.Render("worker (no listening ports)"))
@@ -254,8 +248,8 @@ func renderServiceDetail(svc *gql.FindServiceServiceListServiceConnectionNodesSe
 			d.line(renderPortSummary(port))
 		}
 	}
-	if svc.Project.Slug != "" {
-		d.kv("Project", svc.Project.Slug)
+	if cfg.Project != "" {
+		d.kv("Project", cfg.Project)
 	}
 	if svc.CreatedAt != "" {
 		d.kv("Created", dim.Render(fmtTime(svc.CreatedAt)))
@@ -277,22 +271,18 @@ func renderServiceDetail(svc *gql.FindServiceServiceListServiceConnectionNodesSe
 	return d.String()
 }
 
-func fetchServiceLogs(client graphql.Client, serviceID string, logType gql.LogType, lines int, filters logFilterOptions) (gql.ServiceLogsServiceLogsLogsResult, error) {
-	result, err := gql.ServiceLogs(ctx(), client, gql.LogsInput{
-		ServiceId: serviceID,
+func fetchServiceLogs(client *ink.Client, serviceID string, logType ink.LogType, lines int, filters logFilterOptions) (*ink.LogsResult, error) {
+	return client.GetLogs(ctx(), ink.LogsInput{
+		ServiceID: serviceID,
 		LogType:   logType,
 		StartTime: filters.startTime,
 		EndTime:   filters.endTime,
 		Query:     filters.query,
-		Limit:     &lines,
+		Limit:     lines,
 	})
-	if err != nil {
-		return gql.ServiceLogsServiceLogsLogsResult{}, err
-	}
-	return result.ServiceLogs, nil
 }
 
-func fetchAndPrintLogs(client graphql.Client, serviceID string, logType gql.LogType, lines int, filters logFilterOptions, title string) {
+func fetchAndPrintLogs(client *ink.Client, serviceID string, logType ink.LogType, lines int, filters logFilterOptions, title string) {
 	result, err := fetchServiceLogs(client, serviceID, logType, lines, filters)
 	if err != nil {
 		fmt.Println()
@@ -309,37 +299,35 @@ func fetchAndPrintLogs(client graphql.Client, serviceID string, logType gql.LogT
 	printLogEntries(result.Entries, "  ")
 }
 
-func printLogEntries(entries []gql.ServiceLogsServiceLogsLogsResultEntriesLogEntry, indent string) {
+func printLogEntries(entries []ink.LogEntry, indent string) {
 	for _, e := range entries {
 		ts := dim.Render(e.Timestamp)
 		level := ""
-		if e.Level != nil {
-			switch *e.Level {
-			case "error", "ERROR":
-				level = red.Render("[ERR] ")
-			case "warn", "WARN":
-				level = yellow.Render("[WRN] ")
-			}
+		switch strings.ToUpper(e.Level) {
+		case "ERROR", "ERR":
+			level = red.Render("[ERR] ")
+		case "WARN":
+			level = yellow.Render("[WRN] ")
 		}
 		fmt.Printf("%s%s %s%s\n", indent, ts, level, e.Message)
 	}
 }
 
-func resolveMetricTimeRange(timeRange string) (gql.MetricTimeRange, string, bool) {
+func resolveMetricTimeRange(timeRange string) (ink.MetricTimeRange, string, bool) {
 	normalized := strings.ToLower(strings.TrimSpace(timeRange))
-	gqlRange := map[string]gql.MetricTimeRange{
-		"1h":  gql.MetricTimeRangeOneHour,
-		"6h":  gql.MetricTimeRangeSixHours,
-		"24h": gql.MetricTimeRangeTwentyFourHours,
-		"7d":  gql.MetricTimeRangeSevenDays,
-		"30d": gql.MetricTimeRangeThirtyDays,
+	ranges := map[string]ink.MetricTimeRange{
+		"1h":  ink.MetricTimeRangeOneHour,
+		"6h":  ink.MetricTimeRangeSixHours,
+		"24h": ink.MetricTimeRangeTwentyFourHours,
+		"7d":  ink.MetricTimeRangeSevenDays,
+		"30d": ink.MetricTimeRangeThirtyDays,
 	}
 
-	tr, ok := gqlRange[normalized]
+	tr, ok := ranges[normalized]
 	return tr, normalized, ok
 }
 
-func fetchAndPrintMetrics(client graphql.Client, serviceID, timeRange string) {
+func fetchAndPrintMetrics(client *ink.Client, serviceID, timeRange string) {
 	metrics, normalized, err := fetchServiceMetrics(client, serviceID, timeRange)
 	if err != nil {
 		fmt.Println()
@@ -350,66 +338,33 @@ func fetchAndPrintMetrics(client graphql.Client, serviceID, timeRange string) {
 	printMetricsSection(metrics, normalized)
 }
 
-func latestMetricPoint[T any](points []T, timestamp func(T) string, value func(T) float64) (string, float64, bool) {
-	if len(points) == 0 {
-		return "", 0, false
-	}
-	latest := points[len(points)-1]
-	return timestamp(latest), value(latest), true
-}
-
-func fetchServiceMetrics(client graphql.Client, serviceID, timeRange string) (gql.ServiceMetricsServiceMetrics, string, error) {
+func fetchServiceMetrics(client *ink.Client, serviceID, timeRange string) (ink.ServiceMetrics, string, error) {
 	tr, normalized, ok := resolveMetricTimeRange(timeRange)
 	if !ok {
-		return gql.ServiceMetricsServiceMetrics{}, "", fmt.Errorf("invalid metrics range %q (use 1h, 6h, 24h, 7d, 30d)", timeRange)
+		return ink.ServiceMetrics{}, "", fmt.Errorf("invalid metrics range %q (use 1h, 6h, 24h, 7d, 30d)", timeRange)
 	}
 
-	maxDataPoints := defaultMetricsMaxDataPoints
-	result, err := gql.ServiceMetrics(ctx(), client, serviceID, tr, &maxDataPoints)
+	result, err := client.GetMetrics(ctx(), serviceID, tr, defaultMetricsMaxDataPoints)
 	if err != nil {
-		return gql.ServiceMetricsServiceMetrics{}, "", fmt.Errorf("metrics: %w", err)
+		return ink.ServiceMetrics{}, "", fmt.Errorf("metrics: %w", err)
 	}
 
-	return result.ServiceMetrics, normalized, nil
+	return *result, normalized, nil
 }
 
-func printMetricsSection(m gql.ServiceMetricsServiceMetrics, timeRange string) bool {
-	cpu := metricSamples(m.CpuUsage.DataPoints,
-		func(point gql.ServiceMetricsServiceMetricsCpuUsageMetricSeriesDataPointsMetricDataPoint) string {
-			return point.Timestamp
-		},
-		func(point gql.ServiceMetricsServiceMetricsCpuUsageMetricSeriesDataPointsMetricDataPoint) float64 {
-			return point.Value
-		},
-	)
-	cpu = clampMetricSamples(cpu, defaultMetricsMaxDataPoints)
-	memory := metricSamples(m.MemoryUsageMB.DataPoints,
-		func(point gql.ServiceMetricsServiceMetricsMemoryUsageMBMetricSeriesDataPointsMetricDataPoint) string {
-			return point.Timestamp
-		},
-		func(point gql.ServiceMetricsServiceMetricsMemoryUsageMBMetricSeriesDataPointsMetricDataPoint) float64 {
-			return point.Value
-		},
-	)
-	memory = clampMetricSamples(memory, defaultMetricsMaxDataPoints)
-	netRx := metricSamples(m.NetworkReceiveBytesPerSec.DataPoints,
-		func(point gql.ServiceMetricsServiceMetricsNetworkReceiveBytesPerSecMetricSeriesDataPointsMetricDataPoint) string {
-			return point.Timestamp
-		},
-		func(point gql.ServiceMetricsServiceMetricsNetworkReceiveBytesPerSecMetricSeriesDataPointsMetricDataPoint) float64 {
-			return point.Value
-		},
-	)
-	netRx = clampMetricSamples(netRx, defaultMetricsMaxDataPoints)
-	netTx := metricSamples(m.NetworkTransmitBytesPerSec.DataPoints,
-		func(point gql.ServiceMetricsServiceMetricsNetworkTransmitBytesPerSecMetricSeriesDataPointsMetricDataPoint) string {
-			return point.Timestamp
-		},
-		func(point gql.ServiceMetricsServiceMetricsNetworkTransmitBytesPerSecMetricSeriesDataPointsMetricDataPoint) float64 {
-			return point.Value
-		},
-	)
-	netTx = clampMetricSamples(netTx, defaultMetricsMaxDataPoints)
+func inkMetricSamples(points []ink.MetricDataPoint) []metricSample {
+	samples := make([]metricSample, 0, len(points))
+	for _, p := range points {
+		samples = append(samples, metricSample{timestamp: p.Timestamp, value: p.Value})
+	}
+	return samples
+}
+
+func printMetricsSection(m ink.ServiceMetrics, timeRange string) bool {
+	cpu := clampMetricSamples(inkMetricSamples(m.CPUUsage.DataPoints), defaultMetricsMaxDataPoints)
+	memory := clampMetricSamples(inkMetricSamples(m.MemoryUsageMB.DataPoints), defaultMetricsMaxDataPoints)
+	netRx := clampMetricSamples(inkMetricSamples(m.NetworkReceiveBytesPerSec.DataPoints), defaultMetricsMaxDataPoints)
+	netTx := clampMetricSamples(inkMetricSamples(m.NetworkTransmitBytesPerSec.DataPoints), defaultMetricsMaxDataPoints)
 
 	if maxInt(len(cpu), len(memory), len(netRx), len(netTx)) == 0 {
 		return false
@@ -431,44 +386,13 @@ func printMetricsSection(m gql.ServiceMetricsServiceMetrics, timeRange string) b
 		)
 	}
 
-	printMetricSeries(
-		"CPU",
-		cpu,
-		func(value float64) string { return fmt.Sprintf("%.4f vCPUs", value) },
-		&m.CpuLimitVCPUs,
-	)
-	printMetricSeries(
-		"Memory",
-		memory,
-		func(value float64) string { return fmt.Sprintf("%.1f MB", value) },
-		&m.MemoryLimitMB,
-	)
-	printMetricSeries(
-		"Net RX",
-		netRx,
-		formatBytesPerSecond,
-		nil,
-	)
-	printMetricSeries(
-		"Net TX",
-		netTx,
-		formatBytesPerSecond,
-		nil,
-	)
+	printMetricSeries("CPU", cpu, func(value float64) string { return fmt.Sprintf("%.4f vCPUs", value) }, &m.CPULimitVCPUs)
+	printMetricSeries("Memory", memory, func(value float64) string { return fmt.Sprintf("%.1f MB", value) }, &m.MemoryLimitMB)
+	printMetricSeries("Net RX", netRx, formatBytesPerSecond, nil)
+	printMetricSeries("Net TX", netTx, formatBytesPerSecond, nil)
 	printMetricHistoryTable(timeRange, cpu, memory, netRx, netTx)
 
 	return true
-}
-
-func metricSamples[T any](points []T, timestamp func(T) string, value func(T) float64) []metricSample {
-	samples := make([]metricSample, 0, len(points))
-	for _, point := range points {
-		samples = append(samples, metricSample{
-			timestamp: timestamp(point),
-			value:     value(point),
-		})
-	}
-	return samples
 }
 
 func clampMetricSamples(samples []metricSample, maxPoints int) []metricSample {

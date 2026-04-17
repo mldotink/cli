@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/mldotink/cli/internal/gql"
 	"github.com/spf13/cobra"
 )
 
@@ -40,17 +39,17 @@ ink chat send "Frontend update" --channel my-project`,
 			fatal("Workspace required — set in config or use --workspace")
 		}
 
-		result, err := gql.SendChatMessage(ctx(), client, ws, ptr(channel), content)
+		result, err := client.SendChatMessage(ctx(), ws, channel, content)
 		if err != nil {
 			fatal(err.Error())
 		}
 
 		if jsonOutput {
-			printJSON(result.ChatSend)
+			printJSON(result)
 			return
 		}
 
-		success(fmt.Sprintf("Message sent (seq: %d)", result.ChatSend.Seq))
+		success(fmt.Sprintf("Message sent (seq: %d)", result.Seq))
 	},
 }
 
@@ -68,34 +67,28 @@ var chatReadCmd = &cobra.Command{
 			fatal("Workspace required — set in config or use --workspace")
 		}
 
-		var cursorPtr *int
-		if cursor > 0 {
-			cursorPtr = &cursor
-		}
-
-		result, err := gql.ReadChat(ctx(), client, ws, ptr(channel), cursorPtr, &limit)
+		result, err := client.ReadChat(ctx(), ws, channel, cursor, limit)
 		if err != nil {
 			fatal(err.Error())
 		}
 
 		if jsonOutput {
-			printJSON(result.ChatRead)
+			printJSON(result)
 			return
 		}
 
-		msgs := result.ChatRead.Messages
-		if len(msgs) == 0 {
+		if len(result.Messages) == 0 {
 			fmt.Println(dim.Render("  No messages"))
 			return
 		}
 
 		fmt.Println()
-		for _, m := range msgs {
+		for _, m := range result.Messages {
 			fmt.Printf("  %s  %s\n", bold.Render(m.SenderName), dim.Render(fmtTime(m.CreatedAt)))
 			fmt.Printf("  %s\n\n", m.Content)
 		}
-		if result.ChatRead.HasMore {
-			fmt.Println(dim.Render(fmt.Sprintf("  More messages available — use --cursor %d", result.ChatRead.NextCursor)))
+		if result.HasMore {
+			fmt.Println(dim.Render(fmt.Sprintf("  More messages available — use --cursor %d", result.NextCursor)))
 		}
 	},
 }

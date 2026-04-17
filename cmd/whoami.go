@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/mldotink/cli/internal/gql"
+	ink "github.com/mldotink/sdk-go"
 	"github.com/spf13/cobra"
 )
 
@@ -32,21 +32,21 @@ ink whoami --json`,
 		client := newClient()
 
 		var (
-			result *gql.AccountStatusResponse
-			accErr error
-			wsList *gql.ListWorkspacesResponse
-			wsErr  error
-			wg     sync.WaitGroup
+			account    *ink.AccountStatus
+			accErr     error
+			workspaces []ink.Workspace
+			wsErr      error
+			wg         sync.WaitGroup
 		)
 
 		wg.Add(2)
 		go func() {
 			defer wg.Done()
-			result, accErr = gql.AccountStatus(ctx(), client)
+			account, accErr = client.GetAccountStatus(ctx())
 		}()
 		go func() {
 			defer wg.Done()
-			wsList, wsErr = gql.ListWorkspaces(ctx(), client)
+			workspaces, wsErr = client.ListWorkspaces(ctx())
 		}()
 		wg.Wait()
 
@@ -54,42 +54,39 @@ ink whoami --json`,
 			fatal(accErr.Error())
 		}
 
-		a := result.AccountStatus
-		if a == nil {
+		if account == nil {
 			fatal("Could not fetch account")
 		}
 
-		// Fetch billing for each workspace in parallel
 		type wsBilling struct {
 			slug string
-			data *gql.UsageBillBreakdownResponse
+			data *ink.UsageBillBreakdown
 		}
 		var billings []wsBilling
-		if wsErr == nil && len(wsList.WorkspaceList) > 0 {
-			billings = make([]wsBilling, len(wsList.WorkspaceList))
+		if wsErr == nil && len(workspaces) > 0 {
+			billings = make([]wsBilling, len(workspaces))
 			var bwg sync.WaitGroup
-			for i, ws := range wsList.WorkspaceList {
+			for i, ws := range workspaces {
 				billings[i].slug = ws.Slug
 				bwg.Add(1)
 				go func(idx int, slug string) {
 					defer bwg.Done()
-					s := slug
-					billings[idx].data, _ = gql.UsageBillBreakdown(ctx(), client, &s)
+					billings[idx].data, _ = client.GetUsageBillBreakdown(ctx(), slug)
 				}(i, ws.Slug)
 			}
 			bwg.Wait()
 		}
 
 		if jsonOutput {
-			out := map[string]any{"account": a}
+			out := map[string]any{"account": account}
 			if wsErr == nil {
-				out["workspaces"] = wsList.WorkspaceList
+				out["workspaces"] = workspaces
 			}
 			if len(billings) > 0 {
 				bmap := make(map[string]any)
 				for _, b := range billings {
 					if b.data != nil {
-						bmap[b.slug] = b.data.UsageBillBreakdown
+						bmap[b.slug] = b.data
 					}
 				}
 				out["billing"] = bmap
@@ -103,17 +100,16 @@ ink whoami --json`,
 		}
 
 		d := newDetail("Account")
-		if a.Email != nil {
-			d.kv("Email", *a.Email)
+		if account.Email != "" {
+			d.kv("Email", account.Email)
 		}
 
 		tier := "free"
-		if a.SubscriptionTier != nil {
-			tier = *a.SubscriptionTier
+		if account.SubscriptionTier != "" {
+			tier = account.SubscriptionTier
 		}
 		d.kv("Plan", tier)
 
-		// Config
 		d.blank()
 		d.section("Config")
 		cfgWs := cfg.Workspace
@@ -127,67 +123,60 @@ ink whoami --json`,
 		}
 		d.kv("Project", cfgProj)
 
-		// Workspaces
-		if wsErr == nil && len(wsList.WorkspaceList) > 0 {
+		if wsErr == nil && len(workspaces) > 0 {
 			d.blank()
 			d.section("Workspaces")
 
-			// Build billing lookup
-			billingMap := make(map[string]*gql.UsageBillBreakdownResponse)
+			billingMap := make(map[string]*ink.UsageBillBreakdown)
 			for _, b := range billings {
 				if b.data != nil {
 					billingMap[b.slug] = b.data
 				}
 			}
 
-			// Find max slug width for alignment
 			maxSlug := 0
-			for _, ws := range wsList.WorkspaceList {
+			for _, ws := range workspaces {
 				if len(ws.Slug) > maxSlug {
 					maxSlug = len(ws.Slug)
 				}
 			}
 
-			for _, ws := range wsList.WorkspaceList {
+			for _, ws := range workspaces {
 				slug := ws.Slug
 				if ws.IsDefault {
 					slug += dim.Render("*")
 				}
 				d.line(fmt.Sprintf("  %-*s  %s", maxSlug, slug, dim.Render(ws.Role)))
 				if b, ok := billingMap[ws.Slug]; ok {
-					u := b.UsageBillBreakdown
-					period := dim.Render(shortDate(u.PeriodStart) + " – " + shortDate(u.PeriodEnd))
+					period := dim.Render(shortDate(b.PeriodStart) + " – " + shortDate(b.PeriodEnd))
 					d.line(fmt.Sprintf("    CPU %s  Mem %s  Egress %s",
-						formatCents(u.Cpu.TotalCents),
-						formatCents(u.Memory.TotalCents),
-						formatCents(u.Egress.TotalCents)))
-					d.line(fmt.Sprintf("    Bill %s  %s", formatCents(u.CurrentBillCents), period))
+						formatCents(b.CPU.TotalCents),
+						formatCents(b.Memory.TotalCents),
+						formatCents(b.Egress.TotalCents)))
+					d.line(fmt.Sprintf("    Bill %s  %s", formatCents(b.CurrentBillCents), period))
 				}
 			}
 		}
 
-		// GitHub App — required for deploying from GitHub repos
 		d.blank()
-		if a.HasGitHubApp {
+		if account.HasGitHubApp {
 			d.kv("GitHub App", green.Render("installed")+"  "+dim.Render("deploy from GitHub repos"))
 		} else {
 			d.kv("GitHub App", dim.Render("not installed")+"  "+dim.Render("install at ml.ink to deploy GitHub repos"))
 		}
 
-		// GitHub OAuth — enables agents to create repos on your behalf
-		if a.HasGitHubOAuth {
+		if account.HasGitHubOAuth {
 			name := ""
-			if a.GithubUsername != nil {
-				name = " (" + *a.GithubUsername + ")"
+			if account.GitHubUsername != "" {
+				name = " (" + account.GitHubUsername + ")"
 			}
 			d.kv("GitHub OAuth", green.Render("connected")+name+"  "+dim.Render("agents can create GitHub repos"))
 		} else {
 			d.kv("GitHub OAuth", dim.Render("not connected")+"  "+dim.Render("connect to let agents create GitHub repos"))
 		}
 
-		// GitHub scopes
-		if len(a.GithubScopes) > 0 {
-			d.kv("OAuth Scopes", strings.Join(a.GithubScopes, ", "))
+		if len(account.GitHubScopes) > 0 {
+			d.kv("OAuth Scopes", strings.Join(account.GitHubScopes, ", "))
 		}
 
 		fmt.Println()

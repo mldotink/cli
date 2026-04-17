@@ -6,8 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/Khan/genqlient/graphql"
-	"github.com/mldotink/cli/internal/gql"
+	ink "github.com/mldotink/sdk-go"
 	"github.com/spf13/cobra"
 )
 
@@ -26,7 +25,6 @@ func init() {
 
 }
 
-// addServiceFlags registers the flags shared between deploy and redeploy.
 func addServiceFlags(cmd *cobra.Command) {
 	f := cmd.Flags()
 	if f.Lookup("memory") == nil {
@@ -133,67 +131,67 @@ ink redeploy myapi --buildpack dockerfile --dockerfile Dockerfile.prod`,
 	},
 }
 
-func runCreate(cmd *cobra.Command, client graphql.Client, name string) {
+func runCreate(cmd *cobra.Command, client *ink.Client, name string) {
 	image, _ := cmd.Flags().GetString("image")
 	isImage := image != ""
 
-	input := gql.CreateServiceInput{
+	input := ink.CreateServiceInput{
 		Name:          name,
-		WorkspaceSlug: wsPtr(),
-		Project:       projPtr(),
+		WorkspaceSlug: cfg.Workspace,
+		Project:       cfg.Project,
 	}
 
 	if isImage {
-		input.Source = ptr("image")
-		input.Image = ptr(image)
+		input.Source = "image"
+		input.Image = image
 	} else {
 		repo, _ := cmd.Flags().GetString("repo")
 		if repo == "" {
 			repo = name
 		}
-		input.Source = ptr("repo")
-		input.Repo = ptr(repo)
+		input.Source = "repo"
+		input.Repo = repo
 	}
 
 	if cmd.Flags().Changed("host") && !isImage {
 		v, _ := cmd.Flags().GetString("host")
-		input.Host = ptr(v)
+		input.Host = v
 	}
 	if cmd.Flags().Changed("branch") && !isImage {
 		v, _ := cmd.Flags().GetString("branch")
-		input.Branch = ptr(v)
+		input.Branch = v
 	}
 	if cmd.Flags().Changed("memory") {
 		v, _ := cmd.Flags().GetString("memory")
-		input.Memory = ptr(v)
+		input.Memory = v
 	}
 	if cmd.Flags().Changed("vcpu") {
 		v, _ := cmd.Flags().GetString("vcpu")
-		input.Vcpus = ptr(v)
+		input.VCPUs = v
 	}
 	if cmd.Flags().Changed("build-command") {
 		v, _ := cmd.Flags().GetString("build-command")
-		input.BuildCommand = ptr(v)
+		input.BuildCommand = v
 	}
 	if cmd.Flags().Changed("start-command") {
 		v, _ := cmd.Flags().GetString("start-command")
-		input.StartCommand = ptr(v)
+		input.StartCommand = v
 	}
 	if cmd.Flags().Changed("root-dir") {
 		v, _ := cmd.Flags().GetString("root-dir")
-		input.RootDirectory = ptr(v)
+		input.RootDirectory = v
 	}
 	if cmd.Flags().Changed("publish-dir") {
 		v, _ := cmd.Flags().GetString("publish-dir")
-		input.PublishDirectory = ptr(v)
+		input.PublishDirectory = v
 	}
 	if cmd.Flags().Changed("dockerfile") {
 		v, _ := cmd.Flags().GetString("dockerfile")
-		input.DockerfilePath = ptr(v)
+		input.DockerfilePath = v
 	}
 	if cmd.Flags().Changed("buildpack") {
 		v, _ := cmd.Flags().GetString("buildpack")
-		input.BuildPack = ptr(v)
+		input.BuildPack = v
 	}
 	if cmd.Flags().Changed("port") {
 		v, _ := cmd.Flags().GetInt("port")
@@ -205,36 +203,35 @@ func runCreate(cmd *cobra.Command, client graphql.Client, name string) {
 	}
 	if cmd.Flags().Changed("destroy-timeout-seconds") {
 		v, _ := cmd.Flags().GetInt("destroy-timeout-seconds")
-		input.DestroyTimeoutSeconds = &v
+		input.DestroyTimeoutSeconds = v
 	}
 
 	input.EnvVars = collectEnvVars(cmd)
 
-	result, err := gql.CreateService(ctx(), client, input)
+	result, err := client.CreateService(ctx(), input)
 	if err != nil {
 		fatal(err.Error())
 	}
 
-	s := result.ServiceCreate
 	if jsonOutput {
-		printJSON(s)
+		printJSON(result)
 		return
 	}
 
 	fmt.Println()
-	success(fmt.Sprintf("Service created: %s", bold.Render(s.Name)))
-	kv("Status", renderStatus(s.Status))
-	if endpoint := preferredServiceEndpoint(createResultPorts(s.Ports), nil); endpoint != "" {
+	success(fmt.Sprintf("Service created: %s", bold.Render(result.Name)))
+	kv("Status", renderStatus(result.Status))
+	if endpoint := preferredServiceEndpoint(inkServicePorts(result.Ports), ""); endpoint != "" {
 		kv("Endpoint", accent.Render(endpoint))
 	}
 	fmt.Println()
 }
 
-func runUpdate(cmd *cobra.Command, client graphql.Client, name string) {
-	input := gql.UpdateServiceInput{
+func runUpdate(cmd *cobra.Command, client *ink.Client, name string) {
+	input := ink.UpdateServiceInput{
 		Name:          name,
-		WorkspaceSlug: wsPtr(),
-		Project:       projPtr(),
+		WorkspaceSlug: cfg.Workspace,
+		Project:       cfg.Project,
 	}
 
 	if cmd.Flags().Changed("image") {
@@ -261,7 +258,7 @@ func runUpdate(cmd *cobra.Command, client graphql.Client, name string) {
 	}
 	if cmd.Flags().Changed("vcpu") {
 		v, _ := cmd.Flags().GetString("vcpu")
-		input.Vcpus = ptr(v)
+		input.VCPUs = ptr(v)
 	}
 	if cmd.Flags().Changed("build-command") {
 		v, _ := cmd.Flags().GetString("build-command")
@@ -298,27 +295,25 @@ func runUpdate(cmd *cobra.Command, client graphql.Client, name string) {
 
 	input.EnvVars = collectEnvVars(cmd)
 
-	result, err := gql.UpdateService(ctx(), client, input)
+	result, err := client.UpdateService(ctx(), input)
 	if err != nil {
 		fatal(err.Error())
 	}
 
-	s := result.ServiceUpdate
 	if jsonOutput {
-		printJSON(s)
+		printJSON(result)
 		return
 	}
 
 	fmt.Println()
-	success(fmt.Sprintf("Service updated: %s", bold.Render(s.Name)))
-	kv("Status", renderStatus(s.Status))
+	success(fmt.Sprintf("Service updated: %s", bold.Render(result.Name)))
+	kv("Status", renderStatus(result.Status))
 	fmt.Println()
 }
 
-func collectEnvVars(cmd *cobra.Command) []gql.EnvVarInput {
+func collectEnvVars(cmd *cobra.Command) []ink.EnvVar {
 	vars := make(map[string]string)
 
-	// env-file first (lower priority)
 	if files, _ := cmd.Flags().GetStringArray("env-file"); len(files) > 0 {
 		for _, f := range files {
 			parsed, err := parseEnvFile(f)
@@ -331,7 +326,6 @@ func collectEnvVars(cmd *cobra.Command) []gql.EnvVarInput {
 		}
 	}
 
-	// --env flags override env-file
 	if envs, _ := cmd.Flags().GetStringArray("env"); len(envs) > 0 {
 		for _, e := range envs {
 			if k, v, ok := strings.Cut(e, "="); ok {
@@ -344,21 +338,21 @@ func collectEnvVars(cmd *cobra.Command) []gql.EnvVarInput {
 		return nil
 	}
 
-	result := make([]gql.EnvVarInput, 0, len(vars))
+	result := make([]ink.EnvVar, 0, len(vars))
 	for k, v := range vars {
-		result = append(result, gql.EnvVarInput{Key: k, Value: v})
+		result = append(result, ink.EnvVar{Key: k, Value: v})
 	}
 	return result
 }
 
-func parseEnvFile(path string) ([]gql.EnvVarInput, error) {
+func parseEnvFile(path string) ([]ink.EnvVar, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, fmt.Errorf("cannot read env file %s: %w", path, err)
 	}
 	defer f.Close()
 
-	var vars []gql.EnvVarInput
+	var vars []ink.EnvVar
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
@@ -374,7 +368,7 @@ func parseEnvFile(path string) ([]gql.EnvVarInput, error) {
 		if len(v) >= 2 && ((v[0] == '"' && v[len(v)-1] == '"') || (v[0] == '\'' && v[len(v)-1] == '\'')) {
 			v = v[1 : len(v)-1]
 		}
-		vars = append(vars, gql.EnvVarInput{Key: k, Value: v})
+		vars = append(vars, ink.EnvVar{Key: k, Value: v})
 	}
 	return vars, scanner.Err()
 }

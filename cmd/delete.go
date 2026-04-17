@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/mldotink/cli/internal/gql"
+	ink "github.com/mldotink/sdk-go"
 	"github.com/spf13/cobra"
 )
 
@@ -38,16 +38,20 @@ ink delete myapi -y`,
 
 		client := newClient()
 
-		result, err := gql.DeleteService(ctx(), client, name, projPtr(), nil, wsPtr())
+		result, err := client.DeleteService(ctx(), ink.DeleteServiceInput{
+			Name:          name,
+			Project:       cfg.Project,
+			WorkspaceSlug: cfg.Workspace,
+		})
 		if err != nil {
 			fatal(err.Error())
 		}
 
 		if jsonOutput {
-			printJSON(result.ServiceDelete)
+			printJSON(result)
 			return
 		}
 
-		success(result.ServiceDelete.Message)
+		success(result.Message)
 	},
 }

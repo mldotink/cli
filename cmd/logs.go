@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/mldotink/cli/internal/gql"
+	ink "github.com/mldotink/sdk-go"
 	"github.com/spf13/cobra"
 )
 
@@ -57,9 +57,9 @@ ink logs myapi -n 500`,
 			fatal(fmt.Sprintf("Service %q not found", name))
 		}
 
-		logType := gql.LogTypeRuntime
+		logType := ink.LogTypeRuntime
 		if showBuild {
-			logType = gql.LogTypeBuild
+			logType = ink.LogTypeBuild
 		}
 
 		filters, err := logFiltersFromCommand(cmd, "query")
@@ -67,7 +67,7 @@ ink logs myapi -n 500`,
 			fatal(err.Error())
 		}
 
-		result, err := fetchServiceLogs(client, svc.Id, logType, lines, filters)
+		result, err := fetchServiceLogs(client, svc.ID, logType, lines, filters)
 		if err != nil {
 			fatal(err.Error())
 		}

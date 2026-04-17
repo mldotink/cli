@@ -3,8 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/Khan/genqlient/graphql"
-	"github.com/mldotink/cli/internal/gql"
+	ink "github.com/mldotink/sdk-go"
 	"github.com/spf13/cobra"
 )
 
@@ -39,17 +38,16 @@ ink workspace members my-team`,
 	Run: func(cmd *cobra.Command, args []string) {
 		client := newClient()
 
-		result, err := gql.ListWorkspaces(ctx(), client)
+		wsList, err := client.ListWorkspaces(ctx())
 		if err != nil {
 			fatal(err.Error())
 		}
 
 		if jsonOutput {
-			printJSON(result.WorkspaceList)
+			printJSON(wsList)
 			return
 		}
 
-		wsList := result.WorkspaceList
 		if len(wsList) == 0 {
 			fmt.Println(dim.Render("  No workspaces"))
 		} else {
@@ -80,12 +78,11 @@ var workspacesCreateCmd = &cobra.Command{
 		desc, _ := cmd.Flags().GetString("description")
 		client := newClient()
 
-		result, err := gql.CreateWorkspace(ctx(), client, name, slug, ptr(desc))
+		ws, err := client.CreateWorkspace(ctx(), name, slug, desc)
 		if err != nil {
 			fatal(err.Error())
 		}
 
-		ws := result.WorkspaceCreate
 		if jsonOutput {
 			printJSON(ws)
 			return
@@ -108,13 +105,12 @@ var workspacesDeleteCmd = &cobra.Command{
 			fatal(err.Error())
 		}
 
-		result, err := gql.DeleteWorkspace(ctx(), client, id)
-		if err != nil {
+		if err := client.DeleteWorkspace(ctx(), id); err != nil {
 			fatal(err.Error())
 		}
 
 		if jsonOutput {
-			printJSON(map[string]any{"deleted": result.WorkspaceDelete, "slug": slug})
+			printJSON(map[string]any{"deleted": true, "slug": slug})
 			return
 		}
 
@@ -130,17 +126,16 @@ var workspacesMembersCmd = &cobra.Command{
 		slug := args[0]
 		client := newClient()
 
-		result, err := gql.ListWorkspaceMembers(ctx(), client, slug)
+		members, err := client.ListWorkspaceMembers(ctx(), slug)
 		if err != nil {
 			fatal(err.Error())
 		}
 
 		if jsonOutput {
-			printJSON(result.WorkspaceListMembers)
+			printJSON(members)
 			return
 		}
 
-		members := result.WorkspaceListMembers
 		if len(members) == 0 {
 			fmt.Println(dim.Render("  No members"))
 			return
@@ -148,8 +143,17 @@ var workspacesMembersCmd = &cobra.Command{
 
 		var rows [][]string
 		for _, m := range members {
-			name := deref(m.DisplayName, deref(m.Username, m.UserId))
-			email := deref(m.Email, dim.Render("—"))
+			name := m.DisplayName
+			if name == "" {
+				name = m.Username
+			}
+			if name == "" {
+				name = m.UserID
+			}
+			email := m.Email
+			if email == "" {
+				email = dim.Render("—")
+			}
 			rows = append(rows, []string{name, email, m.Role})
 		}
 
@@ -177,13 +181,13 @@ var workspacesInviteCmd = &cobra.Command{
 			fatal(err.Error())
 		}
 
-		result, err := gql.InviteToWorkspace(ctx(), client, id, user, ptr(role))
+		invite, err := client.InviteToWorkspace(ctx(), id, user, role)
 		if err != nil {
 			fatal(err.Error())
 		}
 
 		if jsonOutput {
-			printJSON(result.WorkspaceInvite)
+			printJSON(invite)
 			return
 		}
 
@@ -199,15 +203,14 @@ var workspacesInvitesCmd = &cobra.Command{
 		client := newClient()
 
 		if len(args) == 0 {
-			result, err := gql.ListMyInvites(ctx(), client)
+			invites, err := client.ListMyInvites(ctx())
 			if err != nil {
 				fatal(err.Error())
 			}
 			if jsonOutput {
-				printJSON(result.WorkspaceListMyInvites)
+				printJSON(invites)
 				return
 			}
-			invites := result.WorkspaceListMyInvites
 			if len(invites) == 0 {
 				fmt.Println(dim.Render("  No pending invites"))
 				return
@@ -215,8 +218,7 @@ var workspacesInvitesCmd = &cobra.Command{
 
 			var rows [][]string
 			for _, inv := range invites {
-				wsName := deref(inv.WorkspaceName, "?")
-				rows = append(rows, []string{inv.Id, wsName, inv.Role, renderStatus(inv.Status)})
+				rows = append(rows, []string{inv.ID, inv.WorkspaceName, inv.Role, renderStatus(inv.Status)})
 			}
 
 			fmt.Println()
@@ -224,15 +226,14 @@ var workspacesInvitesCmd = &cobra.Command{
 			fmt.Println()
 		} else {
 			slug := args[0]
-			result, err := gql.ListWorkspaceInvites(ctx(), client, slug)
+			invites, err := client.ListWorkspaceInvites(ctx(), slug)
 			if err != nil {
 				fatal(err.Error())
 			}
 			if jsonOutput {
-				printJSON(result.WorkspaceListInvites)
+				printJSON(invites)
 				return
 			}
-			invites := result.WorkspaceListInvites
 			if len(invites) == 0 {
 				fmt.Println(dim.Render("  No pending invites"))
 				return
@@ -240,7 +241,7 @@ var workspacesInvitesCmd = &cobra.Command{
 
 			var rows [][]string
 			for _, inv := range invites {
-				rows = append(rows, []string{inv.Id, inv.Role, renderStatus(inv.Status)})
+				rows = append(rows, []string{inv.ID, inv.Role, renderStatus(inv.Status)})
 			}
 
 			fmt.Println()
@@ -256,8 +257,7 @@ var workspacesAcceptCmd = &cobra.Command{
 	Args:  exactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		client := newClient()
-		_, err := gql.AcceptInvite(ctx(), client, args[0])
-		if err != nil {
+		if err := client.AcceptInvite(ctx(), args[0]); err != nil {
 			fatal(err.Error())
 		}
 		if jsonOutput {
@@ -274,8 +274,7 @@ var workspacesDeclineCmd = &cobra.Command{
 	Args:  exactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		client := newClient()
-		_, err := gql.DeclineInvite(ctx(), client, args[0])
-		if err != nil {
+		if err := client.DeclineInvite(ctx(), args[0]); err != nil {
 			fatal(err.Error())
 		}
 		if jsonOutput {
@@ -292,8 +291,7 @@ var workspacesRevokeCmd = &cobra.Command{
 	Args:  exactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		client := newClient()
-		_, err := gql.RevokeInvite(ctx(), client, args[0])
-		if err != nil {
+		if err := client.RevokeInvite(ctx(), args[0]); err != nil {
 			fatal(err.Error())
 		}
 		if jsonOutput {
@@ -317,8 +315,7 @@ var workspacesRemoveCmd = &cobra.Command{
 			fatal(err.Error())
 		}
 
-		_, err = gql.RemoveWorkspaceMember(ctx(), client, wsID, userID)
-		if err != nil {
+		if err := client.RemoveWorkspaceMember(ctx(), wsID, userID); err != nil {
 			fatal(err.Error())
 		}
 
@@ -330,14 +327,14 @@ var workspacesRemoveCmd = &cobra.Command{
 	},
 }
 
-func resolveWorkspaceID(client graphql.Client, slug string) (string, error) {
-	result, err := gql.ListWorkspaces(ctx(), client)
+func resolveWorkspaceID(client *ink.Client, slug string) (string, error) {
+	wsList, err := client.ListWorkspaces(ctx())
 	if err != nil {
 		return "", err
 	}
-	for _, ws := range result.WorkspaceList {
+	for _, ws := range wsList {
 		if ws.Slug == slug {
-			return ws.Id, nil
+			return ws.ID, nil
 		}
 	}
 	return "", fmt.Errorf("workspace %q not found", slug)

@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/mldotink/cli/internal/gql"
+	ink "github.com/mldotink/sdk-go"
 	"github.com/spf13/cobra"
 )
 
@@ -55,7 +55,7 @@ ink secret import myapi --file .env --replace`,
 		file, _ := cmd.Flags().GetString("file")
 		replace, _ := cmd.Flags().GetBool("replace")
 
-		var envVars []gql.EnvVarInput
+		var envVars []ink.EnvVar
 		var err error
 		if file != "" {
 			envVars, err = parseEnvFile(file)
@@ -73,25 +73,24 @@ ink secret import myapi --file .env --replace`,
 			fatal("No variables found in input")
 		}
 
-		result, err := gql.SetSecrets(ctx(), client, gql.SetSecretsInput{
+		err = client.SetSecrets(ctx(), ink.SetSecretsInput{
 			Name:          name,
-			WorkspaceSlug: wsPtr(),
-			Project:       projPtr(),
+			WorkspaceSlug: cfg.Workspace,
+			Project:       cfg.Project,
 			EnvVars:       envVars,
-			Replace:       &replace,
+			Replace:       replace,
 		})
 		if err != nil {
 			fatal(err.Error())
 		}
 
 		if jsonOutput {
-			printJSON(result.ServiceSetSecrets)
+			printJSON(map[string]any{"imported": len(envVars), "service": name})
 			return
 		}
 
 		fmt.Println()
 		success(fmt.Sprintf("Imported %d variable(s) into %s", len(envVars), bold.Render(name)))
-		kv("Status", renderStatus(result.ServiceSetSecrets.Status))
 		fmt.Println()
 	},
 }
@@ -106,34 +105,33 @@ var secretsSetCmd = &cobra.Command{
 		client := newClient()
 		replace, _ := cmd.Flags().GetBool("replace")
 
-		var envVars []gql.EnvVarInput
+		var envVars []ink.EnvVar
 		for _, arg := range args[1:] {
 			k, v, ok := strings.Cut(arg, "=")
 			if !ok {
 				fatal(fmt.Sprintf("Invalid format %q — use KEY=VALUE", arg))
 			}
-			envVars = append(envVars, gql.EnvVarInput{Key: k, Value: v})
+			envVars = append(envVars, ink.EnvVar{Key: k, Value: v})
 		}
 
-		result, err := gql.SetSecrets(ctx(), client, gql.SetSecretsInput{
+		err := client.SetSecrets(ctx(), ink.SetSecretsInput{
 			Name:          name,
-			WorkspaceSlug: wsPtr(),
-			Project:       projPtr(),
+			WorkspaceSlug: cfg.Workspace,
+			Project:       cfg.Project,
 			EnvVars:       envVars,
-			Replace:       &replace,
+			Replace:       replace,
 		})
 		if err != nil {
 			fatal(err.Error())
 		}
 
 		if jsonOutput {
-			printJSON(result.ServiceSetSecrets)
+			printJSON(map[string]any{"set": len(envVars), "service": name})
 			return
 		}
 
 		fmt.Println()
 		success(fmt.Sprintf("Set %d variable(s) on %s", len(envVars), bold.Render(name)))
-		kv("Status", renderStatus(result.ServiceSetSecrets.Status))
 		fmt.Println()
 	},
 }
@@ -178,10 +176,10 @@ var secretsDeleteCmd = &cobra.Command{
 		name := args[0]
 		client := newClient()
 
-		result, err := gql.DeleteSecrets(ctx(), client, gql.DeleteSecretsInput{
+		err := client.DeleteSecrets(ctx(), ink.DeleteSecretsInput{
 			Name:          name,
-			WorkspaceSlug: wsPtr(),
-			Project:       projPtr(),
+			WorkspaceSlug: cfg.Workspace,
+			Project:       cfg.Project,
 			Keys:          args[1:],
 		})
 		if err != nil {
@@ -189,13 +187,12 @@ var secretsDeleteCmd = &cobra.Command{
 		}
 
 		if jsonOutput {
-			printJSON(result.ServiceDeleteSecrets)
+			printJSON(map[string]any{"removed": len(args) - 1, "service": name})
 			return
 		}
 
 		fmt.Println()
 		success(fmt.Sprintf("Removed %d variable(s) from %s", len(args)-1, bold.Render(name)))
-		kv("Status", renderStatus(result.ServiceDeleteSecrets.Status))
 		fmt.Println()
 	},
 }
@@ -209,25 +206,29 @@ var secretsUnsetCmd = &cobra.Command{
 		key := args[1]
 		client := newClient()
 
-		result, err := gql.UnsetSecret(ctx(), client, name, key, projPtr(), nil, wsPtr())
+		err := client.DeleteSecrets(ctx(), ink.DeleteSecretsInput{
+			Name:          name,
+			WorkspaceSlug: cfg.Workspace,
+			Project:       cfg.Project,
+			Keys:          []string{key},
+		})
 		if err != nil {
 			fatal(err.Error())
 		}
 
 		if jsonOutput {
-			printJSON(result.ServiceUnsetSecret)
+			printJSON(map[string]any{"removed": key, "service": name})
 			return
 		}
 
 		fmt.Println()
 		success(fmt.Sprintf("Removed %s from %s", bold.Render(key), bold.Render(name)))
-		kv("Status", renderStatus(result.ServiceUnsetSecret.Status))
 		fmt.Println()
 	},
 }
 
-func parseEnvReader(r *os.File) ([]gql.EnvVarInput, error) {
-	var vars []gql.EnvVarInput
+func parseEnvReader(r *os.File) ([]ink.EnvVar, error) {
+	var vars []ink.EnvVar
 	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
@@ -243,7 +244,7 @@ func parseEnvReader(r *os.File) ([]gql.EnvVarInput, error) {
 		if len(v) >= 2 && ((v[0] == '"' && v[len(v)-1] == '"') || (v[0] == '\'' && v[len(v)-1] == '\'')) {
 			v = v[1 : len(v)-1]
 		}
-		vars = append(vars, gql.EnvVarInput{Key: k, Value: v})
+		vars = append(vars, ink.EnvVar{Key: k, Value: v})
 	}
 	return vars, scanner.Err()
 }

@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/mldotink/cli/internal/gql"
+	ink "github.com/mldotink/sdk-go"
 	"github.com/spf13/cobra"
 )
 
@@ -36,7 +36,7 @@ ink template deploy postgres --name mydb --var db_name=myapp --var storage_gi=20
 		slug := args[0]
 		name, _ := cmd.Flags().GetString("name")
 		if name == "" {
-			fmt.Fprintln(os.Stderr, "Error: --name is required\n")
+			fmt.Fprintln(os.Stderr, "Error: --name is required")
 			fmt.Fprintln(os.Stderr, "Usage: ink template deploy", slug, "--name <instance-name> [--var KEY=VALUE ...]")
 			fmt.Fprintln(os.Stderr, "\nRun \"ink template info "+slug+"\" to see available variables.")
 			os.Exit(1)
@@ -44,16 +44,15 @@ ink template deploy postgres --name mydb --var db_name=myapp --var storage_gi=20
 
 		client := newClient()
 
-		// Fetch template to know required variables
-		result, err := gql.TemplateList(ctx(), client, nil)
+		templates, err := client.ListTemplates(ctx(), "")
 		if err != nil {
 			fatal(err.Error())
 		}
 
-		var tmpl *gql.TemplateListTemplateListServiceTemplate
-		for i := range result.TemplateList {
-			if result.TemplateList[i].Slug == slug {
-				tmpl = &result.TemplateList[i]
+		var tmpl *ink.Template
+		for i := range templates {
+			if templates[i].Slug == slug {
+				tmpl = &templates[i]
 				break
 			}
 		}
@@ -61,7 +60,6 @@ ink template deploy postgres --name mydb --var db_name=myapp --var storage_gi=20
 			fatal(fmt.Sprintf("Template %q not found", slug))
 		}
 
-		// Collect variables from --var flags
 		varFlags, _ := cmd.Flags().GetStringArray("var")
 		vars := make(map[string]string)
 		for _, v := range varFlags {
@@ -70,13 +68,12 @@ ink template deploy postgres --name mydb --var db_name=myapp --var storage_gi=20
 			}
 		}
 
-		// Prompt for missing required variables
 		reader := bufio.NewReader(os.Stdin)
 		for _, v := range tmpl.Variables {
 			if _, ok := vars[v.Key]; ok {
 				continue
 			}
-			if !v.Required && v.DefaultValue != nil {
+			if !v.Required && v.DefaultValue != "" {
 				continue
 			}
 			if !v.Required {
@@ -86,41 +83,36 @@ ink template deploy postgres --name mydb --var db_name=myapp --var storage_gi=20
 			if v.Description != "" {
 				prompt += fmt.Sprintf(" (%s)", v.Description)
 			}
-			if v.DefaultValue != nil {
-				prompt += fmt.Sprintf(" [%s]", *v.DefaultValue)
+			if v.DefaultValue != "" {
+				prompt += fmt.Sprintf(" [%s]", v.DefaultValue)
 			}
 			prompt += ": "
 			fmt.Print(prompt)
 			input, _ := reader.ReadString('\n')
 			input = strings.TrimSpace(input)
-			if input == "" && v.DefaultValue != nil {
-				input = *v.DefaultValue
+			if input == "" && v.DefaultValue != "" {
+				input = v.DefaultValue
 			}
 			if input != "" {
 				vars[v.Key] = input
 			}
 		}
 
-		// Build variable inputs
-		var variables []gql.TemplateVariableValueInput
+		var variables []ink.TemplateVariableValue
 		for k, v := range vars {
-			variables = append(variables, gql.TemplateVariableValueInput{Key: k, Value: v})
+			variables = append(variables, ink.TemplateVariableValue{Key: k, Value: v})
 		}
 
-		input := gql.TemplateDeployInput{
+		deploy, err := client.DeployTemplate(ctx(), ink.TemplateDeployInput{
 			Template:      slug,
 			Name:          name,
-			Project:       projPtr(),
-			WorkspaceSlug: wsPtr(),
+			Project:       cfg.Project,
+			WorkspaceSlug: cfg.Workspace,
 			Variables:     variables,
-		}
-
-		deployResult, err := gql.TemplateDeploy(ctx(), client, input)
+		})
 		if err != nil {
 			fatal(err.Error())
 		}
-
-		deploy := deployResult.TemplateDeploy
 
 		if jsonOutput {
 			printJSON(deploy)
@@ -130,14 +122,13 @@ ink template deploy postgres --name mydb --var db_name=myapp --var storage_gi=20
 		fmt.Println()
 		success(fmt.Sprintf("Template %s deployed: %s", bold.Render(slug), bold.Render(name)))
 
-		// Services table
 		if len(deploy.Services) > 0 {
 			var rows [][]string
 			for _, s := range deploy.Services {
 				endpoint := dim.Render("—")
 				for _, ep := range s.Endpoints {
-					if ep.PublicEndpoint != nil {
-						endpoint = accent.Render(*ep.PublicEndpoint)
+					if ep.PublicEndpoint != "" {
+						endpoint = accent.Render(ep.PublicEndpoint)
 						break
 					}
 				}
@@ -147,17 +138,14 @@ ink template deploy postgres --name mydb --var db_name=myapp --var storage_gi=20
 			fmt.Println(styledTable([]string{"SERVICE", "STATUS", "ENDPOINT"}, rows))
 		}
 
-		// Outputs
 		if len(deploy.Outputs) > 0 {
 			fmt.Println()
 			fmt.Println(bold.Render("  Outputs"))
 			for _, o := range deploy.Outputs {
-				val := o.Value
-				fmt.Printf("  %-20s %s\n", dim.Render(o.Label), val)
+				fmt.Printf("  %-20s %s\n", dim.Render(o.Label), o.Value)
 			}
 		}
 
-		// Next-step hint
 		if len(deploy.Services) > 0 {
 			svcName := deploy.Services[0].Name
 			fmt.Println()

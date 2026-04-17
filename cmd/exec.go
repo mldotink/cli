@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/mldotink/cli/internal/gql"
+	ink "github.com/mldotink/sdk-go"
 	"github.com/spf13/cobra"
 )
 
@@ -21,23 +21,26 @@ ink exec myapi --project backend -- env`,
 		command := strings.Join(args[1:], " ")
 
 		client := newClient()
-		result, err := gql.ServiceExec(ctx(), client, &name, nil, command, projPtr(), wsPtr())
+		result, err := client.Exec(ctx(), ink.ExecInput{
+			Name:          name,
+			Project:       cfg.Project,
+			WorkspaceSlug: cfg.Workspace,
+		}, command)
 		if err != nil {
 			fatal(err.Error())
 		}
 
-		e := result.ServiceExec
 		if jsonOutput {
-			printJSON(e)
-			os.Exit(e.ExitCode)
+			printJSON(result)
+			os.Exit(result.ExitCode)
 		}
 
-		if e.Stdout != "" {
-			fmt.Fprint(os.Stdout, e.Stdout)
+		if result.Stdout != "" {
+			fmt.Fprint(os.Stdout, result.Stdout)
 		}
-		if e.Stderr != "" {
-			fmt.Fprint(os.Stderr, e.Stderr)
+		if result.Stderr != "" {
+			fmt.Fprint(os.Stderr, result.Stderr)
 		}
-		os.Exit(e.ExitCode)
+		os.Exit(result.ExitCode)
 	},
 }

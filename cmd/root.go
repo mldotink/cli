@@ -8,12 +8,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Khan/genqlient/graphql"
 	"github.com/charmbracelet/fang"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/lipgloss/table"
 	"github.com/mldotink/cli/internal/api"
 	"github.com/mldotink/cli/internal/config"
+	ink "github.com/mldotink/sdk-go"
 	"github.com/spf13/cobra"
 )
 
@@ -188,7 +188,7 @@ func Execute() {
 	}
 }
 
-func newClient() graphql.Client {
+func newClient() *ink.Client {
 	if cfg.APIKey == "" {
 		fatal("Not authenticated. Run: ink login")
 	}
@@ -199,34 +199,11 @@ func ctx() context.Context {
 	return context.Background()
 }
 
-// wsPtr returns a pointer to workspace slug, or nil if unset.
-func wsPtr() *string {
-	if cfg.Workspace == "" {
-		return nil
-	}
-	return &cfg.Workspace
-}
-
-// projPtr returns a pointer to project slug, or nil if unset.
-func projPtr() *string {
-	if cfg.Project == "" {
-		return nil
-	}
-	return &cfg.Project
-}
-
 func ptr(s string) *string {
 	if s == "" {
 		return nil
 	}
 	return &s
-}
-
-func deref(s *string, fallback string) string {
-	if s != nil {
-		return *s
-	}
-	return fallback
 }
 
 // ── Output helpers ─────────────────────────────────

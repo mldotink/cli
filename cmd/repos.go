@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/mldotink/cli/internal/gql"
+	ink "github.com/mldotink/sdk-go"
 	"github.com/spf13/cobra"
 )
 
@@ -73,26 +73,20 @@ ink repo create myapi --host github`,
 	Run: func(cmd *cobra.Command, args []string) {
 		name := args[0]
 		host, _ := cmd.Flags().GetString("host")
+		desc, _ := cmd.Flags().GetString("description")
 		client := newClient()
 
-		desc, _ := cmd.Flags().GetString("description")
-
-		input := gql.RepoCreateInput{
+		r, err := client.CreateRepo(ctx(), ink.CreateRepoInput{
 			Name:          name,
-			Host:          ptr(host),
-			WorkspaceSlug: wsPtr(),
-			Project:       projPtr(),
-		}
-		if desc != "" {
-			input.Description = ptr(desc)
-		}
-
-		result, err := gql.CreateRepo(ctx(), client, input)
+			Host:          host,
+			Description:   desc,
+			Project:       cfg.Project,
+			WorkspaceSlug: cfg.Workspace,
+		})
 		if err != nil {
 			fatal(err.Error())
 		}
 
-		r := result.RepoCreate
 		if jsonOutput {
 			printJSON(r)
 			return
@@ -127,18 +121,15 @@ git remote set-url ink $(ink repo token myapp --json | jq -r .gitRemote)`,
 		host, _ := cmd.Flags().GetString("host")
 		client := newClient()
 
-		input := gql.RepoGetTokenInput{
+		r, err := client.GetRepoToken(ctx(), ink.GetRepoTokenInput{
 			Name:          name,
-			Host:          ptr(host),
-			WorkspaceSlug: wsPtr(),
-		}
-
-		result, err := gql.GetRepoToken(ctx(), client, input)
+			Host:          host,
+			WorkspaceSlug: cfg.Workspace,
+		})
 		if err != nil {
 			fatal(err.Error())
 		}
 
-		r := result.RepoGetToken
 		if jsonOutput {
 			printJSON(r)
 			return

@@ -33,7 +33,7 @@ ink metrics myapi --range 30d --json`,
 			fatal(fmt.Sprintf("Service %q not found", args[0]))
 		}
 
-		metrics, normalized, err := fetchServiceMetrics(newClient(), svc.Id, rangeFlag)
+		metrics, normalized, err := fetchServiceMetrics(newClient(), svc.ID, rangeFlag)
 		if err != nil {
 			fatal(err.Error())
 		}
@@ -44,7 +44,7 @@ ink metrics myapi --range 30d --json`,
 		}
 
 		fmt.Println()
-		fmt.Println(titleStyle.Render(deref(svc.Name, args[0])))
+		fmt.Println(titleStyle.Render(svc.Name))
 		if !printMetricsSection(metrics, normalized) {
 			fmt.Println(dim.Render("  No metrics"))
 		}

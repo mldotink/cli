@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/mldotink/cli/internal/gql"
 	"github.com/spf13/cobra"
 )
 
@@ -35,17 +34,16 @@ var dnsZonesCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		client := newClient()
 
-		result, err := gql.ListDnsZones(ctx(), client, wsPtr())
+		zones, err := client.ListDNSZones(ctx(), cfg.Workspace)
 		if err != nil {
 			fatal(err.Error())
 		}
 
 		if jsonOutput {
-			printJSON(result.DnsListZones)
+			printJSON(zones)
 			return
 		}
 
-		zones := result.DnsListZones
 		if len(zones) == 0 {
 			fmt.Println(dim.Render("  No DNS zones"))
 			return
@@ -54,8 +52,8 @@ var dnsZonesCmd = &cobra.Command{
 		var rows [][]string
 		for _, z := range zones {
 			status := renderStatus(z.Status)
-			if z.Error != nil {
-				status += dim.Render(" — " + *z.Error)
+			if z.Error != "" {
+				status += dim.Render(" — " + z.Error)
 			}
 			rows = append(rows, []string{z.Zone, status})
 		}
@@ -76,17 +74,16 @@ var dnsRecordsCmd = &cobra.Command{
 		zone := args[0]
 		client := newClient()
 
-		result, err := gql.ListDnsRecords(ctx(), client, zone, wsPtr())
+		records, err := client.ListDNSRecords(ctx(), zone, cfg.Workspace)
 		if err != nil {
 			fatal(err.Error())
 		}
 
 		if jsonOutput {
-			printJSON(result.DnsListRecords)
+			printJSON(records)
 			return
 		}
 
-		records := result.DnsListRecords
 		if len(records) == 0 {
 			fmt.Println(dim.Render("  No records"))
 			return
@@ -98,7 +95,7 @@ var dnsRecordsCmd = &cobra.Command{
 			if r.Managed {
 				managed = dim.Render("system")
 			}
-			rows = append(rows, []string{r.Name, r.Type, r.Content, strconv.Itoa(r.Ttl), managed})
+			rows = append(rows, []string{r.Name, r.Type, r.Content, strconv.Itoa(r.TTL), managed})
 		}
 
 		fmt.Println()
@@ -126,12 +123,11 @@ ink dns add example.com @ TXT "v=spf1 include:_spf.google.com ~all" --ttl 3600`,
 		ttl, _ := cmd.Flags().GetInt("ttl")
 		client := newClient()
 
-		result, err := gql.AddDnsRecord(ctx(), client, zone, name, typ, content, &ttl, wsPtr())
+		r, err := client.AddDNSRecord(ctx(), zone, name, typ, content, ttl, cfg.Workspace)
 		if err != nil {
 			fatal(err.Error())
 		}
 
-		r := result.DnsAddRecord
 		if jsonOutput {
 			printJSON(r)
 			return
@@ -152,13 +148,12 @@ ink dns delete example.com rec_abc123`,
 		zone, recordID := args[0], args[1]
 		client := newClient()
 
-		result, err := gql.DeleteDnsRecord(ctx(), client, zone, recordID, wsPtr())
-		if err != nil {
+		if err := client.DeleteDNSRecord(ctx(), zone, recordID, cfg.Workspace); err != nil {
 			fatal(err.Error())
 		}
 
 		if jsonOutput {
-			printJSON(map[string]any{"deleted": result.DnsDeleteRecord})
+			printJSON(map[string]any{"deleted": true})
 			return
 		}
 
