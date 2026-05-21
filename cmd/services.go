@@ -200,16 +200,27 @@ func pluralS(n int) string {
 }
 
 func findService(name string) *ink.Service {
-	client := newClient()
-	services, err := client.ListServices(ctx(), cfg.Workspace, cfg.Project)
+	return findServiceWithClient(newClient(), name)
+}
+
+func findServiceWithClient(client *ink.Client, name string) *ink.Service {
+	svc, err := findServiceWithClientE(client, name)
 	if err != nil {
 		fatal(err.Error())
+	}
+	return svc
+}
+
+func findServiceWithClientE(client *ink.Client, name string) (*ink.Service, error) {
+	services, err := client.ListServices(ctx(), cfg.Workspace, cfg.Project)
+	if err != nil {
+		return nil, err
 	}
 
 	for i := range services {
 		if services[i].Name == name {
-			return &services[i]
+			return &services[i], nil
 		}
 	}
-	return nil
+	return nil, nil
 }

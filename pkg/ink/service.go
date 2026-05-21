@@ -33,6 +33,17 @@ const serviceGetQuery = `query($id: ID!) {
   }
 }`
 
+const serviceGetByNameQuery = `query($name: String!, $ws: String, $project: String) {
+  serviceGetByName(name: $name, workspaceSlug: $ws, project: $project) {
+    id projectId name subdomain source repo image branch status errorMessage
+    envVars { key value }
+    ports { name port protocol visibility internalEndpoint publicEndpoint }
+    gitProvider commitHash memory vcpus customDomain customDomainStatus
+    buildPack buildCommand startCommand publishDirectory rootDirectory dockerfilePath
+    destroyTimeoutSeconds createdAt updatedAt
+  }
+}`
+
 const serviceListQuery = `query($ws: String, $proj: String) {
   serviceList(workspaceSlug: $ws, projectSlug: $proj) {
     nodes {
@@ -112,6 +123,28 @@ func (c *Client) GetService(ctx context.Context, id string) (*Service, error) {
 		return nil, fmt.Errorf("ink: service %q not found", id)
 	}
 	return resp.ServiceGet, nil
+}
+
+// GetServiceByName returns full details for a single service by name.
+func (c *Client) GetServiceByName(ctx context.Context, name, workspaceSlug, projectSlug string) (*Service, error) {
+	var resp struct {
+		ServiceGetByName *Service `json:"serviceGetByName"`
+	}
+	vars := map[string]any{"name": name}
+	if workspaceSlug != "" {
+		vars["ws"] = workspaceSlug
+	}
+	if projectSlug != "" {
+		vars["project"] = projectSlug
+	}
+	err := c.doGraphQL(ctx, serviceGetByNameQuery, vars, &resp)
+	if err != nil {
+		return nil, err
+	}
+	if resp.ServiceGetByName == nil {
+		return nil, fmt.Errorf("ink: service %q not found", name)
+	}
+	return resp.ServiceGetByName, nil
 }
 
 // ListServices returns all services in a workspace, optionally filtered by project.

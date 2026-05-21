@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	ink "github.com/mldotink/sdk-go"
 	"github.com/spf13/cobra"
@@ -18,9 +19,11 @@ func init() {
 	f.String("host", "ink", "Git host: ink, github")
 	f.String("branch", "main", "Git branch to deploy")
 	f.String("region", "eu-central-1", "Deploy region")
+	f.Bool("wait", false, "Wait for deployment to become active or fail")
 	addServiceFlags(deployCmd)
 
 	redeployCmd.Flags().String("image", "", "Docker image to deploy (e.g. nginx:latest)")
+	redeployCmd.Flags().Bool("wait", false, "Wait for deployment to become active or fail")
 	addServiceFlags(redeployCmd)
 
 }
@@ -49,13 +52,13 @@ func addServiceFlags(cmd *cobra.Command) {
 		f.String("root-dir", "", "Root directory for monorepo projects")
 	}
 	if f.Lookup("publish-dir") == nil {
-		f.String("publish-dir", "", "Publish directory for static sites (e.g. dist, build)")
+		f.String("publish-dir", "", "Static output directory to serve after railpack build, or existing directory for static buildpack")
 	}
 	if f.Lookup("dockerfile") == nil {
 		f.String("dockerfile", "", "Path to Dockerfile")
 	}
 	if f.Lookup("buildpack") == nil {
-		f.String("buildpack", "railpack", "Build strategy: railpack, dockerfile, static")
+		f.String("buildpack", "railpack", "Build strategy: railpack, dockerfile, static (serve files as-is)")
 	}
 	if f.Lookup("destroy-timeout-seconds") == nil {
 		f.Int("destroy-timeout-seconds", 0, "Auto-destroy after N seconds from deploy completion (0=persistent, max 86400)")
@@ -67,7 +70,7 @@ var deployCmd = &cobra.Command{
 	Short: "Deploy a service for the first time",
 	Long: `Creates a new service from a git repo or Docker image. For git repos, the repo
 must exist first — create one with 'ink repo create' (Ink-managed) or use a GitHub
-repo with the GitHub App installed. The service will be live at {name}.ml.ink.
+repo with the GitHub App installed. The service endpoint is returned by Ink after creation.
 
 To update or redeploy an existing service, use 'ink redeploy'.`,
 	Example: `# Ink-managed repo
@@ -84,7 +87,10 @@ ink deploy mynginx --image nginx:latest --port 80
 
 # With options
 ink deploy myapi --repo myrepo --memory 512Mi --vcpu 0.5 --env-file .env
-ink deploy docs --repo myrepo --buildpack static --publish-dir dist`,
+ink deploy static-root --repo myrepo --buildpack static
+ink deploy static-dist --repo myrepo --buildpack static --publish-dir dist
+ink deploy spa --repo myrepo --publish-dir dist
+ink deploy myapi --repo myrepo --wait`,
 	Args: exactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		name := args[0]
@@ -212,8 +218,17 @@ func runCreate(cmd *cobra.Command, client *ink.Client, name string) {
 	if err != nil {
 		fatal(err.Error())
 	}
+	wait, _ := cmd.Flags().GetBool("wait")
 
 	if jsonOutput {
+		if wait {
+			svc, err := waitForServiceActive(client, name)
+			if err != nil {
+				fatal(err.Error())
+			}
+			printJSON(svc)
+			return
+		}
 		printJSON(result)
 		return
 	}
@@ -223,6 +238,16 @@ func runCreate(cmd *cobra.Command, client *ink.Client, name string) {
 	kv("Status", renderStatus(result.Status))
 	if endpoint := preferredServiceEndpoint(inkServicePorts(result.Ports), ""); endpoint != "" {
 		kv("Endpoint", accent.Render(endpoint))
+	}
+	if wait {
+		svc, err := waitForServiceActive(client, name)
+		if err != nil {
+			fatal(err.Error())
+		}
+		success(fmt.Sprintf("Service active: %s", bold.Render(svc.Name)))
+		if endpoint := preferredServiceEndpoint(inkServicePorts(svc.Ports), svc.CustomDomain); endpoint != "" {
+			kv("Endpoint", accent.Render(endpoint))
+		}
 	}
 	fmt.Println()
 }
@@ -299,8 +324,17 @@ func runUpdate(cmd *cobra.Command, client *ink.Client, name string) {
 	if err != nil {
 		fatal(err.Error())
 	}
+	wait, _ := cmd.Flags().GetBool("wait")
 
 	if jsonOutput {
+		if wait {
+			svc, err := waitForServiceActive(client, name)
+			if err != nil {
+				fatal(err.Error())
+			}
+			printJSON(svc)
+			return
+		}
 		printJSON(result)
 		return
 	}
@@ -308,7 +342,66 @@ func runUpdate(cmd *cobra.Command, client *ink.Client, name string) {
 	fmt.Println()
 	success(fmt.Sprintf("Service updated: %s", bold.Render(result.Name)))
 	kv("Status", renderStatus(result.Status))
+	if wait {
+		svc, err := waitForServiceActive(client, name)
+		if err != nil {
+			fatal(err.Error())
+		}
+		success(fmt.Sprintf("Service active: %s", bold.Render(svc.Name)))
+		if endpoint := preferredServiceEndpoint(inkServicePorts(svc.Ports), svc.CustomDomain); endpoint != "" {
+			kv("Endpoint", accent.Render(endpoint))
+		}
+	}
 	fmt.Println()
+}
+
+func waitForServiceActive(client *ink.Client, name string) (*ink.Service, error) {
+	deadline := time.Now().Add(10 * time.Minute)
+	var lastStatus string
+	var lastResult string
+
+	for {
+		svc, err := findServiceWithClientE(client, name)
+		if err != nil {
+			msg := err.Error()
+			lastResult = msg
+			if msg != lastStatus {
+				lastStatus = msg
+				if !jsonOutput {
+					fmt.Fprintln(os.Stderr, "  "+dim.Render("status")+" "+red.Render("error")+"  "+dim.Render(msg))
+				}
+			}
+		}
+		if svc != nil {
+			status := strings.ToLower(svc.Status)
+			lastResult = svc.Status
+			if status != lastStatus {
+				lastStatus = status
+				if !jsonOutput {
+					fmt.Fprintln(os.Stderr, "  "+dim.Render("status")+" "+renderStatus(svc.Status))
+				}
+			}
+			switch status {
+			case "active", "running":
+				return svc, nil
+			case "failed", "crashed", "error":
+				msg := fmt.Sprintf("service %q deployment %s", name, svc.Status)
+				if svc.ErrorMessage != "" {
+					msg += ": " + svc.ErrorMessage
+				}
+				msg += fmt.Sprintf(". Run: ink logs %s --build", name)
+				return nil, fmt.Errorf("%s", msg)
+			}
+		}
+
+		if time.Now().After(deadline) {
+			if lastResult != "" {
+				return nil, fmt.Errorf("timed out waiting for service %q to become active (last result: %s). Run: ink status %s", name, lastResult, name)
+			}
+			return nil, fmt.Errorf("timed out waiting for service %q to become active. Run: ink status %s", name, name)
+		}
+		time.Sleep(3 * time.Second)
+	}
 }
 
 func collectEnvVars(cmd *cobra.Command) []ink.EnvVar {

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 	"time"
 
@@ -147,12 +148,24 @@ var rootCmd = &cobra.Command{
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		cfg = config.Resolve(apiKeyFlag, wsFlag, projectFlag)
 
+		parent := ""
+		if cmd.Parent() != nil {
+			parent = cmd.Parent().Name()
+		}
 		switch cmd.Name() {
 		case "login", "help", "completion", "workspace", "workspaces", "whoami", "account", "config", "update":
 			// These commands don't operate within a workspace/project scope.
 		default:
+			if parent == "config" {
+				break
+			}
 			if !jsonOutput {
 				printConfigHints()
+			}
+			if shouldValidateContext(cmd) {
+				if err := validateConfiguredContext(newClient()); err != nil {
+					fatal(err.Error())
+				}
 			}
 		}
 	},
@@ -332,15 +345,86 @@ func printConfigHints() {
 		line += fmt.Sprintf("  project=%s", cfg.Project)
 	}
 
-	src := cfg.Sources["workspace"]
-	if src == "" {
-		src = cfg.Sources["project"]
+	var sources []string
+	if src := cfg.Sources["workspace"]; src != "" {
+		sources = append(sources, "workspace "+sourceLabel(src))
 	}
-	if src != "" {
-		line += "  " + dim.Render("("+sourceLabel(src)+")")
+	if src := cfg.Sources["project"]; src != "" {
+		sources = append(sources, "project "+sourceLabel(src))
+	}
+	if len(sources) > 0 {
+		line += "  " + dim.Render("("+strings.Join(sources, ", ")+")")
 	}
 
 	fmt.Fprintln(os.Stderr, line)
+}
+
+func shouldValidateContext(cmd *cobra.Command) bool {
+	if cmd == nil {
+		return false
+	}
+	if f := cmd.Flags().Lookup("all"); f != nil {
+		all, _ := cmd.Flags().GetBool("all")
+		if all {
+			return false
+		}
+	}
+	if cmd.CommandPath() == "ink delete" {
+		return true
+	}
+	switch cmd.CommandPath() {
+	case "ink template deploy", "ink repo create":
+		return true
+	case "ink repo token":
+		return false
+	}
+
+	for c := cmd; c != nil; c = c.Parent() {
+		switch c.Name() {
+		case "deploy", "redeploy", "status", "logs", "exec", "metrics", "service", "services", "secret", "secrets", "domain", "domains":
+			return true
+		}
+	}
+	return false
+}
+
+func validateConfiguredContext(client *ink.Client) error {
+	projects, err := client.ListProjects(ctx(), cfg.Workspace)
+	return validateProjectSelection(configuredWorkspaceLabel(), cfg.Project, projects, err)
+}
+
+func validateProjectSelection(workspace, project string, projects []ink.Project, listErr error) error {
+	if listErr != nil {
+		return fmt.Errorf("configured workspace %q is not usable: %w", workspace, listErr)
+	}
+	if project == "" {
+		return nil
+	}
+	for _, p := range projects {
+		if p.Slug == project {
+			return nil
+		}
+	}
+	return fmt.Errorf("configured project %q was not found in workspace %q%s", project, workspace, projectListHint(projects))
+}
+
+func configuredWorkspaceLabel() string {
+	if cfg == nil || cfg.Workspace == "" {
+		return "default"
+	}
+	return cfg.Workspace
+}
+
+func projectListHint(projects []ink.Project) string {
+	if len(projects) == 0 {
+		return ""
+	}
+	slugs := make([]string, 0, len(projects))
+	for _, p := range projects {
+		slugs = append(slugs, p.Slug)
+	}
+	sort.Strings(slugs)
+	return "; available projects: " + strings.Join(slugs, ", ")
 }
 
 func sourceLabel(src string) string {

@@ -78,6 +78,7 @@ ink whoami --json`,
 		}
 
 		if jsonOutput {
+			validation := configuredContextValidation(client)
 			out := map[string]any{"account": account}
 			if wsErr == nil {
 				out["workspaces"] = workspaces
@@ -91,9 +92,11 @@ ink whoami --json`,
 				}
 				out["billing"] = bmap
 			}
-			out["config"] = map[string]string{
-				"workspace": cfg.Workspace,
-				"project":   cfg.Project,
+			out["config"] = map[string]any{
+				"workspace":  cfg.Workspace,
+				"project":    cfg.Project,
+				"sources":    cfg.Sources,
+				"validation": validation,
 			}
 			printJSON(out)
 			return
@@ -122,6 +125,12 @@ ink whoami --json`,
 			cfgProj = dim.Render("(default)")
 		}
 		d.kv("Project", cfgProj)
+		validation := configuredContextValidation(client)
+		if validation.Valid {
+			d.kv("Config Valid", green.Render("yes"))
+		} else {
+			d.kv("Config Valid", red.Render("no")+"  "+dim.Render(validation.Error))
+		}
 
 		if wsErr == nil && len(workspaces) > 0 {
 			d.blank()
@@ -183,4 +192,29 @@ ink whoami --json`,
 		fmt.Println(d.String())
 		fmt.Println()
 	},
+}
+
+type configuredContextValidationResult struct {
+	Workspace string `json:"workspace"`
+	Project   string `json:"project,omitempty"`
+	Valid     bool   `json:"valid"`
+	Error     string `json:"error,omitempty"`
+}
+
+func configuredContextValidation(client *ink.Client) configuredContextValidationResult {
+	workspace := configuredWorkspaceLabel()
+	projects, err := client.ListProjects(ctx(), cfg.Workspace)
+	if err := validateProjectSelection(workspace, cfg.Project, projects, err); err != nil {
+		return configuredContextValidationResult{
+			Workspace: workspace,
+			Project:   cfg.Project,
+			Valid:     false,
+			Error:     err.Error(),
+		}
+	}
+	return configuredContextValidationResult{
+		Workspace: workspace,
+		Project:   cfg.Project,
+		Valid:     true,
+	}
 }
