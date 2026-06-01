@@ -12,6 +12,7 @@ import (
 
 func init() {
 	templateDeployCmd.Flags().String("name", "", "Instance name (required)")
+	templateDeployCmd.Flags().String("region", "", "Deploy region (defaults to the platform default)")
 	templateDeployCmd.Flags().StringArray("var", nil, "Template variable as KEY=VALUE (repeatable)")
 	templateCmd.AddCommand(templateDeployCmd)
 }
@@ -30,14 +31,18 @@ ink template info postgres
 ink template deploy postgres --name mydb
 
 # Deploy with variables
-ink template deploy postgres --name mydb --var db_name=myapp --var storage_gi=20`,
+ink template deploy postgres --name mydb --var database_name=myapp --var storage_gi=20
+
+# Deploy to another region
+ink template deploy postgres --name mydb --region us-east-1`,
 	Args: exactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		slug := args[0]
 		name, _ := cmd.Flags().GetString("name")
+		region, _ := cmd.Flags().GetString("region")
 		if name == "" {
 			fmt.Fprintln(os.Stderr, "Error: --name is required")
-			fmt.Fprintln(os.Stderr, "Usage: ink template deploy", slug, "--name <instance-name> [--var KEY=VALUE ...]")
+			fmt.Fprintln(os.Stderr, "Usage: ink template deploy", slug, "--name <instance-name> [--region REGION] [--var KEY=VALUE ...]")
 			fmt.Fprintln(os.Stderr, "\nRun \"ink template info "+slug+"\" to see available variables.")
 			os.Exit(1)
 		}
@@ -103,13 +108,7 @@ ink template deploy postgres --name mydb --var db_name=myapp --var storage_gi=20
 			variables = append(variables, ink.TemplateVariableValue{Key: k, Value: v})
 		}
 
-		deploy, err := client.DeployTemplate(ctx(), ink.TemplateDeployInput{
-			Template:      slug,
-			Name:          name,
-			Project:       cfg.Project,
-			WorkspaceSlug: cfg.Workspace,
-			Variables:     variables,
-		})
+		deploy, err := client.DeployTemplate(ctx(), newTemplateDeployInput(slug, name, region, variables))
 		if err != nil {
 			fatal(err.Error())
 		}
@@ -155,4 +154,18 @@ ink template deploy postgres --name mydb --var db_name=myapp --var storage_gi=20
 
 		fmt.Println()
 	},
+}
+
+func newTemplateDeployInput(slug, name, region string, variables []ink.TemplateVariableValue) ink.TemplateDeployInput {
+	input := ink.TemplateDeployInput{
+		Template:      slug,
+		Name:          name,
+		Project:       cfg.Project,
+		WorkspaceSlug: cfg.Workspace,
+		Variables:     variables,
+	}
+	if region != "" {
+		input.Regions = []string{region}
+	}
+	return input
 }

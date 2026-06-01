@@ -95,6 +95,9 @@ ink whoami --json`,
 			out["config"] = map[string]any{
 				"workspace":  cfg.Workspace,
 				"project":    cfg.Project,
+				"api_url":    cfg.APIURL,
+				"oauth_url":  cfg.OAuthURL,
+				"web_url":    cfg.WebURL,
 				"sources":    cfg.Sources,
 				"validation": validation,
 			}
@@ -125,6 +128,15 @@ ink whoami --json`,
 			cfgProj = dim.Render("(default)")
 		}
 		d.kv("Project", cfgProj)
+		if cfg.APIURL != "" {
+			d.kv("API URL", cfg.APIURL)
+		}
+		if cfg.OAuthURL != "" {
+			d.kv("OAuth URL", cfg.OAuthURL)
+		}
+		if cfg.WebURL != "" {
+			d.kv("Web URL", cfg.WebURL)
+		}
 		validation := configuredContextValidation(client)
 		if validation.Valid {
 			d.kv("Config Valid", green.Render("yes"))

@@ -56,8 +56,8 @@ ink redeploy my-app
 
 Ink CLI resolves configuration in this order (highest priority first):
 
-1. **CLI flags** — `--api-key`, `--workspace`, `--project`
-2. **Environment** — `INK_API_KEY`
+1. **CLI flags** — `--api-key`, `--workspace`, `--project`, `--api-url`, `--oauth-url`, `--web-url`
+2. **Environment** — `INK_API_KEY`, `INK_WORKSPACE`, `INK_PROJECT`, `INK_API_URL`, `INK_OAUTH_URL`, `INK_WEB_URL`
 3. **Local config** — nearest `.ink` file in current directory or a parent directory
 4. **Global config** — `~/.config/ink/config`
 
@@ -69,6 +69,12 @@ ink login --scope local
 
 # Global default
 ink login
+
+# Enterprise host
+ink config set \
+  --api-url https://api.example.com/graphql \
+  --oauth-url https://mcp.example.com \
+  --web-url https://ink.example.com
 ```
 
 ## Commands
@@ -118,6 +124,9 @@ ink login                   Authenticate
 --workspace, -w     Workspace slug
 --project           Project slug
 --api-key           API key (overrides config)
+--api-url           GraphQL API URL
+--oauth-url         OAuth server URL
+--web-url           Ink web app URL
 ```
 
 ## License

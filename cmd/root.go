@@ -19,10 +19,13 @@ import (
 )
 
 var (
-	jsonOutput  bool
-	apiKeyFlag  string
-	wsFlag      string
-	projectFlag string
+	jsonOutput   bool
+	apiKeyFlag   string
+	wsFlag       string
+	projectFlag  string
+	apiURLFlag   string
+	oauthURLFlag string
+	webURLFlag   string
 
 	cfg *config.Resolved
 )
@@ -146,7 +149,7 @@ var rootCmd = &cobra.Command{
 	Use:   "ink",
 	Short: "Deploy apps and services to the cloud in seconds (ml.ink)",
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
-		cfg = config.Resolve(apiKeyFlag, wsFlag, projectFlag)
+		cfg = config.Resolve(apiKeyFlag, wsFlag, projectFlag, apiURLFlag, oauthURLFlag, webURLFlag)
 
 		parent := ""
 		if cmd.Parent() != nil {
@@ -178,6 +181,9 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&apiKeyFlag, "api-key", "", "API key (overrides config)")
 	rootCmd.PersistentFlags().StringVarP(&wsFlag, "workspace", "w", "", "Workspace slug (overrides config)")
 	rootCmd.PersistentFlags().StringVar(&projectFlag, "project", "", "Project slug (overrides config)")
+	rootCmd.PersistentFlags().StringVar(&apiURLFlag, "api-url", "", "GraphQL API URL (overrides config)")
+	rootCmd.PersistentFlags().StringVar(&oauthURLFlag, "oauth-url", "", "OAuth server URL (overrides config)")
+	rootCmd.PersistentFlags().StringVar(&webURLFlag, "web-url", "", "Ink web app URL (overrides config)")
 
 }
 
@@ -205,7 +211,10 @@ func newClient() *ink.Client {
 	if cfg.APIKey == "" {
 		fatal("Not authenticated. Run: ink login")
 	}
-	return api.NewClient(cfg.APIKey)
+	return api.NewClient(api.ClientConfig{
+		APIKey:  cfg.APIKey,
+		BaseURL: cfg.APIURL,
+	})
 }
 
 func ctx() context.Context {

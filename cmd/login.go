@@ -21,7 +21,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const oauthServerBase = "https://mcp.ml.ink"
+const (
+	defaultOAuthServerBase = "https://mcp.ml.ink"
+	defaultWebBase         = "https://ml.ink"
+)
 
 func init() {
 	loginCmd.Flags().Bool("global", true, "Save globally (~/.config/ink/config)")
@@ -65,14 +68,14 @@ ink login --api-key dk_live_abc123`,
 
 			switch method {
 			case "browser":
-				k, err := oauthBrowserLogin()
+				k, err := oauthBrowserLogin(oauthServerBase())
 				if err != nil {
 					fatal(err.Error())
 				}
 				key = k
 			case "apikey":
 				fmt.Println()
-				fmt.Println(dim.Render("  Create an API key at: ") + accent.Render("https://ml.ink/account/api-keys"))
+				fmt.Println(dim.Render("  Create an API key at: ") + accent.Render(webBaseURL()+"/account/api-keys"))
 				fmt.Println()
 				var inputKey string
 				err := huh.NewInput().
@@ -94,6 +97,11 @@ ink login --api-key dk_live_abc123`,
 		}
 
 		c := &config.Config{APIKey: key}
+		if cfg != nil {
+			c.APIURL = cfg.APIURL
+			c.OAuthURL = cfg.OAuthURL
+			c.WebURL = cfg.WebURL
+		}
 		var err error
 		if global {
 			err = config.SaveGlobal(c)
@@ -112,7 +120,23 @@ ink login --api-key dk_live_abc123`,
 	},
 }
 
-func oauthBrowserLogin() (string, error) {
+func oauthServerBase() string {
+	if cfg != nil && cfg.OAuthURL != "" {
+		return cfg.OAuthURL
+	}
+	return defaultOAuthServerBase
+}
+
+func webBaseURL() string {
+	if cfg != nil && cfg.WebURL != "" {
+		return cfg.WebURL
+	}
+	return defaultWebBase
+}
+
+func oauthBrowserLogin(baseURL string) (string, error) {
+	baseURL = strings.TrimRight(baseURL, "/")
+
 	// Generate PKCE code verifier (43-128 URL-safe chars)
 	verifierBytes := make([]byte, 32)
 	if _, err := rand.Read(verifierBytes); err != nil {
@@ -142,7 +166,7 @@ func oauthBrowserLogin() (string, error) {
 		"redirect_uris": []string{redirectURI},
 		"client_name":   "ink-cli",
 	})
-	resp, err := http.Post(oauthServerBase+"/oauth/register", "application/json", strings.NewReader(string(regBody)))
+	resp, err := http.Post(baseURL+"/oauth/register", "application/json", strings.NewReader(string(regBody)))
 	if err != nil {
 		listener.Close()
 		return "", fmt.Errorf("failed to register OAuth client: %w", err)
@@ -155,7 +179,7 @@ func oauthBrowserLogin() (string, error) {
 	clientID := regResult.ClientID
 
 	// Build authorize URL
-	authorizeURL, _ := url.Parse(oauthServerBase + "/oauth/authorize")
+	authorizeURL, _ := url.Parse(baseURL + "/oauth/authorize")
 	q := authorizeURL.Query()
 	q.Set("client_id", clientID)
 	q.Set("redirect_uri", redirectURI)
@@ -224,7 +248,7 @@ func oauthBrowserLogin() (string, error) {
 		"client_id":     {clientID},
 	}
 
-	tokenResp, err := http.PostForm(oauthServerBase+"/oauth/token", tokenData)
+	tokenResp, err := http.PostForm(baseURL+"/oauth/token", tokenData)
 	if err != nil {
 		return "", fmt.Errorf("failed to exchange code for token: %w", err)
 	}

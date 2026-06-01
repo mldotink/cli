@@ -8,6 +8,7 @@ Go CLI for the Ink PaaS (ml.ink). Built with Cobra + Charm lipgloss for terminal
 - `cmd/` — one file per command, flat structure (no noun groups for services)
 - `internal/api/` — GraphQL client with Bearer auth via `authTransport` RoundTripper
 - `internal/config/` — config resolution: flags > env > nearest `.ink` (local) > `~/.config/ink/config` (global)
+  for API key, workspace/project, and enterprise host URLs (`api_url`, `oauth_url`, `web_url`)
 - `internal/gql/` — genqlient-generated typed GraphQL client code
 - `schema.graphql` — concatenated from backend `go-backend/internal/graph/*.graphqls` (server directives stripped)
 - `npm/` — per-platform npm packages for `npx` distribution
@@ -29,7 +30,7 @@ Key config: `optional: pointer` — nullable GraphQL params become `*string` (ba
 The schema is sourced from backend `.graphqls` files (NOT API introspection, which may lag behind undeployed changes):
 
 ```bash
-cat ../go-backend/internal/graph/*.graphqls | python3 -c "
+cat ../backend/go-backend/internal/graph/*.graphqls | python3 -c "
 import re, sys
 s = sys.stdin.read()
 s = re.sub(r'directive @\w+.*?\n', '', s)

@@ -11,16 +11,22 @@ type Config struct {
 	APIKey    string `json:"api_key,omitempty"`
 	Workspace string `json:"workspace,omitempty"`
 	Project   string `json:"project,omitempty"`
+	APIURL    string `json:"api_url,omitempty"`
+	OAuthURL  string `json:"oauth_url,omitempty"`
+	WebURL    string `json:"web_url,omitempty"`
 }
 
 type Resolved struct {
 	APIKey    string
 	Workspace string
 	Project   string
+	APIURL    string
+	OAuthURL  string
+	WebURL    string
 	Sources   map[string]string // field -> "global", "local", "env", "flag"
 }
 
-func Resolve(flagAPIKey, flagWorkspace, flagProject string) *Resolved {
+func Resolve(flagAPIKey, flagWorkspace, flagProject, flagAPIURL, flagOAuthURL, flagWebURL string) *Resolved {
 	r := &Resolved{Sources: make(map[string]string)}
 
 	// 1. Global config
@@ -29,6 +35,9 @@ func Resolve(flagAPIKey, flagWorkspace, flagProject string) *Resolved {
 		set(r, "api_key", g.APIKey, "global")
 		set(r, "workspace", g.Workspace, "global")
 		set(r, "project", g.Project, "global")
+		set(r, "api_url", g.APIURL, "global")
+		set(r, "oauth_url", g.OAuthURL, "global")
+		set(r, "web_url", g.WebURL, "global")
 	}
 
 	// 2. Local .ink from current directory or nearest ancestor (overrides global)
@@ -36,26 +45,49 @@ func Resolve(flagAPIKey, flagWorkspace, flagProject string) *Resolved {
 		set(r, "api_key", l.APIKey, "local")
 		set(r, "workspace", l.Workspace, "local")
 		set(r, "project", l.Project, "local")
+		set(r, "api_url", l.APIURL, "local")
+		set(r, "oauth_url", l.OAuthURL, "local")
+		set(r, "web_url", l.WebURL, "local")
 	}
 
-	// 3. Env var (API key only)
+	// 3. Env vars
 	if key := os.Getenv("INK_API_KEY"); key != "" {
-		r.APIKey = strings.TrimSpace(key)
-		r.Sources["api_key"] = "env"
+		set(r, "api_key", key, "env")
+	}
+	if workspace := os.Getenv("INK_WORKSPACE"); workspace != "" {
+		set(r, "workspace", workspace, "env")
+	}
+	if project := os.Getenv("INK_PROJECT"); project != "" {
+		set(r, "project", project, "env")
+	}
+	if apiURL := os.Getenv("INK_API_URL"); apiURL != "" {
+		set(r, "api_url", apiURL, "env")
+	}
+	if oauthURL := firstEnv("INK_OAUTH_URL", "INK_MCP_URL"); oauthURL != "" {
+		set(r, "oauth_url", oauthURL, "env")
+	}
+	if webURL := os.Getenv("INK_WEB_URL"); webURL != "" {
+		set(r, "web_url", webURL, "env")
 	}
 
 	// 4. CLI flags (highest priority)
 	if flagAPIKey != "" {
-		r.APIKey = flagAPIKey
-		r.Sources["api_key"] = "flag"
+		set(r, "api_key", flagAPIKey, "flag")
 	}
 	if flagWorkspace != "" {
-		r.Workspace = flagWorkspace
-		r.Sources["workspace"] = "flag"
+		set(r, "workspace", flagWorkspace, "flag")
 	}
 	if flagProject != "" {
-		r.Project = flagProject
-		r.Sources["project"] = "flag"
+		set(r, "project", flagProject, "flag")
+	}
+	if flagAPIURL != "" {
+		set(r, "api_url", flagAPIURL, "flag")
+	}
+	if flagOAuthURL != "" {
+		set(r, "oauth_url", flagOAuthURL, "flag")
+	}
+	if flagWebURL != "" {
+		set(r, "web_url", flagWebURL, "flag")
 	}
 
 	return r
@@ -82,6 +114,7 @@ func localPath() string {
 }
 
 func set(r *Resolved, field, value, source string) {
+	value = strings.TrimSpace(value)
 	if value == "" {
 		return
 	}
@@ -92,8 +125,23 @@ func set(r *Resolved, field, value, source string) {
 		r.Workspace = value
 	case "project":
 		r.Project = value
+	case "api_url":
+		r.APIURL = value
+	case "oauth_url":
+		r.OAuthURL = strings.TrimRight(value, "/")
+	case "web_url":
+		r.WebURL = strings.TrimRight(value, "/")
 	}
 	r.Sources[field] = source
+}
+
+func firstEnv(keys ...string) string {
+	for _, key := range keys {
+		if value := os.Getenv(key); value != "" {
+			return value
+		}
+	}
+	return ""
 }
 
 func loadFile(path string) *Config {
@@ -146,6 +194,15 @@ func writeConfig(path string, update *Config) error {
 	}
 	if update.Project != "" {
 		existing.Project = update.Project
+	}
+	if update.APIURL != "" {
+		existing.APIURL = strings.TrimSpace(update.APIURL)
+	}
+	if update.OAuthURL != "" {
+		existing.OAuthURL = strings.TrimRight(strings.TrimSpace(update.OAuthURL), "/")
+	}
+	if update.WebURL != "" {
+		existing.WebURL = strings.TrimRight(strings.TrimSpace(update.WebURL), "/")
 	}
 
 	data, err := json.MarshalIndent(existing, "", "  ")
