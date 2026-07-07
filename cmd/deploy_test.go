@@ -122,13 +122,63 @@ func TestRunCreateMapsPortFlagToPublicHTTPPort(t *testing.T) {
 	}
 }
 
+func TestRunCreateMapsAuthPolicyFlag(t *testing.T) {
+	restoreConfig(t, &config.Resolved{Workspace: "team-local"})
+
+	var captured capturedRequest
+	srv := newTestServer(t, &captured, `{"data":{"serviceCreate":{"serviceId":"svc_1","name":"my-app","status":"queued","repo":"my-app","ports":[]}}}`)
+	defer srv.Close()
+
+	cmd := newDeployCommandForTests()
+	if err := cmd.Flags().Set("auth-policy", "org_sso"); err != nil {
+		t.Fatalf("set auth-policy flag: %v", err)
+	}
+
+	runCreate(cmd, newTestClient(t, srv.URL), "my-app")
+
+	var input struct {
+		AuthPolicy string `json:"authPolicy"`
+	}
+	raw, _ := json.Marshal(captured.Variables["input"])
+	json.Unmarshal(raw, &input)
+
+	if input.AuthPolicy != "org_sso" {
+		t.Fatalf("authPolicy = %q, want org_sso", input.AuthPolicy)
+	}
+}
+
+func TestRunUpdateMapsAuthPolicyFlag(t *testing.T) {
+	restoreConfig(t, &config.Resolved{Workspace: "team-local"})
+
+	var captured capturedRequest
+	srv := newTestServer(t, &captured, `{"data":{"serviceUpdate":{"serviceId":"svc_1","name":"my-app","status":"queued"}}}`)
+	defer srv.Close()
+
+	cmd := newDeployCommandForTests()
+	if err := cmd.Flags().Set("auth-policy", "deployer_sso"); err != nil {
+		t.Fatalf("set auth-policy flag: %v", err)
+	}
+
+	runUpdate(cmd, newTestClient(t, srv.URL), "my-app")
+
+	var input struct {
+		AuthPolicy string `json:"authPolicy"`
+	}
+	raw, _ := json.Marshal(captured.Variables["input"])
+	json.Unmarshal(raw, &input)
+
+	if input.AuthPolicy != "deployer_sso" {
+		t.Fatalf("authPolicy = %q, want deployer_sso", input.AuthPolicy)
+	}
+}
+
 func newDeployCommandForTests() *cobra.Command {
 	cmd := &cobra.Command{Use: "deploy"}
 	cmd.Flags().StringP("repo", "r", "", "")
 	cmd.Flags().IntP("port", "p", 0, "")
 	cmd.Flags().String("host", "ink", "")
 	cmd.Flags().String("branch", "main", "")
-	cmd.Flags().String("region", "eu-central-1", "")
+	cmd.Flags().String("region", "", "")
 	addServiceFlags(cmd)
 	return cmd
 }

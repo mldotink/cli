@@ -11,6 +11,7 @@ type endpointPort struct {
 	port             string
 	protocol         string
 	visibility       string
+	authPolicy       string
 	internalEndpoint string
 	publicEndpoint   string
 }
@@ -32,6 +33,7 @@ func inkServicePorts(ports []ink.ServicePort) []endpointPort {
 			port:             port.Port,
 			protocol:         port.Protocol,
 			visibility:       port.Visibility,
+			authPolicy:       port.AuthPolicy,
 			internalEndpoint: port.InternalEndpoint,
 			publicEndpoint:   port.PublicEndpoint,
 		})
@@ -74,11 +76,15 @@ func renderPortSummary(port endpointPort) string {
 	if port.publicEndpoint != "" {
 		public = accent.Render(port.publicEndpoint)
 	}
+	label := fmt.Sprintf("%s/%s:%s", port.visibility, port.protocol, port.port)
+	if port.authPolicy != "" && port.protocol == "http" && port.visibility == "public" {
+		label += " auth=" + port.authPolicy
+	}
 
 	return fmt.Sprintf(
 		"  %-10s %-12s public %s\n  %-10s %-12s internal %s",
 		bold.Render(port.name),
-		fmt.Sprintf("%s/%s:%s", port.visibility, port.protocol, port.port),
+		label,
 		public,
 		"",
 		"",

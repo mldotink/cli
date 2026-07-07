@@ -18,7 +18,7 @@ func init() {
 	f.IntP("port", "p", 0, "Application port (default: auto-detected)")
 	f.String("host", "ink", "Git host: ink, github")
 	f.String("branch", "main", "Git branch to deploy")
-	f.String("region", "eu-central-1", "Deploy region")
+	f.String("region", "", "Deploy region (omit for platform default)")
 	f.Bool("wait", false, "Wait for deployment to become active or fail")
 	addServiceFlags(deployCmd)
 
@@ -59,6 +59,9 @@ func addServiceFlags(cmd *cobra.Command) {
 	}
 	if f.Lookup("buildpack") == nil {
 		f.String("buildpack", "railpack", "Build strategy: railpack, dockerfile, static (serve files as-is)")
+	}
+	if f.Lookup("auth-policy") == nil {
+		f.String("auth-policy", "", "Public HTTP auth policy: public, org_sso, deployer_sso (omit for platform default)")
 	}
 	if f.Lookup("destroy-timeout-seconds") == nil {
 		f.Int("destroy-timeout-seconds", 0, "Auto-destroy after N seconds from deploy completion (0=persistent, max 86400)")
@@ -203,6 +206,13 @@ func runCreate(cmd *cobra.Command, client *ink.Client, name string) {
 		v, _ := cmd.Flags().GetInt("port")
 		input.Ports = singlePublicHTTPPort(v)
 	}
+	if cmd.Flags().Changed("auth-policy") {
+		policy, err := serviceAuthPolicyFromCommand(cmd)
+		if err != nil {
+			fatal(err.Error())
+		}
+		input.AuthPolicy = policy
+	}
 	if cmd.Flags().Changed("region") {
 		region, _ := cmd.Flags().GetString("region")
 		input.Regions = []string{region}
@@ -313,6 +323,13 @@ func runUpdate(cmd *cobra.Command, client *ink.Client, name string) {
 		v, _ := cmd.Flags().GetInt("port")
 		input.Ports = singlePublicHTTPPort(v)
 	}
+	if cmd.Flags().Changed("auth-policy") {
+		policy, err := serviceAuthPolicyFromCommand(cmd)
+		if err != nil {
+			fatal(err.Error())
+		}
+		input.AuthPolicy = policy
+	}
 	if cmd.Flags().Changed("destroy-timeout-seconds") {
 		v, _ := cmd.Flags().GetInt("destroy-timeout-seconds")
 		input.DestroyTimeoutSeconds = &v
@@ -401,6 +418,17 @@ func waitForServiceActive(client *ink.Client, name string) (*ink.Service, error)
 			return nil, fmt.Errorf("timed out waiting for service %q to become active. Run: ink status %s", name, name)
 		}
 		time.Sleep(3 * time.Second)
+	}
+}
+
+func serviceAuthPolicyFromCommand(cmd *cobra.Command) (string, error) {
+	policy, _ := cmd.Flags().GetString("auth-policy")
+	policy = strings.TrimSpace(strings.ToLower(policy))
+	switch policy {
+	case "public", "org_sso", "deployer_sso":
+		return policy, nil
+	default:
+		return "", fmt.Errorf("invalid --auth-policy %q: use public, org_sso, or deployer_sso", policy)
 	}
 }
 

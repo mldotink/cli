@@ -81,6 +81,8 @@ github.com/mitchellh/hashstructure/v2 v2.0.2 h1:vGKWl0YJqUNxE8d+h8f6NJLcCJrgbhC4
 github.com/mitchellh/hashstructure/v2 v2.0.2/go.mod h1:MG3aRVU/N29oo/V/IhBX8GR/zz4kQkprJgF2EVszyDE=
 github.com/mldotink/sdk-go v0.0.0-20260601150714-05a16757e284 h1:2d2ZhQn+UGbvWU2sBUG9MTD8sx/HqRum0TPmtM0VvxM=
 github.com/mldotink/sdk-go v0.0.0-20260601150714-05a16757e284/go.mod h1:O/MH99/e1mEMsGYzvwwlFnyccpArmvw1jVCq3YZrims=
+github.com/mldotink/sdk-go v0.0.0-20260703105130-9f7fab805dcb h1:pEs5EofY4ipUmZ5uCjqmjSzayqwtlOz7iNVjqhqv2qc=
+github.com/mldotink/sdk-go v0.0.0-20260703105130-9f7fab805dcb/go.mod h1:O/MH99/e1mEMsGYzvwwlFnyccpArmvw1jVCq3YZrims=
 github.com/muesli/ansi v0.0.0-20230316100256-276c6243b2f6 h1:ZK8zHtRHOkbHy6Mmr5D264iyp3TiX5OmNcI5cIARiQI=
 github.com/muesli/ansi v0.0.0-20230316100256-276c6243b2f6/go.mod h1:CJlz5H+gyd6CUWT45Oy4q24RdLyn7Md9Vj2/ldJBSIo=
 github.com/muesli/cancelreader v0.2.2 h1:3I4Kt4BQjOR54NavqnDogx/MIoWBFa0StPA8ELUXHmA=

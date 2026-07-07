@@ -6,7 +6,7 @@ require (
 	github.com/charmbracelet/fang v1.0.0
 	github.com/charmbracelet/huh v1.0.0
 	github.com/charmbracelet/lipgloss v1.1.0
-	github.com/mldotink/sdk-go v0.0.0-20260601150714-05a16757e284
+	github.com/mldotink/sdk-go v0.0.0-20260703105130-9f7fab805dcb
 	github.com/spf13/cobra v1.9.1
 )
 
