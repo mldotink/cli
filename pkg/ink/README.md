@@ -1,6 +1,6 @@
 # Ink Go SDK
 
-Go client library for the [Ink](https://ml.ink) cloud platform.
+Go client library for the [Ink](https://deployink.com) cloud platform.
 
 ## Installation
 
@@ -16,7 +16,7 @@ go get github.com/mldotink/cli/pkg/ink
 import "github.com/mldotink/cli/pkg/ink"
 
 client := ink.NewClient(ink.Config{
-    APIKey: "dk_live_...", // https://ml.ink/account/api-keys
+    APIKey: "dk_live_...", // https://deployink.com/account/api-keys
 })
 ```
 

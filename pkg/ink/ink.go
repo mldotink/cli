@@ -1,4 +1,4 @@
-// Package ink provides a Go client for the Ink platform API (ml.ink).
+// Package ink provides a Go client for the Ink platform API.
 package ink
 
 import (
@@ -11,16 +11,16 @@ import (
 )
 
 const (
-	DefaultBaseURL = "https://api.ml.ink/graphql"
-	DefaultExecURL = "wss://exec-eu-central-1.ml.ink"
+	DefaultBaseURL = "https://api.deployink.com/graphql"
+	DefaultExecURL = "wss://exec-us-east-1.deployink.com"
 )
 
 // Config configures an Ink API client.
 type Config struct {
-	// APIKey is required. Create one at https://ml.ink/account/api-keys.
+	// APIKey is required. Create one at https://deployink.com/account/api-keys.
 	APIKey string
 
-	// BaseURL overrides the GraphQL endpoint. Default: https://api.ml.ink/graphql
+	// BaseURL overrides the GraphQL endpoint. Default: https://api.deployink.com/graphql
 	BaseURL string
 
 	// ExecURL overrides the exec-proxy WebSocket endpoint.

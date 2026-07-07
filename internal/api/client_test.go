@@ -23,7 +23,7 @@ func TestClientHeaderTransportAddsInkClient(t *testing.T) {
 	capture := &captureTransport{}
 	transport := clientHeaderTransport{base: capture}
 
-	req, err := http.NewRequest(http.MethodPost, "https://api.ml.ink/graphql", nil)
+	req, err := http.NewRequest(http.MethodPost, "https://api.deployink.com/graphql", nil)
 	if err != nil {
 		t.Fatalf("new request: %v", err)
 	}

@@ -76,7 +76,7 @@ func TestResolveEnvOverridesWorkspaceProjectAndHosts(t *testing.T) {
 	}
 	if err := os.WriteFile(
 		filepath.Join(home, ".config", "ink", "config"),
-		[]byte(`{"workspace":"team-global","project":"api-global","api_url":"https://api.ml.ink/graphql","oauth_url":"https://mcp.ml.ink"}`+"\n"),
+		[]byte(`{"workspace":"team-global","project":"api-global","api_url":"https://api.deployink.com/graphql","oauth_url":"https://mcp.deployink.com"}`+"\n"),
 		0o600,
 	); err != nil {
 		t.Fatalf("write global config: %v", err)

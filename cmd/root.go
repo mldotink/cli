@@ -147,7 +147,7 @@ var Version = "dev"
 
 var rootCmd = &cobra.Command{
 	Use:   "ink",
-	Short: "Deploy apps and services to the cloud in seconds (ml.ink)",
+	Short: "Deploy apps and services to the cloud in seconds",
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		cfg = config.Resolve(apiKeyFlag, wsFlag, projectFlag, apiURLFlag, oauthURLFlag, webURLFlag)
 
