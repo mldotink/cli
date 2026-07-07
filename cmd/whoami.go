@@ -183,7 +183,7 @@ ink whoami --json`,
 		if account.HasGitHubApp {
 			d.kv("GitHub App", green.Render("installed")+"  "+dim.Render("deploy from GitHub repos"))
 		} else {
-			d.kv("GitHub App", dim.Render("not installed")+"  "+dim.Render("install at ml.ink to deploy GitHub repos"))
+			d.kv("GitHub App", dim.Render("not installed")+"  "+dim.Render("install at deployink.com to deploy GitHub repos"))
 		}
 
 		if account.HasGitHubOAuth {

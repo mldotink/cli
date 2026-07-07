@@ -55,7 +55,7 @@ var reposCreateCmd = &cobra.Command{
 	Use:   "create <name>",
 	Short: "Create a git repository in your workspace",
 	Long: `Creates a git repository in your workspace. With --host ink (default), creates
-a private repo on Ink's git server (git.ml.ink) and returns a remote URL with
+a private repo on Ink's git server (git.deployink.com) and returns a remote URL with
 a push token. With --host github, creates a GitHub repo (requires OAuth).
 
 For GitHub repos without OAuth, use 'gh repo create' yourself and deploy

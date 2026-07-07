@@ -1,6 +1,6 @@
 # Ink CLI
 
-The command-line interface for [Ink](https://ml.ink) — a cloud platform designed for AI agents to deploy and manage services autonomously. Ink makes deployments simple enough that fully autonomous agents can handle the entire lifecycle: create, deploy, monitor, and scale services without human intervention.
+The command-line interface for [Ink](https://deployink.com) — a cloud platform designed for AI agents to deploy and manage services autonomously. Ink makes deployments simple enough that fully autonomous agents can handle the entire lifecycle: create, deploy, monitor, and scale services without human intervention.
 
 ## Install
 

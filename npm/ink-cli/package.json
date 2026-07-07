@@ -1,7 +1,7 @@
 {
   "name": "@mldotink/cli",
   "version": "0.0.0",
-  "description": "Deploy and manage services on Ink (ml.ink)",
+  "description": "Deploy and manage services on Ink",
   "bin": {
     "ink": "bin/ink"
   },
@@ -15,7 +15,7 @@
     "@mldotink/cli-linux-arm64": "0.0.0",
     "@mldotink/cli-win32-x64": "0.0.0"
   },
-  "homepage": "https://ml.ink",
+  "homepage": "https://deployink.com",
   "repository": {
     "type": "git",
     "url": "https://github.com/mldotink/cli"

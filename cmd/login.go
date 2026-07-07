@@ -22,8 +22,8 @@ import (
 )
 
 const (
-	defaultOAuthServerBase = "https://mcp.ml.ink"
-	defaultWebBase         = "https://ml.ink"
+	defaultOAuthServerBase = "https://mcp.deployink.com"
+	defaultWebBase         = "https://deployink.com"
 )
 
 func init() {

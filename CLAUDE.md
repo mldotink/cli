@@ -1,6 +1,6 @@
 # Ink CLI
 
-Go CLI for the Ink PaaS (ml.ink). Built with Cobra + Charm lipgloss for terminal styling.
+Go CLI for the Ink PaaS. Built with Cobra + Charm lipgloss for terminal styling.
 
 ## Architecture
 
