@@ -39,7 +39,7 @@ brews:
       owner: mldotink
       name: homebrew-tap
       token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
-    homepage: "https://ml.ink"
+    homepage: "https://deployink.com"
     description: "Deploy and manage services on Ink"
     license: "MIT"
     install: |
@@ -49,7 +49,7 @@ brews:
 
 nfpms:
   - package_name: ink
-    homepage: "https://ml.ink"
+    homepage: "https://deployink.com"
     description: "Deploy and manage services on Ink"
     license: "MIT"
     formats:
